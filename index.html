@@ -299,7 +299,6 @@
     }
 
     function updateFormFlow() {
-      updateSchoolOptions();
       let previousFieldsCompleted = true;
 
       requiredFlow.forEach((field, index) => {
@@ -356,9 +355,18 @@
 
     buttons.forEach(button => button.addEventListener('click', () => showView(button.dataset.view)));
     continueReport.addEventListener('click', () => emergencyGate.classList.remove('active'));
-    requiredFlow.forEach(field => field.addEventListener('input', updateFormFlow));
-    requiredFlow.forEach(field => field.addEventListener('change', updateFormFlow));
+    requiredFlow.forEach(field => {
+      const handler = () => {
+        if (field === districtSelect) {
+          updateSchoolOptions();
+        }
+        updateFormFlow();
+      };
+      field.addEventListener('input', handler);
+      field.addEventListener('change', handler);
+    });
     reportForm.addEventListener('reset', resetFormFlow);
+    updateSchoolOptions();
     updateFormFlow();
 
     const heatToggle = document.getElementById('heatToggle');
