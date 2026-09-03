@@ -54,6 +54,12 @@
     .hint { color: var(--muted); font-size: 13px; font-weight: 400; }
     .optional-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
     .admin-layout { display: grid; grid-template-columns: 320px 1fr; gap: 18px; }
+    .security-card { margin-bottom: 18px; }
+    .security-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .security-item { border: 1px solid var(--line); border-radius: 8px; padding: 10px; background: #f8fafc; }
+    .security-item span { display: block; color: var(--muted); font-size: 12px; margin-bottom: 4px; }
+    .security-item strong { display: block; color: var(--ink); font-size: 14px; word-break: break-word; }
+    .security-note { margin-top: 12px; color: var(--muted); font-size: 13px; }
     .filters { display: grid; gap: 12px; }
     .map-panel { padding: 16px; overflow: hidden; }
     .map-toolbar { display: flex; justify-content: space-between; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
@@ -81,7 +87,7 @@
     .emergency-card { width: min(620px, 100%); background: #fff; border-radius: 8px; padding: 26px; text-align: center; box-shadow: 0 24px 70px rgba(0,0,0,.28); }
     .countdown { width: 74px; height: 74px; border-radius: 999px; display: grid; place-items: center; margin: 8px auto 16px; background: #fee2e2; color: var(--red); font-size: 34px; font-weight: 800; border: 3px solid #fecaca; }
     .emergency-card .primary:disabled { background: #9ca3af; cursor: wait; }
-    @media (max-width: 920px) { .hero, .admin-layout, form, .optional-grid { grid-template-columns: 1fr; } h1 { font-size: 30px; } main { padding: 16px; } }
+    @media (max-width: 920px) { .hero, .admin-layout, form, .optional-grid, .security-grid { grid-template-columns: 1fr; } h1 { font-size: 30px; } main { padding: 16px; } }
   </style>
 </head>
 <body>
@@ -207,6 +213,22 @@
           <p class="hint">Isı haritası olay sayısı, kategori yoğunluğu ve tarih aralığına göre görünür hale gelir.</p>
         </aside>
         <div>
+          <div class="panel security-card">
+            <h2>Teknik Güvenlik Kaydı Demo</h2>
+            <p>Bu kart geçici test amaçlıdır. Normal web sayfasının alabileceği teknik bilgileri gösterir; IMEI, cihaz seri no ve MAC adresi web tarayıcısından alınamaz.</p>
+            <div class="security-grid">
+              <div class="security-item"><span>IP adresi</span><strong id="visitorIp">Alınıyor...</strong></div>
+              <div class="security-item"><span>Cihaz türü</span><strong id="visitorDevice">-</strong></div>
+              <div class="security-item"><span>Tarayıcı</span><strong id="visitorBrowser">-</strong></div>
+              <div class="security-item"><span>İşletim sistemi</span><strong id="visitorOs">-</strong></div>
+              <div class="security-item"><span>Dil</span><strong id="visitorLanguage">-</strong></div>
+              <div class="security-item"><span>Saat dilimi</span><strong id="visitorTimezone">-</strong></div>
+              <div class="security-item"><span>Ekran boyutu</span><strong id="visitorScreen">-</strong></div>
+              <div class="security-item"><span>Kayıt zamanı</span><strong id="visitorTime">-</strong></div>
+            </div>
+            <p class="security-note">Üretim sürümünde bu bilgiler yalnızca kötüye kullanım ve bilgi kirliliğini azaltmak için sınırlı teknik güvenlik kaydı olarak tutulmalıdır.</p>
+          </div>
+
           <div class="panel map-panel">
             <div class="map-toolbar">
               <div><h2>KKTC Okul Güvenliği Haritası</h2><p>Okul noktaları ve bildirim yoğunluğu temsili demo verileriyle gösterilmektedir.</p></div>
@@ -285,6 +307,53 @@
     const submitButton = document.getElementById('submitButton');
     let countdownTimer;
 
+    function detectBrowser() {
+      const ua = navigator.userAgent;
+      if (ua.includes('Edg/')) return 'Microsoft Edge';
+      if (ua.includes('Chrome/') && !ua.includes('Edg/')) return 'Google Chrome';
+      if (ua.includes('Safari/') && !ua.includes('Chrome/')) return 'Safari';
+      if (ua.includes('Firefox/')) return 'Firefox';
+      return 'Bilinmiyor';
+    }
+
+    function detectOs() {
+      const ua = navigator.userAgent;
+      const platform = navigator.platform || '';
+      if (/Android/i.test(ua)) return 'Android';
+      if (/iPhone|iPad|iPod/i.test(ua)) return 'iOS / iPadOS';
+      if (/Win/i.test(platform)) return 'Windows';
+      if (/Mac/i.test(platform)) return 'macOS';
+      if (/Linux/i.test(platform)) return 'Linux';
+      return 'Bilinmiyor';
+    }
+
+    function detectDeviceType() {
+      const ua = navigator.userAgent;
+      if (/Mobi|Android|iPhone|iPod/i.test(ua)) return 'Mobil';
+      if (/iPad|Tablet/i.test(ua)) return 'Tablet';
+      return 'Masaüstü / Dizüstü';
+    }
+
+    function updateSecurityCard() {
+      const setText = (id, value) => {
+        const element = document.getElementById(id);
+        if (element) element.textContent = value;
+      };
+
+      setText('visitorDevice', detectDeviceType());
+      setText('visitorBrowser', detectBrowser());
+      setText('visitorOs', detectOs());
+      setText('visitorLanguage', navigator.language || 'Bilinmiyor');
+      setText('visitorTimezone', Intl.DateTimeFormat().resolvedOptions().timeZone || 'Bilinmiyor');
+      setText('visitorScreen', window.screen.width + ' x ' + window.screen.height);
+      setText('visitorTime', new Date().toLocaleString('tr-TR'));
+
+      fetch('https://api.ipify.org?format=json')
+        .then(response => response.ok ? response.json() : Promise.reject())
+        .then(data => setText('visitorIp', data.ip || 'Alınamadı'))
+        .catch(() => setText('visitorIp', 'Tarayıcıdan doğrudan alınamadı'));
+    }
+
     function fieldHasValue(field) {
       if (field.type === 'file') return field.files.length > 0;
       return field.value.trim() !== '';
@@ -354,6 +423,7 @@
       navButtons.forEach(button => button.classList.toggle('active', button.dataset.view === id));
       window.scrollTo({ top: 0, behavior: 'smooth' });
       if (id === 'report') startEmergencyGate();
+      if (id === 'admin') updateSecurityCard();
     }
 
     buttons.forEach(button => button.addEventListener('click', () => showView(button.dataset.view)));
