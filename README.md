@@ -11,13 +11,17 @@ Güvenli Okul, öğrenciler, veliler, öğretmenler, okul personeli ve okul çev
 - Halka açık tanıtım sayfası
 - Anonim güvenlik bildirimi formu
 - Bildirim sayfasına girişte 5 saniyelik acil durum telefon yönlendirme uyarısı
-- İlçe ve okul listesi üzerinden okul seçimi
+- İlçe seçimine göre filtrelenen gerçek okul listesi
 - Fotoğraf veya dosya ekleme alanı
 - PGM yönetim paneli tasarımı
 - KKTC haritası üzerinde okul noktaları
 - Kategori ve olay sayısına göre ısı haritası görünümü
 - Bildirim durumu takibi
 - Kurumsal raporlama temeli
+
+## Okul Seçimi
+
+Kullanıcı önce ilçeyi seçer. Okul alanında yalnızca seçilen ilçeye bağlı okullar listelenir. İlçe seçilmeden tüm okullar gösterilmez.
 
 ## Acil Durum Politikası
 
