@@ -10,25 +10,22 @@ Güvenli Okul, öğrenciler, veliler, öğretmenler, okul personeli ve okul çev
 
 - Halka açık tanıtım sayfası
 - Anonim güvenlik bildirimi formu
+- Bildirim sayfasına girişte 5 saniyelik acil durum telefon yönlendirme uyarısı
 - İlçe ve okul listesi üzerinden okul seçimi
 - Fotoğraf veya dosya ekleme alanı
 - PGM yönetim paneli tasarımı
 - KKTC haritası üzerinde okul noktaları
-- Kategori, aciliyet ve olay sayısına göre ısı haritası görünümü
+- Kategori ve olay sayısına göre ısı haritası görünümü
 - Bildirim durumu takibi
 - Kurumsal raporlama temeli
 
-## Aciliyet Yaklaşımı
+## Acil Durum Politikası
 
-Aciliyet tek başına bildirimi yapan kişinin beyanına bırakılmaz. Sistem üç aşamalı çalışır:
+Bu sistem acil olay bildirimi almak için kullanılmaz. Devam eden kavga, yaralanma, silah, yangın, ciddi tehdit veya anlık tehlike gibi durumlar web formu üzerinden alınmamalıdır.
 
-1. Bildirimi yapan kişi acil olduğunu düşünüp düşünmediğini işaretler.
-2. Sistem kategori, anahtar risk ifadeleri, tekrar sayısı ve olay yoğunluğuna göre otomatik öncelik üretir.
-3. PGM yetkilisi panel üzerinden resmi işlem önceliğini onaylar veya değiştirir.
+Bildirim sayfasına girildiğinde kullanıcıya 5 saniyelik zorunlu uyarı gösterilir. Sayım tamamlandıktan sonra yalnızca acil olmayan okul güvenliği bildirimi yapılmasına izin verilir.
 
-## Uyarı İlkesi
-
-Devam eden kavga, yaralanma, silah, yangın, ciddi tehdit veya anlık tehlike varsa web formu yerine derhal 155 / 112 aranmalıdır.
+Acil durumlar derhal 155 Polis İmdat veya 112 Acil Çağrı Merkezi telefon hattına bildirilmelidir.
 
 ## Çalıştırma
 
