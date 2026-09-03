@@ -16,205 +16,59 @@
       --surface: #ffffff;
       --soft: #f8fafc;
     }
-
     * { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      font-family: Arial, Helvetica, sans-serif;
-      color: var(--ink);
-      background: var(--soft);
-      line-height: 1.5;
-    }
-
-    header {
-      background: var(--navy);
-      color: #fff;
-      padding: 18px 24px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      flex-wrap: wrap;
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-weight: 700;
-      letter-spacing: .2px;
-    }
-
-    .mark {
-      width: 42px;
-      height: 42px;
-      border-radius: 8px;
-      background: #fff;
-      color: var(--navy);
-      display: grid;
-      place-items: center;
-      font-weight: 800;
-    }
-
+    body { margin: 0; font-family: Arial, Helvetica, sans-serif; color: var(--ink); background: var(--soft); line-height: 1.5; }
+    header { background: var(--navy); color: #fff; padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    .brand { display: flex; align-items: center; gap: 12px; font-weight: 700; letter-spacing: .2px; }
+    .mark { width: 42px; height: 42px; border-radius: 8px; background: #fff; color: var(--navy); display: grid; place-items: center; font-weight: 800; }
     nav { display: flex; gap: 8px; flex-wrap: wrap; }
-
-    nav button,
-    .primary,
-    .secondary {
-      border: 0;
-      border-radius: 8px;
-      padding: 11px 14px;
-      cursor: pointer;
-      font-weight: 700;
-    }
-
+    nav button, .primary, .secondary { border: 0; border-radius: 8px; padding: 11px 14px; cursor: pointer; font-weight: 700; }
     nav button { background: rgba(255,255,255,.12); color: #fff; }
     nav button.active { background: #fff; color: var(--navy); }
-
     main { max-width: 1220px; margin: 0 auto; padding: 24px; }
-
-    .hero {
-      display: grid;
-      grid-template-columns: 1.1fr .9fr;
-      gap: 24px;
-      align-items: stretch;
-      margin-bottom: 24px;
-    }
-
-    .panel,
-    .stat,
-    .table-wrap {
-      background: var(--surface);
-      border: 1px solid var(--line);
-      border-radius: 8px;
-    }
-
+    .hero { display: grid; grid-template-columns: 1.1fr .9fr; gap: 24px; align-items: stretch; margin-bottom: 24px; }
+    .panel, .stat, .table-wrap { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
     .panel { padding: 22px; }
-
     h1, h2, h3 { margin: 0 0 12px; line-height: 1.15; }
     h1 { font-size: 36px; }
     h2 { font-size: 24px; }
     h3 { font-size: 18px; }
     p { margin: 0 0 14px; color: #374151; }
-
-    .notice {
-      border-left: 5px solid var(--red);
-      background: #fef2f2;
-      padding: 14px;
-      border-radius: 8px;
-      color: #7f1d1d;
-      margin-top: 16px;
-    }
-
+    .notice { border-left: 5px solid var(--red); background: #fef2f2; padding: 14px; border-radius: 8px; color: #7f1d1d; margin-top: 16px; }
     .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 18px; }
     .primary { background: var(--blue); color: #fff; }
     .secondary { background: #e5e7eb; color: #111827; }
-
+    .primary:disabled { background: #9ca3af; cursor: not-allowed; }
     .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
     .stat { padding: 16px; }
     .stat strong { display: block; font-size: 28px; color: var(--navy); }
     .stat span { color: var(--muted); font-size: 14px; }
-
     .view { display: none; }
     .view.active { display: block; }
-
     form { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
     label { font-weight: 700; font-size: 14px; display: grid; gap: 6px; }
-    input, select, textarea {
-      width: 100%;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 11px 12px;
-      font: inherit;
-      background: #fff;
-    }
-    select:disabled { background: #f3f4f6; color: var(--muted); cursor: not-allowed; }
+    input, select, textarea { width: 100%; border: 1px solid var(--line); border-radius: 8px; padding: 11px 12px; font: inherit; background: #fff; }
+    input:disabled, select:disabled, textarea:disabled { background: #f3f4f6; color: var(--muted); cursor: not-allowed; }
     textarea { min-height: 118px; resize: vertical; }
     .full { grid-column: 1 / -1; }
     .hint { color: var(--muted); font-size: 13px; font-weight: 400; }
-
+    .optional-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
     .admin-layout { display: grid; grid-template-columns: 320px 1fr; gap: 18px; }
     .filters { display: grid; gap: 12px; }
-
     .map-panel { padding: 16px; overflow: hidden; }
-    .map-toolbar {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      align-items: center;
-      flex-wrap: wrap;
-      margin-bottom: 12px;
-    }
-
-    .map {
-      position: relative;
-      min-height: 440px;
-      background: linear-gradient(180deg, #e0f2fe, #f8fafc);
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      overflow: hidden;
-    }
-
-    .island {
-      position: absolute;
-      inset: 48px 38px 64px;
-      background: #d9f99d;
-      clip-path: polygon(3% 50%, 12% 37%, 28% 33%, 42% 40%, 57% 31%, 76% 36%, 96% 48%, 82% 59%, 61% 63%, 42% 59%, 24% 68%, 9% 62%);
-      border: 3px solid #84cc16;
-      opacity: .95;
-    }
-
-    .district-label {
-      position: absolute;
-      font-size: 12px;
-      font-weight: 800;
-      color: #365314;
-      background: rgba(255,255,255,.75);
-      padding: 4px 6px;
-      border-radius: 6px;
-    }
-
-    .school-pin,
-    .heat-point {
-      position: absolute;
-      transform: translate(-50%, -50%);
-      border-radius: 999px;
-    }
-
-    .school-pin {
-      width: 14px;
-      height: 14px;
-      background: var(--blue);
-      border: 2px solid #fff;
-      box-shadow: 0 0 0 2px rgba(29,78,216,.25);
-    }
-
-    .heat-point {
-      width: var(--size);
-      height: var(--size);
-      background: radial-gradient(circle, rgba(185,28,28,.58), rgba(245,158,11,.30) 42%, rgba(37,99,235,.03) 72%);
-      opacity: .88;
-      display: none;
-    }
-
+    .map-toolbar { display: flex; justify-content: space-between; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+    .map { position: relative; min-height: 440px; background: linear-gradient(180deg, #e0f2fe, #f8fafc); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+    .island { position: absolute; inset: 48px 38px 64px; background: #d9f99d; clip-path: polygon(3% 50%, 12% 37%, 28% 33%, 42% 40%, 57% 31%, 76% 36%, 96% 48%, 82% 59%, 61% 63%, 42% 59%, 24% 68%, 9% 62%); border: 3px solid #84cc16; opacity: .95; }
+    .district-label { position: absolute; font-size: 12px; font-weight: 800; color: #365314; background: rgba(255,255,255,.75); padding: 4px 6px; border-radius: 6px; }
+    .school-pin, .heat-point { position: absolute; transform: translate(-50%, -50%); border-radius: 999px; }
+    .school-pin { width: 14px; height: 14px; background: var(--blue); border: 2px solid #fff; box-shadow: 0 0 0 2px rgba(29,78,216,.25); }
+    .heat-point { width: var(--size); height: var(--size); background: radial-gradient(circle, rgba(185,28,28,.58), rgba(245,158,11,.30) 42%, rgba(37,99,235,.03) 72%); opacity: .88; display: none; }
     .map.heat .school-pin { display: none; }
     .map.heat .heat-point { display: block; }
-
-    .legend {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-      flex-wrap: wrap;
-      color: var(--muted);
-      font-size: 13px;
-      margin-top: 10px;
-    }
-
+    .legend { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; color: var(--muted); font-size: 13px; margin-top: 10px; }
     .dot { width: 11px; height: 11px; border-radius: 999px; display: inline-block; }
     .dot.blue { background: var(--blue); }
     .dot.red { background: var(--red); }
-
     table { width: 100%; border-collapse: collapse; }
     th, td { padding: 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
     th { background: #f3f4f6; font-size: 13px; }
@@ -222,50 +76,12 @@
     .new { background: #dbeafe; color: #1e40af; }
     .review { background: #fef9c3; color: #854d0e; }
     .transferred { background: #ede9fe; color: #5b21b6; }
-
-    .emergency-gate {
-      position: fixed;
-      inset: 0;
-      z-index: 20;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 18px;
-      background: rgba(15, 23, 42, .72);
-    }
-
+    .emergency-gate { position: fixed; inset: 0; z-index: 20; display: none; align-items: center; justify-content: center; padding: 18px; background: rgba(15, 23, 42, .72); }
     .emergency-gate.active { display: flex; }
-
-    .emergency-card {
-      width: min(620px, 100%);
-      background: #fff;
-      border-radius: 8px;
-      padding: 26px;
-      text-align: center;
-      box-shadow: 0 24px 70px rgba(0,0,0,.28);
-    }
-
-    .countdown {
-      width: 74px;
-      height: 74px;
-      border-radius: 999px;
-      display: grid;
-      place-items: center;
-      margin: 8px auto 16px;
-      background: #fee2e2;
-      color: var(--red);
-      font-size: 34px;
-      font-weight: 800;
-      border: 3px solid #fecaca;
-    }
-
+    .emergency-card { width: min(620px, 100%); background: #fff; border-radius: 8px; padding: 26px; text-align: center; box-shadow: 0 24px 70px rgba(0,0,0,.28); }
+    .countdown { width: 74px; height: 74px; border-radius: 999px; display: grid; place-items: center; margin: 8px auto 16px; background: #fee2e2; color: var(--red); font-size: 34px; font-weight: 800; border: 3px solid #fecaca; }
     .emergency-card .primary:disabled { background: #9ca3af; cursor: wait; }
-
-    @media (max-width: 920px) {
-      .hero, .admin-layout, form { grid-template-columns: 1fr; }
-      h1 { font-size: 30px; }
-      main { padding: 16px; }
-    }
+    @media (max-width: 920px) { .hero, .admin-layout, form, .optional-grid { grid-template-columns: 1fr; } h1 { font-size: 30px; } main { padding: 16px; } }
   </style>
 </head>
 <body>
@@ -306,10 +122,10 @@
     <section id="report" class="view">
       <div class="panel">
         <h2>Anonim Güvenlik Bildirimi</h2>
-        <p>Bu form kimlik bilgisi istemeden okul güvenliğiyle ilgili risklerin bildirilmesi için hazırlanmıştır. İletişim bilgisi bırakmak tamamen isteğe bağlıdır.</p>
-        <form>
-          <label>İlçe
-            <select id="districtSelect" required>
+        <p>Form adım adım açılır. Zorunlu alan tamamlanmadan bir sonraki alan aktif olmaz. Ad soyad, telefon ve e-posta isteğe bağlıdır.</p>
+        <form id="reportForm">
+          <label>İlçe *
+            <select id="districtSelect" required data-step="0">
               <option value="">İlçe seçiniz</option>
               <option value="Lefkoşa">Lefkoşa</option>
               <option value="Gazimağusa">Gazimağusa</option>
@@ -319,14 +135,15 @@
               <option value="Lefke">Lefke</option>
             </select>
           </label>
-          <label>Okul
-            <select id="schoolSelect" required disabled>
+          <label>Okul *
+            <select id="schoolSelect" required data-step="1" disabled>
               <option value="">Önce ilçe seçiniz</option>
             </select>
             <span id="schoolHint" class="hint">Okul listesi seçilen ilçeye göre gösterilir.</span>
           </label>
-          <label>Bildirim kategorisi
-            <select required>
+          <label>Bildirim kategorisi *
+            <select id="categorySelect" required data-step="2" disabled>
+              <option value="">Kategori seçiniz</option>
               <option>Trafik güvenliği</option>
               <option>Okul servisi / taşımacılık</option>
               <option>Kavga / şiddet / zorbalık</option>
@@ -338,25 +155,36 @@
               <option>Diğer</option>
             </select>
           </label>
-          <label>Olay tarihi / yaklaşık saat
-            <input type="datetime-local">
+          <label>Olay tarihi / yaklaşık saat *
+            <input id="eventDateInput" type="datetime-local" required data-step="3" disabled>
           </label>
-          <label class="full">Sorunun kısa başlığı
-            <input type="text" placeholder="Örn: Okul çıkışında tehlikeli araç yoğunluğu" maxlength="120">
+          <label class="full">Sorunun kısa başlığı *
+            <input id="titleInput" type="text" required data-step="4" disabled placeholder="Örn: Okul çıkışında tehlikeli araç yoğunluğu" maxlength="120">
           </label>
-          <label class="full">Açıklama
-            <textarea placeholder="Gördüğünüz durumu açık ve kısa şekilde yazınız. Kişisel bilgi yazmanız gerekmez."></textarea>
+          <label class="full">Açıklama *
+            <textarea id="descriptionInput" required data-step="5" disabled placeholder="Gördüğünüz durumu açık ve kısa şekilde yazınız. Kişisel bilgi yazmanız gerekmez."></textarea>
           </label>
-          <label class="full">Fotoğraf / dosya ekle
-            <input type="file" accept="image/png,image/jpeg,application/pdf" multiple>
+          <label class="full">Fotoğraf / dosya ekle *
+            <input id="fileInput" type="file" required data-step="6" disabled accept="image/png,image/jpeg,application/pdf" multiple>
             <span class="hint">PDF, JPG veya PNG. Kimlik içeren belge yüklememeye dikkat ediniz.</span>
           </label>
-          <label class="full">İsteğe bağlı iletişim bilgisi
-            <input type="text" placeholder="Telefon veya e-posta, zorunlu değildir">
-          </label>
+          <div class="full">
+            <h3>İsteğe bağlı iletişim bilgileri</h3>
+            <div class="optional-grid">
+              <label>Ad Soyad
+                <input id="nameInput" type="text" data-optional disabled placeholder="İsteğe bağlı">
+              </label>
+              <label>Telefon Numarası
+                <input id="phoneInput" type="tel" data-optional disabled placeholder="İsteğe bağlı">
+              </label>
+              <label>E-posta
+                <input id="emailInput" type="email" data-optional disabled placeholder="İsteğe bağlı">
+              </label>
+            </div>
+          </div>
           <div class="full actions">
-            <button class="primary" type="button">Bildirimi Gönder</button>
-            <button class="secondary" type="reset">Formu Temizle</button>
+            <button id="submitButton" class="primary" type="button" disabled>Bildirimi Gönder</button>
+            <button id="resetButton" class="secondary" type="reset">Formu Temizle</button>
           </div>
         </form>
       </div>
@@ -378,7 +206,6 @@
           <button id="heatToggle" class="primary" type="button">Isı Haritasını Aç</button>
           <p class="hint">Isı haritası olay sayısı, kategori yoğunluğu ve tarih aralığına göre görünür hale gelir.</p>
         </aside>
-
         <div>
           <div class="panel map-panel">
             <div class="map-toolbar">
@@ -406,7 +233,6 @@
             </div>
             <div class="legend"><span><i class="dot blue"></i> Okul noktası</span><span><i class="dot red"></i> Bildirim yoğunluğu</span></div>
           </div>
-
           <div class="table-wrap" style="margin-top:18px;overflow:auto">
             <table>
               <thead><tr><th>Okul</th><th>İlçe</th><th>Kategori</th><th>Olay</th><th>Durum</th></tr></thead>
@@ -449,27 +275,58 @@
     const emergencyGate = document.getElementById('emergencyGate');
     const countdown = document.getElementById('countdown');
     const continueReport = document.getElementById('continueReport');
+    const reportForm = document.getElementById('reportForm');
     const districtSelect = document.getElementById('districtSelect');
     const schoolSelect = document.getElementById('schoolSelect');
     const schoolHint = document.getElementById('schoolHint');
+    const requiredFlow = Array.from(document.querySelectorAll('[data-step]')).sort((a, b) => Number(a.dataset.step) - Number(b.dataset.step));
+    const optionalFields = Array.from(document.querySelectorAll('[data-optional]'));
+    const submitButton = document.getElementById('submitButton');
     let countdownTimer;
+
+    function fieldHasValue(field) {
+      if (field.type === 'file') return field.files.length > 0;
+      return field.value.trim() !== '';
+    }
 
     function updateSchoolOptions() {
       const district = districtSelect.value;
       const schools = schoolsByDistrict[district] || [];
       schoolSelect.innerHTML = '';
-
-      if (!district) {
-        schoolSelect.disabled = true;
-        schoolSelect.append(new Option('Önce ilçe seçiniz', ''));
-        schoolHint.textContent = 'Okul listesi seçilen ilçeye göre gösterilir.';
-        return;
-      }
-
-      schoolSelect.disabled = false;
-      schoolSelect.append(new Option('Okul seçiniz', ''));
+      schoolSelect.append(new Option(district ? 'Okul seçiniz' : 'Önce ilçe seçiniz', ''));
       schools.forEach(school => schoolSelect.append(new Option(school, school)));
-      schoolHint.textContent = district + ' ilçesinde ' + schools.length + ' okul listeleniyor.';
+      schoolHint.textContent = district ? district + ' ilçesinde ' + schools.length + ' okul listeleniyor.' : 'Okul listesi seçilen ilçeye göre gösterilir.';
+    }
+
+    function updateFormFlow() {
+      updateSchoolOptions();
+      let previousFieldsCompleted = true;
+
+      requiredFlow.forEach((field, index) => {
+        if (index === 0) {
+          field.disabled = false;
+        } else {
+          field.disabled = !previousFieldsCompleted;
+          if (field.disabled) {
+            if (field.type === 'file') field.value = '';
+            else field.value = '';
+          }
+        }
+        previousFieldsCompleted = previousFieldsCompleted && fieldHasValue(field);
+      });
+
+      const allRequiredCompleted = requiredFlow.every(fieldHasValue);
+      optionalFields.forEach(field => { field.disabled = !allRequiredCompleted; });
+      submitButton.disabled = !allRequiredCompleted;
+    }
+
+    function resetFormFlow() {
+      setTimeout(() => {
+        schoolSelect.innerHTML = '<option value="">Önce ilçe seçiniz</option>';
+        schoolHint.textContent = 'Okul listesi seçilen ilçeye göre gösterilir.';
+        optionalFields.forEach(field => { field.value = ''; });
+        updateFormFlow();
+      }, 0);
     }
 
     function startEmergencyGate() {
@@ -479,14 +336,10 @@
       continueReport.disabled = true;
       continueReport.textContent = '5 saniye sonra bildirim formuna geç';
       emergencyGate.classList.add('active');
-
       countdownTimer = setInterval(() => {
         remaining -= 1;
         countdown.textContent = remaining;
-        continueReport.textContent = remaining > 0
-          ? remaining + ' saniye sonra bildirim formuna geç'
-          : 'Bildirim formuna geç';
-
+        continueReport.textContent = remaining > 0 ? remaining + ' saniye sonra bildirim formuna geç' : 'Bildirim formuna geç';
         if (remaining === 0) {
           clearInterval(countdownTimer);
           continueReport.disabled = false;
@@ -498,15 +351,15 @@
       views.forEach(view => view.classList.toggle('active', view.id === id));
       navButtons.forEach(button => button.classList.toggle('active', button.dataset.view === id));
       window.scrollTo({ top: 0, behavior: 'smooth' });
-
-      if (id === 'report') {
-        startEmergencyGate();
-      }
+      if (id === 'report') startEmergencyGate();
     }
 
     buttons.forEach(button => button.addEventListener('click', () => showView(button.dataset.view)));
     continueReport.addEventListener('click', () => emergencyGate.classList.remove('active'));
-    districtSelect.addEventListener('change', updateSchoolOptions);
+    requiredFlow.forEach(field => field.addEventListener('input', updateFormFlow));
+    requiredFlow.forEach(field => field.addEventListener('change', updateFormFlow));
+    reportForm.addEventListener('reset', resetFormFlow);
+    updateFormFlow();
 
     const heatToggle = document.getElementById('heatToggle');
     const map = document.getElementById('map');
