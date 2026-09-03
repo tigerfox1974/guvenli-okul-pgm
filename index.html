@@ -57,11 +57,7 @@
       font-weight: 800;
     }
 
-    nav {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
+    nav { display: flex; gap: 8px; flex-wrap: wrap; }
 
     nav button,
     .primary,
@@ -73,11 +69,7 @@
       font-weight: 700;
     }
 
-    nav button {
-      background: rgba(255,255,255,.12);
-      color: #fff;
-    }
-
+    nav button { background: rgba(255,255,255,.12); color: #fff; }
     nav button.active { background: #fff; color: var(--navy); }
 
     main { max-width: 1220px; margin: 0 auto; padding: 24px; }
@@ -137,16 +129,12 @@
       font: inherit;
       background: #fff;
     }
+    select:disabled { background: #f3f4f6; color: var(--muted); cursor: not-allowed; }
     textarea { min-height: 118px; resize: vertical; }
     .full { grid-column: 1 / -1; }
     .hint { color: var(--muted); font-size: 13px; font-weight: 400; }
 
-    .admin-layout {
-      display: grid;
-      grid-template-columns: 320px 1fr;
-      gap: 18px;
-    }
-
+    .admin-layout { display: grid; grid-template-columns: 320px 1fr; gap: 18px; }
     .filters { display: grid; gap: 12px; }
 
     .map-panel { padding: 16px; overflow: hidden; }
@@ -234,7 +222,6 @@
     .new { background: #dbeafe; color: #1e40af; }
     .review { background: #fef9c3; color: #854d0e; }
     .transferred { background: #ede9fe; color: #5b21b6; }
-    .done { background: #dcfce7; color: #166534; }
 
     .emergency-gate {
       position: fixed;
@@ -272,10 +259,7 @@
       border: 3px solid #fecaca;
     }
 
-    .emergency-card .primary:disabled {
-      background: #9ca3af;
-      cursor: wait;
-    }
+    .emergency-card .primary:disabled { background: #9ca3af; cursor: wait; }
 
     @media (max-width: 920px) {
       .hero, .admin-layout, form { grid-template-columns: 1fr; }
@@ -311,7 +295,7 @@
           <h2>İlk proje bileşenleri</h2>
           <div class="grid">
             <div class="stat"><strong>6</strong><span>İlçe bazlı takip</span></div>
-            <div class="stat"><strong>9</strong><span>Bildirim kategorisi</span></div>
+            <div class="stat"><strong>60</strong><span>Excel'den alınan okul</span></div>
             <div class="stat"><strong>5 sn</strong><span>Zorunlu telefon yönlendirme uyarısı</span></div>
           </div>
           <p style="margin-top:16px">PGM panelinde okullar harita üzerinde gösterilir. İstenirse kategoriye, olay sayısına ve tarih aralığına göre ısı haritası oluşturulur.</p>
@@ -325,21 +309,21 @@
         <p>Bu form kimlik bilgisi istemeden okul güvenliğiyle ilgili risklerin bildirilmesi için hazırlanmıştır. İletişim bilgisi bırakmak tamamen isteğe bağlıdır.</p>
         <form>
           <label>İlçe
-            <select required>
-              <option value="">Seçiniz</option>
-              <option>Lefkoşa</option><option>Girne</option><option>Gazimağusa</option><option>Güzelyurt</option><option>İskele</option><option>Lefke</option>
+            <select id="districtSelect" required>
+              <option value="">İlçe seçiniz</option>
+              <option value="Lefkoşa">Lefkoşa</option>
+              <option value="Gazimağusa">Gazimağusa</option>
+              <option value="Girne">Girne</option>
+              <option value="Güzelyurt">Güzelyurt</option>
+              <option value="İskele">İskele</option>
+              <option value="Lefke">Lefke</option>
             </select>
           </label>
           <label>Okul
-            <select required>
-              <option value="">Listeden okul seçiniz</option>
-              <option>20 Temmuz Fen Lisesi</option>
-              <option>Atatürk Öğretmen Akademisi</option>
-              <option>Bayraktar Türk Maarif Koleji</option>
-              <option>Gazimağusa Türk Maarif Koleji</option>
-              <option>Güzelyurt Türk Maarif Koleji</option>
-              <option>İskele Ticaret Lisesi</option>
+            <select id="schoolSelect" required disabled>
+              <option value="">Önce ilçe seçiniz</option>
             </select>
+            <span id="schoolHint" class="hint">Okul listesi seçilen ilçeye göre gösterilir.</span>
           </label>
           <label>Bildirim kategorisi
             <select required>
@@ -450,13 +434,43 @@
   </div>
 
   <script>
+    const schoolsByDistrict = {
+      'Gazimağusa': ['Çanakkale Ortaokulu', 'Canbulat Özgürlük Ortaokulu', 'Cumhuriyet Lisesi', 'Doğu Akdeniz Doğa Koleji', 'Dr. Fazıl Küçük Endüstri Meslek Lisesi', 'Gazimağusa Meslek Lisesi', 'Gazimağusa Ticaret Lisesi', 'Gazimağusa Türk Maarif Koleji', 'Namık Kemal Lisesi', 'Polatpaşa Lisesi', 'Şht. Zeka Çorba Ortaokulu', 'Yakın Doğu Koleji Yeniboğaziçi'],
+      'Girne': ['19 Mayıs TMK', 'Anafartalar Lisesi', 'Dr. Suat Günsel Koleji', 'Esentepe Ortaokulu', 'Girne Amerikan Koleji', 'Girne Doğa College', 'Girne Turizm Meslek Lisesi', 'Lapta Yavuzlar Lisesi', 'Necat British College(Girne)', 'Oğuz Veli Ortaokulu', 'Osman Nejat Konuk Ortaokulu', 'The English School of Kyrenia'],
+      'Güzelyurt': ['Güzelyurt Meslek Lisesi', 'Güzelyurt Türk Maarif Koleji', 'Kurtuluş Lisesi', 'Şht. Turgut Ortaokulu'],
+      'Lefke': ['Cengiz Topel Endüstri Meslek Lisesi', 'Lefke Gazi Lisesi'],
+      'Lefkoşa': ['20 Temmuz Fen Lisesi', 'Anadolu Güzel Sanatlar Lisesi', 'Atatürk Meslek Lisesi', 'Atleks Sanverler Ortaokulu', 'Bayraktar Ortaokulu', 'Bülent Ecevit Anadolu Lisesi', 'Değirmenlik Lisesi', 'Demokrasi Ortaokulu', 'Esin Leman Lisesi', 'Hala Sultan İlahiyat Koleji', 'Haydarpaşa Ticaret Lisesi', 'İrsen Küçük Ortaokulu', 'Lefkoşa Türk Lisesi', 'Levent Koleji', 'Meral Vedat Ertüngü', 'Necat British College(Lefkoşa)', 'Osman Örek Meslek Lisesi', 'Rauf Raif Denktaş Meslek Lisesi', 'Sedat Simavi Endüstri Meslek Lisesi', 'Şht. Hüseyin Ruso Ortaokulu', 'TED Koleji', 'Türk Maarif Koleji', 'Yakın Doğu Koleji'],
+      'İskele': ['Bekirpaşa Lisesi', 'Dipkarpaz Recep Tayyip Erdoğan Ortaokulu', 'Erenköy Lisesi', 'İskele Evkaf Türk Maarif Koleji', 'İskele Ticaret Lisesi', 'Karpaz Meslek Lisesi', 'Muharrem Döveç Ortaokulu']
+    };
+
     const buttons = document.querySelectorAll('[data-view]');
     const views = document.querySelectorAll('.view');
     const navButtons = document.querySelectorAll('nav button');
     const emergencyGate = document.getElementById('emergencyGate');
     const countdown = document.getElementById('countdown');
     const continueReport = document.getElementById('continueReport');
+    const districtSelect = document.getElementById('districtSelect');
+    const schoolSelect = document.getElementById('schoolSelect');
+    const schoolHint = document.getElementById('schoolHint');
     let countdownTimer;
+
+    function updateSchoolOptions() {
+      const district = districtSelect.value;
+      const schools = schoolsByDistrict[district] || [];
+      schoolSelect.innerHTML = '';
+
+      if (!district) {
+        schoolSelect.disabled = true;
+        schoolSelect.append(new Option('Önce ilçe seçiniz', ''));
+        schoolHint.textContent = 'Okul listesi seçilen ilçeye göre gösterilir.';
+        return;
+      }
+
+      schoolSelect.disabled = false;
+      schoolSelect.append(new Option('Okul seçiniz', ''));
+      schools.forEach(school => schoolSelect.append(new Option(school, school)));
+      schoolHint.textContent = district + ' ilçesinde ' + schools.length + ' okul listeleniyor.';
+    }
 
     function startEmergencyGate() {
       clearInterval(countdownTimer);
@@ -492,6 +506,7 @@
 
     buttons.forEach(button => button.addEventListener('click', () => showView(button.dataset.view)));
     continueReport.addEventListener('click', () => emergencyGate.classList.remove('active'));
+    districtSelect.addEventListener('change', updateSchoolOptions);
 
     const heatToggle = document.getElementById('heatToggle');
     const map = document.getElementById('map');
