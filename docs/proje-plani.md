@@ -135,7 +135,21 @@ Harita yöneticinin şu sorulara hızlı cevap almasını sağlamalıdır:
 
 ## 9. Gizlilik ve Kötüye Kullanım Önlemleri
 
-Anonimlik korunmalıdır. Bununla birlikte sistem kötüye kullanıma karşı sessiz güvenlik önlemleri içermelidir.
+Sistem halka açık tarafta ad-soyad ve iletişim bilgisini zorunlu istemez. Bu nedenle kullanıcı açısından kimliksiz bildirim esastır. Bununla birlikte bilgi kirliliğini ve kötüye kullanımı azaltmak için sınırlı teknik güvenlik kaydı tutulabilir.
+
+PGM panelindeki geçici demo kartında normal web sayfasının alabileceği bilgiler gösterilir:
+
+| Teknik bilgi | Kullanım amacı |
+|---|---|
+| IP adresi | Tekrarlı sahte bildirim ve spam analizi |
+| Cihaz türü | Mobil/masaüstü kullanım ayrımı |
+| Tarayıcı | Teknik uyumluluk ve güvenlik incelemesi |
+| İşletim sistemi | Teknik güvenlik izi |
+| Dil ve saat dilimi | Tutarlılık kontrolü |
+| Ekran boyutu | Cihaz sınıflandırması |
+| Gönderim zamanı | Olay ve gönderim yoğunluğu analizi |
+
+Normal web sayfası IMEI, cihaz seri numarası ve MAC adresi alamaz. Bu bilgiler tarayıcı ve işletim sistemi güvenlik modeli nedeniyle web sitelerine açılmaz.
 
 Önerilen önlemler:
 
@@ -145,6 +159,7 @@ Anonimlik korunmalıdır. Bununla birlikte sistem kötüye kullanıma karşı se
 - Yetkisiz panel erişimini engelleme
 - Yetkili işlem kayıtları
 - Kişisel veri yazılmaması için kullanıcı uyarısı
+- Teknik güvenlik kayıtlarına rol bazlı erişim
 - Acil olayların web formuna değil telefon hatlarına yönlendirilmesi
 
 ## 10. İlk Teknik Yaklaşım
