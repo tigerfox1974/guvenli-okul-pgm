@@ -5,7 +5,7 @@ Aşağıdaki metin VS Code Copilot Agent veya benzeri bir geliştirme aracına v
 ```text
 Bu repoda Güvenli Okul isimli KKTC Polis Genel Müdürlüğü bünyesinde kullanılacak web projesinin ilk çalışan demosunu geliştir.
 
-Projenin amacı: KKTC genelindeki okullarda güvenlik sorunlarının herkes tarafından anonim şekilde bildirilmesini sağlamak ve PGM panelinde bu bildirimleri okul, ilçe, kategori, aciliyet ve tarih aralığına göre takip etmek.
+Projenin amacı: KKTC genelindeki okullarda güvenlik sorunlarının herkes tarafından anonim şekilde bildirilmesini sağlamak ve PGM panelinde bu bildirimleri okul, ilçe, kategori ve tarih aralığına göre takip etmek.
 
 Korunacak temel kararlar:
 - Proje adı şimdilik Güvenli Okul olacak.
@@ -13,16 +13,27 @@ Korunacak temel kararlar:
 - Kimlik bilgisi zorunlu olmayacak; anonim bildirim esas olacak.
 - Okul seçimi serbest yazı değil, mevcut okul listesinden yapılacak.
 - Dosya/fotoğraf yükleme alanı olacak. PDF, JPG ve PNG desteklenecek.
+- Acil olay bildirimi bu sistemden hiçbir şekilde alınmayacak.
+- Bildirim sayfasına girişte 5 saniye geri sayan zorunlu uyarı ekranı gösterilecek.
+- Geri sayım bitmeden bildirim formu kullanıma açılmayacak.
+- Uyarı ekranı, acil durumların 155 Polis İmdat veya 112 Acil Çağrı Merkezi telefon hattına bildirilmesi gerektiğini açıkça söyleyecek.
+- Formda aciliyet beyanı, acil seçenek, öncelik seviyesi veya benzeri hiçbir alan bulunmayacak.
 - PGM yönetim paneli olacak.
 - PGM panelinde KKTC haritası olacak.
 - Okullar harita üzerinde gösterilecek.
-- Harita üzerinde kategoriye, olay sayısına, aciliyet seviyesine ve tarih aralığına göre ısı haritası görünümü olacak.
+- Harita üzerinde kategoriye, olay sayısına ve tarih aralığına göre ısı haritası görünümü olacak.
 
 Halka açık bölümde şunlar olsun:
 - Kısa proje tanıtımı
 - Anonimlik ve gizlilik açıklaması
-- Acil durum uyarısı
+- Acil durumların web formundan alınmadığını belirten telefon yönlendirmesi
 - Bildirim formuna geçiş
+
+Bildirim sayfası giriş uyarısı:
+Bildirim sayfasına girildiğinde önce 5 saniyelik geri sayım ekranı göster. Bu ekran kapatılabilir olmamalı. Sayım bittiğinde kullanıcı bildirim formuna geçebilmelidir.
+
+Uyarı metni:
+Acil durum bildirimi bu sistemden alınmaz. Devam eden kavga, yaralanma, silah, yangın, ciddi tehdit veya anlık tehlike varsa lütfen bu formu kullanmayın. Bu durumlar derhal 155 Polis İmdat veya 112 Acil Çağrı Merkezi telefon hattına bildirilmelidir.
 
 Bildirim formu alanları:
 - İlçe
@@ -32,7 +43,6 @@ Bildirim formu alanları:
 - Açıklama
 - Olay tarihi / yaklaşık saat
 - Fotoğraf veya dosya yükleme
-- Kullanıcının aciliyet beyanı
 - İsteğe bağlı iletişim bilgisi
 
 Bildirim kategorileri:
@@ -46,28 +56,13 @@ Bildirim kategorileri:
 - Siber zorbalık / sosyal medya tehdidi
 - Diğer
 
-Aciliyet modeli:
-Aciliyet sadece vatandaşın beyanına göre belirlenmeyecek. Sistem üç aşamalı çalışacak:
-1. Bildirimi yapan kişi acil olduğunu düşünüp düşünmediğini işaretler.
-2. Sistem kategori, anahtar risk ifadeleri, tekrar sayısı ve olay yoğunluğuna göre otomatik öncelik üretir.
-3. PGM yetkilisi panelde resmi işlem önceliğini onaylar veya değiştirir.
-
-Aciliyet seviyeleri:
-- Kritik
-- Yüksek
-- Orta
-- Düşük
-
-Acil uyarı metni:
-Devam eden kavga, yaralanma, silah, yangın, ciddi tehdit veya anlık tehlike varsa bu form yerine derhal 155 / 112 aranmalıdır.
-
 PGM paneli alanları:
 - Gelen bildirim listesi
 - Bildirim detay ekranı
 - Dosya/fotoğraf görüntüleme
 - Durum güncelleme
 - Yetkili notu ekleme
-- İlçe, okul, kategori, aciliyet ve tarih filtreleri
+- İlçe, okul, kategori ve tarih filtreleri
 - KKTC haritası
 - Isı haritası modu
 - Raporlama özetleri
