@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Güvenli Okul | PGM</title>
+  <style>
+    :root {
+      --navy: #14213d;
+      --blue: #1d4ed8;
+      --light-blue: #eff6ff;
+      --red: #b91c1c;
+      --amber: #b45309;
+      --green: #047857;
+      --ink: #111827;
+      --muted: #6b7280;
+      --line: #d1d5db;
+      --surface: #ffffff;
+      --soft: #f8fafc;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--ink);
+      background: var(--soft);
+      line-height: 1.5;
+    }
+
+    header {
+      background: var(--navy);
+      color: #fff;
+      padding: 18px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 700;
+      letter-spacing: .2px;
+    }
+
+    .mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 8px;
+      background: #fff;
+      color: var(--navy);
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+    }
+
+    nav {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    nav button,
+    .primary,
+    .secondary {
+      border: 0;
+      border-radius: 8px;
+      padding: 11px 14px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    nav button {
+      background: rgba(255,255,255,.12);
+      color: #fff;
+    }
+
+    nav button.active { background: #fff; color: var(--navy); }
+
+    main { max-width: 1220px; margin: 0 auto; padding: 24px; }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 24px;
+      align-items: stretch;
+      margin-bottom: 24px;
+    }
+
+    .panel,
+    .stat,
+    .table-wrap {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    .panel { padding: 22px; }
+
+    h1, h2, h3 { margin: 0 0 12px; line-height: 1.15; }
+    h1 { font-size: 36px; }
+    h2 { font-size: 24px; }
+    h3 { font-size: 18px; }
+    p { margin: 0 0 14px; color: #374151; }
+
+    .notice {
+      border-left: 5px solid var(--red);
+      background: #fef2f2;
+      padding: 14px;
+      border-radius: 8px;
+      color: #7f1d1d;
+      margin-top: 16px;
+    }
+
+    .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 18px; }
+    .primary { background: var(--blue); color: #fff; }
+    .secondary { background: #e5e7eb; color: #111827; }
+
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .stat { padding: 16px; }
+    .stat strong { display: block; font-size: 28px; color: var(--navy); }
+    .stat span { color: var(--muted); font-size: 14px; }
+
+    .view { display: none; }
+    .view.active { display: block; }
+
+    form { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+    label { font-weight: 700; font-size: 14px; display: grid; gap: 6px; }
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 11px 12px;
+      font: inherit;
+      background: #fff;
+    }
+    textarea { min-height: 118px; resize: vertical; }
+    .full { grid-column: 1 / -1; }
+    .hint { color: var(--muted); font-size: 13px; font-weight: 400; }
+
+    .admin-layout {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 18px;
+    }
+
+    .filters { display: grid; gap: 12px; }
+
+    .map-panel { padding: 16px; overflow: hidden; }
+    .map-toolbar {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .map {
+      position: relative;
+      min-height: 440px;
+      background: linear-gradient(180deg, #e0f2fe, #f8fafc);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .island {
+      position: absolute;
+      inset: 48px 38px 64px;
+      background: #d9f99d;
+      clip-path: polygon(3% 50%, 12% 37%, 28% 33%, 42% 40%, 57% 31%, 76% 36%, 96% 48%, 82% 59%, 61% 63%, 42% 59%, 24% 68%, 9% 62%);
+      border: 3px solid #84cc16;
+      opacity: .95;
+    }
+
+    .district-label {
+      position: absolute;
+      font-size: 12px;
+      font-weight: 800;
+      color: #365314;
+      background: rgba(255,255,255,.75);
+      padding: 4px 6px;
+      border-radius: 6px;
+    }
+
+    .school-pin,
+    .heat-point {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      border-radius: 999px;
+    }
+
+    .school-pin {
+      width: 14px;
+      height: 14px;
+      background: var(--blue);
+      border: 2px solid #fff;
+      box-shadow: 0 0 0 2px rgba(29,78,216,.25);
+    }
+
+    .heat-point {
+      width: var(--size);
+      height: var(--size);
+      background: radial-gradient(circle, rgba(185,28,28,.58), rgba(245,158,11,.30) 42%, rgba(37,99,235,.03) 72%);
+      opacity: .88;
+      display: none;
+    }
+
+    .map.heat .school-pin { display: none; }
+    .map.heat .heat-point { display: block; }
+
+    .legend {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 10px;
+    }
+
+    .dot { width: 11px; height: 11px; border-radius: 999px; display: inline-block; }
+    .dot.blue { background: var(--blue); }
+    .dot.red { background: var(--red); }
+
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { background: #f3f4f6; font-size: 13px; }
+    .badge { display: inline-block; padding: 4px 8px; border-radius: 999px; font-size: 12px; font-weight: 800; }
+    .critical { background: #fee2e2; color: #991b1b; }
+    .high { background: #ffedd5; color: #9a3412; }
+    .medium { background: #fef9c3; color: #854d0e; }
+    .low { background: #dcfce7; color: #166534; }
+
+    @media (max-width: 920px) {
+      .hero, .admin-layout, form { grid-template-columns: 1fr; }
+      h1 { font-size: 30px; }
+      main { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand"><div class="mark">PGM</div><div>Güvenli Okul<br><span style="font-weight:400">Anonim okul güvenliği bildirim sistemi</span></div></div>
+    <nav aria-label="Ana menü">
+      <button class="active" data-view="home">Tanıtım</button>
+      <button data-view="report">Bildirim Yap</button>
+      <button data-view="admin">PGM Paneli</button>
+    </nav>
+  </header>
+
+  <main>
+    <section id="home" class="view active">
+      <div class="hero">
+        <div class="panel">
+          <h1>Okul güvenliği için sessiz, hızlı ve güvenilir bildirim kanalı.</h1>
+          <p>Güvenli Okul, KKTC genelindeki okullarda görülen güvenlik risklerinin herkes tarafından anonim olarak PGM'ye iletilmesi için tasarlanmıştır.</p>
+          <p>Kimlik bilgisi zorunlu değildir. Amaç; sorunları erken görmek, tekrar eden riskleri analiz etmek ve ilgili birimlerin daha hızlı değerlendirme yapmasını sağlamaktır.</p>
+          <div class="notice"><strong>Acil uyarı:</strong> Devam eden kavga, yaralanma, silah, yangın, ciddi tehdit veya anlık tehlike varsa bu form yerine derhal 155 / 112 aranmalıdır.</div>
+          <div class="actions">
+            <button class="primary" data-view="report">Anonim Bildirim Yap</button>
+            <button class="secondary" data-view="admin">PGM Panelini Gör</button>
+          </div>
+        </div>
+        <div class="panel">
+          <h2>İlk proje bileşenleri</h2>
+          <div class="grid">
+            <div class="stat"><strong>6</strong><span>İlçe bazlı takip</span></div>
+            <div class="stat"><strong>9</strong><span>Bildirim kategorisi</span></div>
+            <div class="stat"><strong>4</strong><span>Aciliyet seviyesi</span></div>
+          </div>
+          <p style="margin-top:16px">PGM panelinde okullar harita üzerinde gösterilir. İstenirse kategoriye, olay sayısına, aciliyet seviyesine ve tarih aralığına göre ısı haritası oluşturulur.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="report" class="view">
+      <div class="panel">
+        <h2>Anonim Güvenlik Bildirimi</h2>
+        <p>Bu form kimlik bilgisi istemeden okul güvenliğiyle ilgili risklerin bildirilmesi için hazırlanmıştır. İletişim bilgisi bırakmak tamamen isteğe bağlıdır.</p>
+        <form>
+          <label>İlçe
+            <select required>
+              <option value="">Seçiniz</option>
+              <option>Lefkoşa</option><option>Girne</option><option>Gazimağusa</option><option>Güzelyurt</option><option>İskele</option><option>Lefke</option>
+            </select>
+          </label>
+          <label>Okul
+            <select required>
+              <option value="">Listeden okul seçiniz</option>
+              <option>20 Temmuz Fen Lisesi</option>
+              <option>Atatürk Öğretmen Akademisi</option>
+              <option>Bayraktar Türk Maarif Koleji</option>
+              <option>Gazimağusa Türk Maarif Koleji</option>
+              <option>Güzelyurt Türk Maarif Koleji</option>
+              <option>İskele Ticaret Lisesi</option>
+            </select>
+          </label>
+          <label>Bildirim kategorisi
+            <select required>
+              <option>Trafik güvenliği</option>
+              <option>Okul servisi / taşımacılık</option>
+              <option>Kavga / şiddet / zorbalık</option>
+              <option>Uyuşturucu veya zararlı madde şüphesi</option>
+              <option>Şüpheli kişi / araç</option>
+              <option>Okul çevresi güvenliği</option>
+              <option>Kamera / aydınlatma / giriş-çıkış eksikliği</option>
+              <option>Siber zorbalık / sosyal medya tehdidi</option>
+              <option>Diğer</option>
+            </select>
+          </label>
+          <label>Olay tarihi / yaklaşık saat
+            <input type="datetime-local">
+          </label>
+          <label class="full">Sorunun kısa başlığı
+            <input type="text" placeholder="Örn: Okul çıkışında tehlikeli araç yoğunluğu" maxlength="120">
+          </label>
+          <label class="full">Açıklama
+            <textarea placeholder="Gördüğünüz durumu açık ve kısa şekilde yazınız. Kişisel bilgi yazmanız gerekmez."></textarea>
+          </label>
+          <label>Fotoğraf / dosya ekle
+            <input type="file" accept="image/png,image/jpeg,application/pdf" multiple>
+            <span class="hint">PDF, JPG veya PNG. Kimlik içeren belge yüklememeye dikkat ediniz.</span>
+          </label>
+          <label>Aciliyet beyanı
+            <select>
+              <option>Normal değerlendirme</option>
+              <option>Acil olduğunu düşünüyorum</option>
+              <option>Anlık tehlike var - 155 / 112 aranmalı</option>
+            </select>
+          </label>
+          <label class="full">İsteğe bağlı iletişim bilgisi
+            <input type="text" placeholder="Telefon veya e-posta, zorunlu değildir">
+          </label>
+          <div class="full actions">
+            <button class="primary" type="button">Bildirimi Gönder</button>
+            <button class="secondary" type="reset">Formu Temizle</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <section id="admin" class="view">
+      <div class="admin-layout">
+        <aside class="panel filters">
+          <h2>PGM Paneli</h2>
+          <label>İlçe
+            <select><option>Tümü</option><option>Lefkoşa</option><option>Girne</option><option>Gazimağusa</option><option>Güzelyurt</option><option>İskele</option><option>Lefke</option></select>
+          </label>
+          <label>Kategori
+            <select><option>Tüm kategoriler</option><option>Trafik güvenliği</option><option>Zorbalık</option><option>Şüpheli kişi / araç</option><option>Uyuşturucu şüphesi</option></select>
+          </label>
+          <label>Aciliyet
+            <select><option>Tümü</option><option>Kritik</option><option>Yüksek</option><option>Orta</option><option>Düşük</option></select>
+          </label>
+          <label>Tarih aralığı
+            <select><option>Son 7 gün</option><option>Son 30 gün</option><option>Bu yıl</option></select>
+          </label>
+          <button id="heatToggle" class="primary" type="button">Isı Haritasını Aç</button>
+          <p class="hint">Isı haritası olay sayısı, kategori yoğunluğu ve acil bildirim ağırlığına göre görünür hale gelir.</p>
+        </aside>
+
+        <div>
+          <div class="panel map-panel">
+            <div class="map-toolbar">
+              <div><h2>KKTC Okul Güvenliği Haritası</h2><p>Okul noktaları ve bildirim yoğunluğu temsili demo verileriyle gösterilmektedir.</p></div>
+              <strong id="mapMode">Nokta görünümü</strong>
+            </div>
+            <div id="map" class="map" aria-label="KKTC haritası demo görünümü">
+              <div class="island"></div>
+              <div class="district-label" style="left:31%;top:43%">Lefkoşa</div>
+              <div class="district-label" style="left:25%;top:34%">Girne</div>
+              <div class="district-label" style="left:61%;top:43%">Gazimağusa</div>
+              <div class="district-label" style="left:20%;top:55%">Güzelyurt</div>
+              <div class="district-label" style="left:78%;top:50%">İskele</div>
+              <div class="district-label" style="left:10%;top:55%">Lefke</div>
+              <span class="school-pin" style="left:34%;top:48%" title="Bayraktar TMK"></span>
+              <span class="school-pin" style="left:28%;top:37%" title="Girne okul noktası"></span>
+              <span class="school-pin" style="left:63%;top:48%" title="Gazimağusa okul noktası"></span>
+              <span class="school-pin" style="left:21%;top:58%" title="Güzelyurt okul noktası"></span>
+              <span class="school-pin" style="left:80%;top:52%" title="İskele okul noktası"></span>
+              <span class="heat-point" style="left:34%;top:48%;--size:150px"></span>
+              <span class="heat-point" style="left:28%;top:37%;--size:86px"></span>
+              <span class="heat-point" style="left:63%;top:48%;--size:118px"></span>
+              <span class="heat-point" style="left:21%;top:58%;--size:72px"></span>
+              <span class="heat-point" style="left:80%;top:52%;--size:96px"></span>
+            </div>
+            <div class="legend"><span><i class="dot blue"></i> Okul noktası</span><span><i class="dot red"></i> Bildirim yoğunluğu</span></div>
+          </div>
+
+          <div class="table-wrap" style="margin-top:18px;overflow:auto">
+            <table>
+              <thead><tr><th>Okul</th><th>İlçe</th><th>Kategori</th><th>Olay</th><th>Aciliyet</th><th>Durum</th></tr></thead>
+              <tbody>
+                <tr><td>Bayraktar Türk Maarif Koleji</td><td>Lefkoşa</td><td>Trafik güvenliği</td><td>18</td><td><span class="badge high">Yüksek</span></td><td>İnceleniyor</td></tr>
+                <tr><td>Gazimağusa Türk Maarif Koleji</td><td>Gazimağusa</td><td>Şüpheli kişi / araç</td><td>11</td><td><span class="badge critical">Kritik</span></td><td>İlgili birime aktarıldı</td></tr>
+                <tr><td>Güzelyurt Türk Maarif Koleji</td><td>Güzelyurt</td><td>Aydınlatma eksikliği</td><td>6</td><td><span class="badge medium">Orta</span></td><td>Yeni</td></tr>
+                <tr><td>İskele Ticaret Lisesi</td><td>İskele</td><td>Okul servisi</td><td>8</td><td><span class="badge high">Yüksek</span></td><td>İnceleniyor</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const buttons = document.querySelectorAll('[data-view]');
+    const views = document.querySelectorAll('.view');
+    const navButtons = document.querySelectorAll('nav button');
+
+    function showView(id) {
+      views.forEach(view => view.classList.toggle('active', view.id === id));
+      navButtons.forEach(button => button.classList.toggle('active', button.dataset.view === id));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    buttons.forEach(button => button.addEventListener('click', () => showView(button.dataset.view)));
+
+    const heatToggle = document.getElementById('heatToggle');
+    const map = document.getElementById('map');
+    const mapMode = document.getElementById('mapMode');
+
+    heatToggle.addEventListener('click', () => {
+      const heat = map.classList.toggle('heat');
+      heatToggle.textContent = heat ? 'Nokta Görünümüne Dön' : 'Isı Haritasını Aç';
+      mapMode.textContent = heat ? 'Isı haritası görünümü' : 'Nokta görünümü';
+    });
+  </script>
+</body>
+</html>
