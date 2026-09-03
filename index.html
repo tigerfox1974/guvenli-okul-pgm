@@ -8,9 +8,7 @@
     :root {
       --navy: #14213d;
       --blue: #1d4ed8;
-      --light-blue: #eff6ff;
       --red: #b91c1c;
-      --amber: #b45309;
       --green: #047857;
       --ink: #111827;
       --muted: #6b7280;
@@ -233,10 +231,51 @@
     th, td { padding: 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
     th { background: #f3f4f6; font-size: 13px; }
     .badge { display: inline-block; padding: 4px 8px; border-radius: 999px; font-size: 12px; font-weight: 800; }
-    .critical { background: #fee2e2; color: #991b1b; }
-    .high { background: #ffedd5; color: #9a3412; }
-    .medium { background: #fef9c3; color: #854d0e; }
-    .low { background: #dcfce7; color: #166534; }
+    .new { background: #dbeafe; color: #1e40af; }
+    .review { background: #fef9c3; color: #854d0e; }
+    .transferred { background: #ede9fe; color: #5b21b6; }
+    .done { background: #dcfce7; color: #166534; }
+
+    .emergency-gate {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(15, 23, 42, .72);
+    }
+
+    .emergency-gate.active { display: flex; }
+
+    .emergency-card {
+      width: min(620px, 100%);
+      background: #fff;
+      border-radius: 8px;
+      padding: 26px;
+      text-align: center;
+      box-shadow: 0 24px 70px rgba(0,0,0,.28);
+    }
+
+    .countdown {
+      width: 74px;
+      height: 74px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      margin: 8px auto 16px;
+      background: #fee2e2;
+      color: var(--red);
+      font-size: 34px;
+      font-weight: 800;
+      border: 3px solid #fecaca;
+    }
+
+    .emergency-card .primary:disabled {
+      background: #9ca3af;
+      cursor: wait;
+    }
 
     @media (max-width: 920px) {
       .hero, .admin-layout, form { grid-template-columns: 1fr; }
@@ -262,7 +301,7 @@
           <h1>Okul güvenliği için sessiz, hızlı ve güvenilir bildirim kanalı.</h1>
           <p>Güvenli Okul, KKTC genelindeki okullarda görülen güvenlik risklerinin herkes tarafından anonim olarak PGM'ye iletilmesi için tasarlanmıştır.</p>
           <p>Kimlik bilgisi zorunlu değildir. Amaç; sorunları erken görmek, tekrar eden riskleri analiz etmek ve ilgili birimlerin daha hızlı değerlendirme yapmasını sağlamaktır.</p>
-          <div class="notice"><strong>Acil uyarı:</strong> Devam eden kavga, yaralanma, silah, yangın, ciddi tehdit veya anlık tehlike varsa bu form yerine derhal 155 / 112 aranmalıdır.</div>
+          <div class="notice"><strong>Önemli uyarı:</strong> Devam eden kavga, yaralanma, silah, yangın, ciddi tehdit veya anlık tehlike bu sistemden alınmaz. Bu durumlar derhal 155 veya 112 telefon hattına bildirilmelidir.</div>
           <div class="actions">
             <button class="primary" data-view="report">Anonim Bildirim Yap</button>
             <button class="secondary" data-view="admin">PGM Panelini Gör</button>
@@ -273,9 +312,9 @@
           <div class="grid">
             <div class="stat"><strong>6</strong><span>İlçe bazlı takip</span></div>
             <div class="stat"><strong>9</strong><span>Bildirim kategorisi</span></div>
-            <div class="stat"><strong>4</strong><span>Aciliyet seviyesi</span></div>
+            <div class="stat"><strong>5 sn</strong><span>Zorunlu telefon yönlendirme uyarısı</span></div>
           </div>
-          <p style="margin-top:16px">PGM panelinde okullar harita üzerinde gösterilir. İstenirse kategoriye, olay sayısına, aciliyet seviyesine ve tarih aralığına göre ısı haritası oluşturulur.</p>
+          <p style="margin-top:16px">PGM panelinde okullar harita üzerinde gösterilir. İstenirse kategoriye, olay sayısına ve tarih aralığına göre ısı haritası oluşturulur.</p>
         </div>
       </div>
     </section>
@@ -324,16 +363,9 @@
           <label class="full">Açıklama
             <textarea placeholder="Gördüğünüz durumu açık ve kısa şekilde yazınız. Kişisel bilgi yazmanız gerekmez."></textarea>
           </label>
-          <label>Fotoğraf / dosya ekle
+          <label class="full">Fotoğraf / dosya ekle
             <input type="file" accept="image/png,image/jpeg,application/pdf" multiple>
             <span class="hint">PDF, JPG veya PNG. Kimlik içeren belge yüklememeye dikkat ediniz.</span>
-          </label>
-          <label>Aciliyet beyanı
-            <select>
-              <option>Normal değerlendirme</option>
-              <option>Acil olduğunu düşünüyorum</option>
-              <option>Anlık tehlike var - 155 / 112 aranmalı</option>
-            </select>
           </label>
           <label class="full">İsteğe bağlı iletişim bilgisi
             <input type="text" placeholder="Telefon veya e-posta, zorunlu değildir">
@@ -356,14 +388,11 @@
           <label>Kategori
             <select><option>Tüm kategoriler</option><option>Trafik güvenliği</option><option>Zorbalık</option><option>Şüpheli kişi / araç</option><option>Uyuşturucu şüphesi</option></select>
           </label>
-          <label>Aciliyet
-            <select><option>Tümü</option><option>Kritik</option><option>Yüksek</option><option>Orta</option><option>Düşük</option></select>
-          </label>
           <label>Tarih aralığı
             <select><option>Son 7 gün</option><option>Son 30 gün</option><option>Bu yıl</option></select>
           </label>
           <button id="heatToggle" class="primary" type="button">Isı Haritasını Aç</button>
-          <p class="hint">Isı haritası olay sayısı, kategori yoğunluğu ve acil bildirim ağırlığına göre görünür hale gelir.</p>
+          <p class="hint">Isı haritası olay sayısı, kategori yoğunluğu ve tarih aralığına göre görünür hale gelir.</p>
         </aside>
 
         <div>
@@ -396,12 +425,12 @@
 
           <div class="table-wrap" style="margin-top:18px;overflow:auto">
             <table>
-              <thead><tr><th>Okul</th><th>İlçe</th><th>Kategori</th><th>Olay</th><th>Aciliyet</th><th>Durum</th></tr></thead>
+              <thead><tr><th>Okul</th><th>İlçe</th><th>Kategori</th><th>Olay</th><th>Durum</th></tr></thead>
               <tbody>
-                <tr><td>Bayraktar Türk Maarif Koleji</td><td>Lefkoşa</td><td>Trafik güvenliği</td><td>18</td><td><span class="badge high">Yüksek</span></td><td>İnceleniyor</td></tr>
-                <tr><td>Gazimağusa Türk Maarif Koleji</td><td>Gazimağusa</td><td>Şüpheli kişi / araç</td><td>11</td><td><span class="badge critical">Kritik</span></td><td>İlgili birime aktarıldı</td></tr>
-                <tr><td>Güzelyurt Türk Maarif Koleji</td><td>Güzelyurt</td><td>Aydınlatma eksikliği</td><td>6</td><td><span class="badge medium">Orta</span></td><td>Yeni</td></tr>
-                <tr><td>İskele Ticaret Lisesi</td><td>İskele</td><td>Okul servisi</td><td>8</td><td><span class="badge high">Yüksek</span></td><td>İnceleniyor</td></tr>
+                <tr><td>Bayraktar Türk Maarif Koleji</td><td>Lefkoşa</td><td>Trafik güvenliği</td><td>18</td><td><span class="badge review">İnceleniyor</span></td></tr>
+                <tr><td>Gazimağusa Türk Maarif Koleji</td><td>Gazimağusa</td><td>Şüpheli kişi / araç</td><td>11</td><td><span class="badge transferred">İlgili birime aktarıldı</span></td></tr>
+                <tr><td>Güzelyurt Türk Maarif Koleji</td><td>Güzelyurt</td><td>Aydınlatma eksikliği</td><td>6</td><td><span class="badge new">Yeni</span></td></tr>
+                <tr><td>İskele Ticaret Lisesi</td><td>İskele</td><td>Okul servisi</td><td>8</td><td><span class="badge review">İnceleniyor</span></td></tr>
               </tbody>
             </table>
           </div>
@@ -410,18 +439,59 @@
     </section>
   </main>
 
+  <div id="emergencyGate" class="emergency-gate" role="dialog" aria-modal="true" aria-labelledby="emergencyTitle">
+    <div class="emergency-card">
+      <div id="countdown" class="countdown">5</div>
+      <h2 id="emergencyTitle">Acil durum bildirimi bu sistemden alınmaz</h2>
+      <p>Devam eden kavga, yaralanma, silah, yangın, ciddi tehdit veya anlık tehlike varsa lütfen bu formu kullanmayın.</p>
+      <p><strong>Bu durumlar derhal 155 Polis İmdat veya 112 Acil Çağrı Merkezi telefon hattına bildirilmelidir.</strong></p>
+      <button id="continueReport" class="primary" type="button" disabled>5 saniye sonra bildirim formuna geç</button>
+    </div>
+  </div>
+
   <script>
     const buttons = document.querySelectorAll('[data-view]');
     const views = document.querySelectorAll('.view');
     const navButtons = document.querySelectorAll('nav button');
+    const emergencyGate = document.getElementById('emergencyGate');
+    const countdown = document.getElementById('countdown');
+    const continueReport = document.getElementById('continueReport');
+    let countdownTimer;
+
+    function startEmergencyGate() {
+      clearInterval(countdownTimer);
+      let remaining = 5;
+      countdown.textContent = remaining;
+      continueReport.disabled = true;
+      continueReport.textContent = '5 saniye sonra bildirim formuna geç';
+      emergencyGate.classList.add('active');
+
+      countdownTimer = setInterval(() => {
+        remaining -= 1;
+        countdown.textContent = remaining;
+        continueReport.textContent = remaining > 0
+          ? remaining + ' saniye sonra bildirim formuna geç'
+          : 'Bildirim formuna geç';
+
+        if (remaining === 0) {
+          clearInterval(countdownTimer);
+          continueReport.disabled = false;
+        }
+      }, 1000);
+    }
 
     function showView(id) {
       views.forEach(view => view.classList.toggle('active', view.id === id));
       navButtons.forEach(button => button.classList.toggle('active', button.dataset.view === id));
       window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      if (id === 'report') {
+        startEmergencyGate();
+      }
     }
 
     buttons.forEach(button => button.addEventListener('click', () => showView(button.dataset.view)));
+    continueReport.addEventListener('click', () => emergencyGate.classList.remove('active'));
 
     const heatToggle = document.getElementById('heatToggle');
     const map = document.getElementById('map');
