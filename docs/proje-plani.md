@@ -148,8 +148,9 @@ PGM panelindeki geçici demo kartında normal web sayfasının alabileceği bilg
 | Dil ve saat dilimi | Tutarlılık kontrolü |
 | Ekran boyutu | Cihaz sınıflandırması |
 | Gönderim zamanı | Olay ve gönderim yoğunluğu analizi |
+| Tarayıcı konumu | Kullanıcının açık izniyle enlem, boylam ve doğruluk bilgisi |
 
-Normal web sayfası IMEI, cihaz seri numarası ve MAC adresi alamaz. Bu bilgiler tarayıcı ve işletim sistemi güvenlik modeli nedeniyle web sitelerine açılmaz.
+Normal web sayfası IMEI, cihaz seri numarası ve MAC adresi alamaz. Bu bilgiler tarayıcı ve işletim sistemi güvenlik modeli nedeniyle web sitelerine açılmaz. Gerçek konum bilgisi ise ancak kullanıcının açık tarayıcı izniyle alınabilir; izin verilmezse sistem kesin konum alamaz.
 
 Önerilen önlemler:
 
