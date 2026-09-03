@@ -12,6 +12,8 @@ Korunacak temel kararlar:
 - Bildirim yapabilecek kişiler herkes olacak.
 - Kimlik bilgisi zorunlu olmayacak; anonim bildirim esas olacak.
 - Okul seçimi serbest yazı değil, mevcut okul listesinden yapılacak.
+- Kullanıcı önce ilçeyi seçecek; okul listesinde sadece seçilen ilçenin okulları görünecek.
+- İlçe seçilmeden okul listesi tüm okulları göstermeyecek.
 - Dosya/fotoğraf yükleme alanı olacak. PDF, JPG ve PNG desteklenecek.
 - Acil olay bildirimi bu sistemden hiçbir şekilde alınmayacak.
 - Bildirim sayfasına girişte 5 saniye geri sayan zorunlu uyarı ekranı gösterilecek.
@@ -44,6 +46,12 @@ Bildirim formu alanları:
 - Olay tarihi / yaklaşık saat
 - Fotoğraf veya dosya yükleme
 - İsteğe bağlı iletişim bilgisi
+
+Okul listesi kuralı:
+- İlçe seçimi zorunlu olacak.
+- Okul alanı ilçe seçilene kadar pasif olacak.
+- İlçe seçildiğinde sadece o ilçenin okulları listelenecek.
+- Okul adları serbest yazılmayacak.
 
 Bildirim kategorileri:
 - Trafik güvenliği
