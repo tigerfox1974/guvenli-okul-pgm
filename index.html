@@ -225,8 +225,13 @@
               <div class="security-item"><span>Saat dilimi</span><strong id="visitorTimezone">-</strong></div>
               <div class="security-item"><span>Ekran boyutu</span><strong id="visitorScreen">-</strong></div>
               <div class="security-item"><span>Kayıt zamanı</span><strong id="visitorTime">-</strong></div>
+              <div class="security-item"><span>Tarayıcı konumu</span><strong id="visitorLocation">İzin istenmedi</strong></div>
+              <div class="security-item"><span>Konum doğruluğu</span><strong id="visitorAccuracy">-</strong></div>
             </div>
-            <p class="security-note">Üretim sürümünde bu bilgiler yalnızca kötüye kullanım ve bilgi kirliliğini azaltmak için sınırlı teknik güvenlik kaydı olarak tutulmalıdır.</p>
+            <div class="actions">
+              <button id="locationButton" class="secondary" type="button">Konum İzni İste</button>
+            </div>
+            <p class="security-note">Üretim sürümünde bu bilgiler yalnızca kötüye kullanım ve bilgi kirliliğini azaltmak için sınırlı teknik güvenlik kaydı olarak tutulmalıdır. Kesin konum bilgisi ancak kullanıcının açık tarayıcı izniyle alınabilir.</p>
           </div>
 
           <div class="panel map-panel">
@@ -305,6 +310,7 @@
     const optionalFields = Array.from(document.querySelectorAll('[data-optional]'));
     const optionalFileFields = Array.from(document.querySelectorAll('[data-optional-file]'));
     const submitButton = document.getElementById('submitButton');
+    const locationButton = document.getElementById('locationButton');
     let countdownTimer;
 
     function detectBrowser() {
@@ -334,24 +340,56 @@
       return 'Masaüstü / Dizüstü';
     }
 
-    function updateSecurityCard() {
-      const setText = (id, value) => {
-        const element = document.getElementById(id);
-        if (element) element.textContent = value;
-      };
+    function setSecurityText(id, value) {
+      const element = document.getElementById(id);
+      if (element) element.textContent = value;
+    }
 
-      setText('visitorDevice', detectDeviceType());
-      setText('visitorBrowser', detectBrowser());
-      setText('visitorOs', detectOs());
-      setText('visitorLanguage', navigator.language || 'Bilinmiyor');
-      setText('visitorTimezone', Intl.DateTimeFormat().resolvedOptions().timeZone || 'Bilinmiyor');
-      setText('visitorScreen', window.screen.width + ' x ' + window.screen.height);
-      setText('visitorTime', new Date().toLocaleString('tr-TR'));
+    function requestBrowserLocation() {
+      if (!navigator.geolocation) {
+        setSecurityText('visitorLocation', 'Bu tarayıcı desteklemiyor');
+        setSecurityText('visitorAccuracy', '-');
+        return;
+      }
+
+      setSecurityText('visitorLocation', 'Konum izni bekleniyor...');
+      setSecurityText('visitorAccuracy', '-');
+
+      navigator.geolocation.getCurrentPosition(
+        position => {
+          const latitude = position.coords.latitude.toFixed(6);
+          const longitude = position.coords.longitude.toFixed(6);
+          const accuracy = Math.round(position.coords.accuracy);
+          setSecurityText('visitorLocation', latitude + ', ' + longitude);
+          setSecurityText('visitorAccuracy', accuracy + ' metre');
+        },
+        error => {
+          const messages = {
+            1: 'Kullanıcı konum izni vermedi',
+            2: 'Konum bilgisi alınamadı',
+            3: 'Konum isteği zaman aşımına uğradı'
+          };
+          setSecurityText('visitorLocation', messages[error.code] || 'Konum alınamadı');
+          setSecurityText('visitorAccuracy', '-');
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    }
+
+    function updateSecurityCard() {
+
+      setSecurityText('visitorDevice', detectDeviceType());
+      setSecurityText('visitorBrowser', detectBrowser());
+      setSecurityText('visitorOs', detectOs());
+      setSecurityText('visitorLanguage', navigator.language || 'Bilinmiyor');
+      setSecurityText('visitorTimezone', Intl.DateTimeFormat().resolvedOptions().timeZone || 'Bilinmiyor');
+      setSecurityText('visitorScreen', window.screen.width + ' x ' + window.screen.height);
+      setSecurityText('visitorTime', new Date().toLocaleString('tr-TR'));
 
       fetch('https://api.ipify.org?format=json')
         .then(response => response.ok ? response.json() : Promise.reject())
-        .then(data => setText('visitorIp', data.ip || 'Alınamadı'))
-        .catch(() => setText('visitorIp', 'Tarayıcıdan doğrudan alınamadı'));
+        .then(data => setSecurityText('visitorIp', data.ip || 'Alınamadı'))
+        .catch(() => setSecurityText('visitorIp', 'Tarayıcıdan doğrudan alınamadı'));
     }
 
     function fieldHasValue(field) {
@@ -439,6 +477,7 @@
       field.addEventListener('change', handler);
     });
     reportForm.addEventListener('reset', resetFormFlow);
+    locationButton.addEventListener('click', requestBrowserLocation);
     updateSchoolOptions();
     updateFormFlow();
 
