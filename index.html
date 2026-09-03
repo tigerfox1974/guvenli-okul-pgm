@@ -164,8 +164,8 @@
           <label class="full">Açıklama *
             <textarea id="descriptionInput" required data-step="5" disabled placeholder="Gördüğünüz durumu açık ve kısa şekilde yazınız. Kişisel bilgi yazmanız gerekmez."></textarea>
           </label>
-          <label class="full">Fotoğraf / dosya ekle *
-            <input id="fileInput" type="file" required data-step="6" disabled accept="image/png,image/jpeg,application/pdf" multiple>
+          <label class="full">Fotoğraf / dosya ekle
+            <input id="fileInput" type="file" data-optional-file disabled accept="image/png,image/jpeg,application/pdf" multiple>
             <span class="hint">PDF, JPG veya PNG. Kimlik içeren belge yüklememeye dikkat ediniz.</span>
           </label>
           <div class="full">
@@ -281,6 +281,7 @@
     const schoolHint = document.getElementById('schoolHint');
     const requiredFlow = Array.from(document.querySelectorAll('[data-step]')).sort((a, b) => Number(a.dataset.step) - Number(b.dataset.step));
     const optionalFields = Array.from(document.querySelectorAll('[data-optional]'));
+    const optionalFileFields = Array.from(document.querySelectorAll('[data-optional-file]'));
     const submitButton = document.getElementById('submitButton');
     let countdownTimer;
 
@@ -315,6 +316,7 @@
       });
 
       const allRequiredCompleted = requiredFlow.every(fieldHasValue);
+      optionalFileFields.forEach(field => { field.disabled = !allRequiredCompleted; });
       optionalFields.forEach(field => { field.disabled = !allRequiredCompleted; });
       submitButton.disabled = !allRequiredCompleted;
     }
@@ -323,6 +325,7 @@
       setTimeout(() => {
         schoolSelect.innerHTML = '<option value="">Önce ilçe seçiniz</option>';
         schoolHint.textContent = 'Okul listesi seçilen ilçeye göre gösterilir.';
+        optionalFileFields.forEach(field => { field.value = ''; });
         optionalFields.forEach(field => { field.value = ''; });
         updateFormFlow();
       }, 0);
