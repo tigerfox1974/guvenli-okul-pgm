@@ -17,7 +17,7 @@ Sistem iki ana yüzeyden oluşur:
 | Kurumsal yapı | KKTC Polis Genel Müdürlüğü bünyesinde |
 | Bildirim yapabilecek kişiler | Herkes |
 | Kimlik zorunluluğu | Yok, anonim bildirim esas |
-| Okul seçimi | Mevcut okul listesinden seçim |
+| Okul seçimi | Önce ilçe seçilir, okul listesi sadece seçilen ilçeye göre gelir |
 | Dosya / fotoğraf | PDF, JPG, PNG desteklenir |
 | Acil olay bildirimi | Alınmayacak |
 | Bildirim giriş uyarısı | 5 saniyelik telefon yönlendirme ekranı olacak |
@@ -58,7 +58,7 @@ Uyarı amacı:
 | Alan | Zorunlu mu? | Açıklama |
 |---|---:|---|
 | İlçe | Evet | Okul listesini filtrelemek için |
-| Okul | Evet | Mevcut okul listesinden seçilir |
+| Okul | Evet | Yalnızca seçilen ilçeye bağlı okullar listelenir |
 | Bildirim kategorisi | Evet | Risk türünü belirler |
 | Kısa başlık | Evet | Bildirimin hızlı anlaşılması için |
 | Açıklama | Evet | Olayın detayları |
@@ -67,6 +67,13 @@ Uyarı amacı:
 | İletişim bilgisi | Hayır | Tamamen isteğe bağlı |
 
 Formda acil durum veya aciliyet seçimi bulunmamalıdır. Bu sistem yalnızca acil olmayan okul güvenliği bildirimleri için kullanılmalıdır.
+
+### Okul Listesi İş Kuralı
+
+- İlçe seçilmeden okul listesi açılmamalıdır.
+- İlçe seçildiğinde sadece o ilçeye bağlı okullar gösterilmelidir.
+- Kullanıcı okul adını serbest yazmamalıdır.
+- Okul listesi merkezi okul verisinden beslenmelidir.
 
 ## 6. Bildirim Kategorileri
 
