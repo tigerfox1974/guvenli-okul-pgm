@@ -68,14 +68,6 @@
     .map .leaflet-container { font: inherit; }
     .leaflet-popup-content { margin: 10px 12px; line-height: 1.45; }
     .leaflet-popup-content strong { color: var(--navy); }
-    .school-marker {
-      width: 16px;
-      height: 16px;
-      border-radius: 999px;
-      background: var(--blue);
-      border: 3px solid #fff;
-      box-shadow: 0 0 0 2px rgba(29,78,216,.32), 0 8px 18px rgba(15,23,42,.20);
-    }
     .legend { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; color: var(--muted); font-size: 13px; margin-top: 10px; }
     .dot { width: 11px; height: 11px; border-radius: 999px; display: inline-block; }
     .dot.blue { background: var(--blue); }
@@ -285,7 +277,6 @@
       'İskele': ['Bekirpaşa Lisesi', 'Dipkarpaz Recep Tayyip Erdoğan Ortaokulu', 'Erenköy Lisesi', 'İskele Evkaf Türk Maarif Koleji', 'İskele Ticaret Lisesi', 'Karpaz Meslek Lisesi', 'Muharrem Döveç Ortaokulu']
     };
 
-    const schoolPinIconUrl = 'data:image/png;base64,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';
     const schoolMapData = [
       {
             id: 1,
@@ -926,15 +917,9 @@
       }).addTo(leafletMap);
 
       markerLayer = L.layerGroup().addTo(leafletMap);
-      const markerIcon = L.icon({
-        iconUrl: schoolPinIconUrl,
-        iconSize: [40, 54],
-        iconAnchor: [20, 54],
-        popupAnchor: [0, -48]
-      });
 
       schoolMapData.forEach(school => {
-        L.marker([school.lat, school.lng], { icon: markerIcon })
+        L.marker([school.lat, school.lng])
           .bindPopup('<strong>' + school.name + '</strong><br>' +
             school.district + '<br>' +
             'Koordinat: ' + school.lat.toFixed(4) + ', ' + school.lng.toFixed(4) + '<br>' +
