@@ -69,15 +69,17 @@ Bildirim kategorileri:
 - Diğer
 
 PGM paneli alanları:
-- Gelen bildirim listesi
+- Toplam bildirim, yeni bildirim, incelenen bildirim, en yoğun ilçe ve en yoğun kategori özet kartları
+- Demo/gerçek bildirim verisine bağlı gelen bildirim listesi
+- Bildirim listesinde okul adına tıklanınca haritanın ilgili okula yakınlaşması
 - Bildirim detay ekranı
 - Dosya/fotoğraf görüntüleme
 - Durum güncelleme
 - Yetkili notu ekleme
-- İlçe, okul, kategori ve tarih filtreleri
-- Leaflet tabanlı KKTC okul haritası
+- İlçe, okul, kategori, durum ve tarih filtreleri
+- Filtrelere göre güncellenen Leaflet tabanlı KKTC okul haritası
 - Excel kaynaklı doğrulanmış koordinat listesinden kalıcı okul pinleri
-- Leaflet.heat ısı haritası modu
+- Filtrelere göre güncellenen Leaflet.heat ısı haritası modu
 - Raporlama özetleri
 
 Bildirim durumları:
