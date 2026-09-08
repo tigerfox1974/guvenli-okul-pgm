@@ -54,7 +54,7 @@
     .full { grid-column: 1 / -1; }
     .hint { color: var(--muted); font-size: 13px; font-weight: 400; }
     .optional-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-    .admin-layout { display: grid; grid-template-columns: 320px 1fr; gap: 18px; }
+    .admin-layout { display: grid; grid-template-columns: 320px 1fr; gap: 18px; align-items: start; }
     .security-card { margin-bottom: 18px; }
     .admin-summary { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 18px; }
     .summary-card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px; }
@@ -68,7 +68,10 @@
     .security-item span { display: block; color: var(--muted); font-size: 12px; margin-bottom: 4px; }
     .security-item strong { display: block; color: var(--ink); font-size: 14px; word-break: break-word; }
     .security-note { margin-top: 12px; color: var(--muted); font-size: 13px; }
-    .filters { display: grid; gap: 12px; }
+    .filters { display: grid; gap: 12px; align-content: start; align-self: start; }
+    .filters label { align-content: start; }
+    .filters select { min-height: 42px; height: 42px; }
+    .filters .primary, .filters .secondary { min-height: 42px; }
     .map-panel { padding: 16px; overflow: hidden; }
     .map-toolbar { display: flex; justify-content: space-between; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
     .map { position: relative; min-height: 500px; background: #e5e7eb; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
@@ -1316,7 +1319,7 @@
     }
 
     function getFilteredReports() {
-      return demoReportData.filter(report => {
+      return getEnrichedReports().filter(report => {
         if (adminDistrictFilter.value !== 'all' && report.district !== adminDistrictFilter.value) return false;
         if (adminSchoolFilter.value !== 'all' && String(report.schoolId) !== adminSchoolFilter.value) return false;
         if (adminCategoryFilter.value !== 'all' && report.category !== adminCategoryFilter.value) return false;
@@ -1525,7 +1528,7 @@
           .addTo(markerLayer);
       });
 
-      heatLayer = L.heatLayer(buildHeatData(), { radius: 34, blur: 24, maxZoom: 12 });
+      heatLayer = typeof L.heatLayer === 'function' ? L.heatLayer(buildHeatData(), { radius: 34, blur: 24, maxZoom: 12 }) : null;
       leafletMap.fitBounds(markerLayer.getBounds(), { padding: [28, 28] });
 
       setTimeout(() => leafletMap.invalidateSize(), 150);
@@ -1538,8 +1541,8 @@
     }
 
     function updateHeatLayer() {
-      if (!leafletMap || !heatLayer) return;
-      if (leafletMap.hasLayer(heatLayer)) heatLayer.remove();
+      if (!leafletMap || typeof L.heatLayer !== 'function') return;
+      if (heatLayer && leafletMap.hasLayer(heatLayer)) heatLayer.remove();
       heatLayer = L.heatLayer(buildHeatData(), { radius: 34, blur: 24, maxZoom: 12 });
       if (heatVisible && buildHeatData().length) heatLayer.addTo(leafletMap);
     }
@@ -1550,17 +1553,17 @@
 
       const hasHeatData = buildHeatData().length > 0;
 
-      if (heatVisible && hasHeatData) {
+      if (heatVisible && hasHeatData && heatLayer) {
         heatLayer.addTo(leafletMap);
         markerLayer.addTo(leafletMap);
       } else {
         heatVisible = false;
-        heatLayer.remove();
+        if (heatLayer) heatLayer.remove();
         markerLayer.addTo(leafletMap);
       }
 
       heatToggle.textContent = heatVisible ? 'Nokta Görünümüne Dön' : 'Isı Haritasını Aç';
-      mapMode.textContent = heatVisible ? 'Leaflet ısı haritası görünümü' : 'Okul pinleri görünümü';
+      mapMode.textContent = heatVisible ? 'Leaflet ısı haritası görünümü' : (hasHeatData ? 'Okul pinleri görünümü' : 'Isı haritası için bildirim verisi yok');
     });
   </script>
 </body>
