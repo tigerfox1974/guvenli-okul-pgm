@@ -22,8 +22,8 @@ Sistem iki ana yüzeyden oluşur:
 | Acil olay bildirimi | Alınmayacak |
 | Bildirim giriş uyarısı | 5 saniyelik telefon yönlendirme ekranı olacak |
 | Yönetim paneli | Olacak |
-| Harita | PGM panelinde KKTC haritası olacak |
-| Isı haritası | Kategori, olay sayısı ve tarih aralığına göre olacak |
+| Harita motoru | Leaflet + OpenStreetMap |
+| Isı haritası | Leaflet.heat ile kategori, olay sayısı ve tarih aralığına göre olacak |
 
 ## 3. Halka Açık Sayfa
 
@@ -101,7 +101,7 @@ Panelde bulunması gereken temel alanlar:
 - Durum değiştirme
 - Yetkili notu ekleme
 - İlçe, okul, kategori ve tarih filtreleri
-- KKTC haritası
+- Leaflet tabanlı KKTC okul haritası
 - Isı haritası modu
 - Rapor ekranı
 
@@ -116,7 +116,9 @@ Panelde bulunması gereken temel alanlar:
 
 ## 8. Harita ve Isı Haritası
 
-PGM panelinde KKTC haritası bulunmalıdır. Okullar harita üzerinde nokta olarak gösterilmelidir.
+PGM panelinde Leaflet + OpenStreetMap tabanlı KKTC haritası kullanılmalıdır. Okullar harita üzerinde nokta olarak gösterilmelidir. Isı haritası için Leaflet.heat eklentisi kullanılacaktır.
+
+Mevcut demo aşamasında harita motoru gerçek Leaflet haritasıdır; okul koordinatları ise örnek/demo koordinatlardır. Üretim sürümünde her okulun gerçek enlem-boylam bilgisi merkezi okul verisine eklenmelidir.
 
 Isı haritası şu verilere göre üretilebilir:
 
@@ -171,5 +173,6 @@ Normal web sayfası IMEI, cihaz seri numarası ve MAC adresi alamaz. Bu bilgiler
 - Veritabanı: Supabase PostgreSQL
 - Dosya depolama: Supabase Storage
 - Kimlik doğrulama: PGM yetkili kullanıcıları için rol bazlı giriş
-- Harita: KKTC okul koordinatları ile harita katmanı
+- Harita: Leaflet + OpenStreetMap, KKTC okul koordinatları ile okul noktaları
+- Isı haritası: Leaflet.heat ile olay yoğunluğu katmanı
 - Raporlama: İlçe, okul, kategori ve tarih bazlı analizler
