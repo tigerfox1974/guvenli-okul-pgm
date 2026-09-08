@@ -21,9 +21,11 @@ Korunacak temel kararlar:
 - Uyarı ekranı, acil durumların 155 Polis İmdat veya 112 Acil Çağrı Merkezi telefon hattına bildirilmesi gerektiğini açıkça söyleyecek.
 - Formda aciliyet beyanı, acil seçenek, öncelik seviyesi veya benzeri hiçbir alan bulunmayacak.
 - PGM yönetim paneli olacak.
-- PGM panelinde KKTC haritası olacak.
-- Okullar harita üzerinde gösterilecek.
+- PGM panelindeki harita Leaflet + OpenStreetMap ile çalışacak.
+- Okullar harita üzerinde Leaflet marker olarak gösterilecek.
+- Isı haritası için Leaflet.heat kullanılacak.
 - Harita üzerinde kategoriye, olay sayısına ve tarih aralığına göre ısı haritası görünümü olacak.
+- Mevcut demo koordinatları geçicidir; üretim sürümünde gerçek okul enlem-boylam verisi kullanılacak.
 
 Halka açık bölümde şunlar olsun:
 - Kısa proje tanıtımı
@@ -71,8 +73,8 @@ PGM paneli alanları:
 - Durum güncelleme
 - Yetkili notu ekleme
 - İlçe, okul, kategori ve tarih filtreleri
-- KKTC haritası
-- Isı haritası modu
+- Leaflet tabanlı KKTC okul haritası
+- Leaflet.heat ısı haritası modu
 - Raporlama özetleri
 
 Bildirim durumları:
@@ -86,5 +88,5 @@ Bildirim durumları:
 Tasarım dili:
 Kurumsal, sade, mobil uyumlu, temiz ve güven veren bir arayüz oluştur. İlk ekran gerçek kullanılabilir ürünü göstersin. Gereksiz pazarlama dili kullanma. PGM panelini demo içinde görünür yap.
 
-Mevcut çalışan bölümleri bozma. Değişiklikleri kontrollü ve minimum müdahale ile yap. Önce mevcut index.html demosunu geliştirilebilir bir frontend yapısına taşı. Gerekiyorsa Vite + React kullanılabilir. Harita için ilk aşamada temsili KKTC harita görünümü yeterlidir; üretim aşamasında gerçek okul koordinatları ve harita kütüphanesi eklenebilir.
+Mevcut çalışan bölümleri bozma. Değişiklikleri kontrollü ve minimum müdahale ile yap. Önce mevcut index.html demosunu geliştirilebilir bir frontend yapısına taşı. Gerekiyorsa Vite + React kullanılabilir. Harita kararını değiştirme: Leaflet + OpenStreetMap + Leaflet.heat kullanılacak. Üretim aşamasında gerçek okul koordinatları eklenecek.
 ```
