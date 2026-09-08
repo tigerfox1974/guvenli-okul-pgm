@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Güvenli Okul | PGM</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <style>
     :root {
       --navy: #14213d;
@@ -63,14 +64,18 @@
     .filters { display: grid; gap: 12px; }
     .map-panel { padding: 16px; overflow: hidden; }
     .map-toolbar { display: flex; justify-content: space-between; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
-    .map { position: relative; min-height: 440px; background: linear-gradient(180deg, #e0f2fe, #f8fafc); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
-    .island { position: absolute; inset: 48px 38px 64px; background: #d9f99d; clip-path: polygon(3% 50%, 12% 37%, 28% 33%, 42% 40%, 57% 31%, 76% 36%, 96% 48%, 82% 59%, 61% 63%, 42% 59%, 24% 68%, 9% 62%); border: 3px solid #84cc16; opacity: .95; }
-    .district-label { position: absolute; font-size: 12px; font-weight: 800; color: #365314; background: rgba(255,255,255,.75); padding: 4px 6px; border-radius: 6px; }
-    .school-pin, .heat-point { position: absolute; transform: translate(-50%, -50%); border-radius: 999px; }
-    .school-pin { width: 14px; height: 14px; background: var(--blue); border: 2px solid #fff; box-shadow: 0 0 0 2px rgba(29,78,216,.25); }
-    .heat-point { width: var(--size); height: var(--size); background: radial-gradient(circle, rgba(185,28,28,.58), rgba(245,158,11,.30) 42%, rgba(37,99,235,.03) 72%); opacity: .88; display: none; }
-    .map.heat .school-pin { display: none; }
-    .map.heat .heat-point { display: block; }
+    .map { position: relative; min-height: 500px; background: #e5e7eb; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+    .map .leaflet-container { font: inherit; }
+    .leaflet-popup-content { margin: 10px 12px; line-height: 1.45; }
+    .leaflet-popup-content strong { color: var(--navy); }
+    .school-marker {
+      width: 16px;
+      height: 16px;
+      border-radius: 999px;
+      background: var(--blue);
+      border: 3px solid #fff;
+      box-shadow: 0 0 0 2px rgba(29,78,216,.32), 0 8px 18px rgba(15,23,42,.20);
+    }
     .legend { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; color: var(--muted); font-size: 13px; margin-top: 10px; }
     .dot { width: 11px; height: 11px; border-radius: 999px; display: inline-block; }
     .dot.blue { background: var(--blue); }
@@ -239,26 +244,8 @@
               <div><h2>KKTC Okul Güvenliği Haritası</h2><p>Okul noktaları ve bildirim yoğunluğu temsili demo verileriyle gösterilmektedir.</p></div>
               <strong id="mapMode">Nokta görünümü</strong>
             </div>
-            <div id="map" class="map" aria-label="KKTC haritası demo görünümü">
-              <div class="island"></div>
-              <div class="district-label" style="left:31%;top:43%">Lefkoşa</div>
-              <div class="district-label" style="left:25%;top:34%">Girne</div>
-              <div class="district-label" style="left:61%;top:43%">Gazimağusa</div>
-              <div class="district-label" style="left:20%;top:55%">Güzelyurt</div>
-              <div class="district-label" style="left:78%;top:50%">İskele</div>
-              <div class="district-label" style="left:10%;top:55%">Lefke</div>
-              <span class="school-pin" style="left:34%;top:48%" title="Bayraktar TMK"></span>
-              <span class="school-pin" style="left:28%;top:37%" title="Girne okul noktası"></span>
-              <span class="school-pin" style="left:63%;top:48%" title="Gazimağusa okul noktası"></span>
-              <span class="school-pin" style="left:21%;top:58%" title="Güzelyurt okul noktası"></span>
-              <span class="school-pin" style="left:80%;top:52%" title="İskele okul noktası"></span>
-              <span class="heat-point" style="left:34%;top:48%;--size:150px"></span>
-              <span class="heat-point" style="left:28%;top:37%;--size:86px"></span>
-              <span class="heat-point" style="left:63%;top:48%;--size:118px"></span>
-              <span class="heat-point" style="left:21%;top:58%;--size:72px"></span>
-              <span class="heat-point" style="left:80%;top:52%;--size:96px"></span>
-            </div>
-            <div class="legend"><span><i class="dot blue"></i> Okul noktası</span><span><i class="dot red"></i> Bildirim yoğunluğu</span></div>
+            <div id="map" class="map" aria-label="Leaflet KKTC okul güvenliği haritası"></div>
+            <div class="legend"><span><i class="dot blue"></i> Okul noktası</span><span><i class="dot red"></i> Bildirim yoğunluğu / ısı haritası</span></div>
           </div>
           <div class="table-wrap" style="margin-top:18px;overflow:auto">
             <table>
@@ -286,6 +273,8 @@
     </div>
   </div>
 
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
   <script>
     const schoolsByDistrict = {
       'Gazimağusa': ['Çanakkale Ortaokulu', 'Canbulat Özgürlük Ortaokulu', 'Cumhuriyet Lisesi', 'Doğu Akdeniz Doğa Koleji', 'Dr. Fazıl Küçük Endüstri Meslek Lisesi', 'Gazimağusa Meslek Lisesi', 'Gazimağusa Ticaret Lisesi', 'Gazimağusa Türk Maarif Koleji', 'Namık Kemal Lisesi', 'Polatpaşa Lisesi', 'Şht. Zeka Çorba Ortaokulu', 'Yakın Doğu Koleji Yeniboğaziçi'],
@@ -295,6 +284,20 @@
       'Lefkoşa': ['20 Temmuz Fen Lisesi', 'Anadolu Güzel Sanatlar Lisesi', 'Atatürk Meslek Lisesi', 'Atleks Sanverler Ortaokulu', 'Bayraktar Ortaokulu', 'Bülent Ecevit Anadolu Lisesi', 'Değirmenlik Lisesi', 'Demokrasi Ortaokulu', 'Esin Leman Lisesi', 'Hala Sultan İlahiyat Koleji', 'Haydarpaşa Ticaret Lisesi', 'İrsen Küçük Ortaokulu', 'Lefkoşa Türk Lisesi', 'Levent Koleji', 'Meral Vedat Ertüngü', 'Necat British College(Lefkoşa)', 'Osman Örek Meslek Lisesi', 'Rauf Raif Denktaş Meslek Lisesi', 'Sedat Simavi Endüstri Meslek Lisesi', 'Şht. Hüseyin Ruso Ortaokulu', 'TED Koleji', 'Türk Maarif Koleji', 'Yakın Doğu Koleji'],
       'İskele': ['Bekirpaşa Lisesi', 'Dipkarpaz Recep Tayyip Erdoğan Ortaokulu', 'Erenköy Lisesi', 'İskele Evkaf Türk Maarif Koleji', 'İskele Ticaret Lisesi', 'Karpaz Meslek Lisesi', 'Muharrem Döveç Ortaokulu']
     };
+
+    const schoolMapData = [
+      { name: 'Bayraktar Ortaokulu', district: 'Lefkoşa', category: 'Trafik güvenliği', reports: 18, status: 'İnceleniyor', lat: 35.1889, lng: 33.3635 },
+      { name: 'Türk Maarif Koleji', district: 'Lefkoşa', category: 'Okul çevresi güvenliği', reports: 13, status: 'Yeni', lat: 35.1931, lng: 33.3506 },
+      { name: '19 Mayıs TMK', district: 'Girne', category: 'Okul servisi / taşımacılık', reports: 9, status: 'İnceleniyor', lat: 35.3368, lng: 33.3186 },
+      { name: 'Anafartalar Lisesi', district: 'Girne', category: 'Siber zorbalık / sosyal medya tehdidi', reports: 5, status: 'Yeni', lat: 35.3412, lng: 33.3198 },
+      { name: 'Gazimağusa Türk Maarif Koleji', district: 'Gazimağusa', category: 'Şüpheli kişi / araç', reports: 11, status: 'İlgili birime aktarıldı', lat: 35.1264, lng: 33.9341 },
+      { name: 'Namık Kemal Lisesi', district: 'Gazimağusa', category: 'Kavga / şiddet / zorbalık', reports: 7, status: 'İnceleniyor', lat: 35.1218, lng: 33.9417 },
+      { name: 'Güzelyurt Türk Maarif Koleji', district: 'Güzelyurt', category: 'Aydınlatma eksikliği', reports: 6, status: 'Yeni', lat: 35.1998, lng: 32.9934 },
+      { name: 'Kurtuluş Lisesi', district: 'Güzelyurt', category: 'Trafik güvenliği', reports: 4, status: 'Yeni', lat: 35.1924, lng: 32.9911 },
+      { name: 'Lefke Gazi Lisesi', district: 'Lefke', category: 'Okul çevresi güvenliği', reports: 3, status: 'Yeni', lat: 35.1126, lng: 32.8466 },
+      { name: 'İskele Ticaret Lisesi', district: 'İskele', category: 'Okul servisi / taşımacılık', reports: 8, status: 'İnceleniyor', lat: 35.2873, lng: 33.8915 },
+      { name: 'İskele Evkaf Türk Maarif Koleji', district: 'İskele', category: 'Uyuşturucu veya zararlı madde şüphesi', reports: 6, status: 'İnceleniyor', lat: 35.2846, lng: 33.8848 }
+    ];
 
     const buttons = document.querySelectorAll('[data-view]');
     const views = document.querySelectorAll('.view');
@@ -461,7 +464,11 @@
       navButtons.forEach(button => button.classList.toggle('active', button.dataset.view === id));
       window.scrollTo({ top: 0, behavior: 'smooth' });
       if (id === 'report') startEmergencyGate();
-      if (id === 'admin') updateSecurityCard();
+      if (id === 'admin') {
+        updateSecurityCard();
+        initLeafletMap();
+        setTimeout(() => leafletMap && leafletMap.invalidateSize(), 150);
+      }
     }
 
     buttons.forEach(button => button.addEventListener('click', () => showView(button.dataset.view)));
@@ -482,13 +489,67 @@
     updateFormFlow();
 
     const heatToggle = document.getElementById('heatToggle');
-    const map = document.getElementById('map');
     const mapMode = document.getElementById('mapMode');
+    let leafletMap;
+    let markerLayer;
+    let heatLayer;
+    let heatVisible = false;
+
+    function initLeafletMap() {
+      if (leafletMap || typeof L === 'undefined') return;
+
+      leafletMap = L.map('map', {
+        center: [35.18, 33.36],
+        zoom: 9,
+        scrollWheelZoom: true
+      });
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap katkıda bulunanlar'
+      }).addTo(leafletMap);
+
+      markerLayer = L.layerGroup().addTo(leafletMap);
+      const markerIcon = L.divIcon({
+        className: '',
+        html: '<div class="school-marker"></div>',
+        iconSize: [16, 16],
+        iconAnchor: [8, 8],
+        popupAnchor: [0, -8]
+      });
+
+      schoolMapData.forEach(school => {
+        L.marker([school.lat, school.lng], { icon: markerIcon })
+          .bindPopup('<strong>' + school.name + '</strong><br>' +
+            school.district + '<br>' +
+            school.category + '<br>' +
+            'Bildirim sayısı: ' + school.reports + '<br>' +
+            'Durum: ' + school.status)
+          .addTo(markerLayer);
+      });
+
+      heatLayer = L.heatLayer(
+        schoolMapData.map(school => [school.lat, school.lng, Math.min(school.reports / 20, 1)]),
+        { radius: 34, blur: 24, maxZoom: 12 }
+      );
+
+      setTimeout(() => leafletMap.invalidateSize(), 150);
+    }
 
     heatToggle.addEventListener('click', () => {
-      const heat = map.classList.toggle('heat');
-      heatToggle.textContent = heat ? 'Nokta Görünümüne Dön' : 'Isı Haritasını Aç';
-      mapMode.textContent = heat ? 'Isı haritası görünümü' : 'Nokta görünümü';
+      initLeafletMap();
+      heatVisible = !heatVisible;
+
+      if (heatVisible) {
+        markerLayer.remove();
+        heatLayer.addTo(leafletMap);
+      } else {
+        heatLayer.remove();
+        markerLayer.addTo(leafletMap);
+      }
+
+      heatToggle.textContent = heatVisible ? 'Nokta Görünümüne Dön' : 'Isı Haritasını Aç';
+      mapMode.textContent = heatVisible ? 'Leaflet ısı haritası görünümü' : 'Leaflet okul noktaları';
     });
   </script>
 </body>
