@@ -112,10 +112,10 @@ Panelde bulunması gereken temel alanlar:
 
 - Yeni
 - İnceleniyor
-- İlgili birime aktarıldı
+- Aktarıldı
 - Sonuçlandı
 - Arşivlendi
-- Asılsız / değerlendirme dışı
+- Asılsız
 
 ## 8. Harita ve Isı Haritası
 
@@ -132,6 +132,8 @@ Isı haritası şu verilere göre üretilebilir:
 - Tekrarlayan benzer bildirimler
 
 İlk panel geliştirmesinde toplam bildirim, yeni bildirim, incelenen bildirim, en yoğun ilçe ve en yoğun kategori kartları eklenmiştir. Demo bildirim listesi artık filtrelere bağlı çalışır; listedeki okul adına tıklanınca harita ilgili okul konumuna yakınlaşır.
+
+İkinci panel geliştirmesinde ana tablo okul + kategori bazlı bildirim grubu olarak çalışır. Grup satırında toplam bildirim sayısı ve renkli durum dağılımı bagetleri görünür. Bagetlerin üzerinde beklenince "3 yeni", "2 inceleniyor", "8 Aktarıldı", "1 sonuçlandı" veya "1 asılsız" gibi kısa açıklama balonları gösterilir. Ana gruba tıklanınca o gruba bağlı tekil bildirimler detay panelinde listelenir.
 
 Harita yöneticinin şu sorulara hızlı cevap almasını sağlamalıdır:
 
