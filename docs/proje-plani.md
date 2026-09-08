@@ -96,14 +96,16 @@ Not: Bu kategoriler acil olay alma amacı taşımaz. Devam eden tehlike içeren 
 
 Panelde bulunması gereken temel alanlar:
 
+- Genel durum özet kartları
 - Gelen bildirim listesi
+- Demo/gerçek bildirim verisine bağlı çalışan filtreler
 - Bildirim detay ekranı
 - Fotoğraf / dosya görüntüleme
 - Durum değiştirme
 - Yetkili notu ekleme
-- İlçe, okul, kategori ve tarih filtreleri
-- Leaflet tabanlı KKTC okul haritası
-- Isı haritası modu
+- İlçe, okul, kategori, durum ve tarih filtreleri
+- Filtreye göre güncellenen Leaflet tabanlı KKTC okul haritası
+- Filtreye göre güncellenen ısı haritası modu
 - Rapor ekranı
 
 ### Bildirim Durumları
@@ -128,6 +130,8 @@ Isı haritası şu verilere göre üretilebilir:
 - Kategori yoğunluğu
 - Tarih aralığı
 - Tekrarlayan benzer bildirimler
+
+İlk panel geliştirmesinde toplam bildirim, yeni bildirim, incelenen bildirim, en yoğun ilçe ve en yoğun kategori kartları eklenmiştir. Demo bildirim listesi artık filtrelere bağlı çalışır; listedeki okul adına tıklanınca harita ilgili okul konumuna yakınlaşır.
 
 Harita yöneticinin şu sorulara hızlı cevap almasını sağlamalıdır:
 
