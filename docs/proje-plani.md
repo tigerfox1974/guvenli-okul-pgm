@@ -24,7 +24,7 @@ Sistem iki ana yüzeyden oluşur:
 | Yönetim paneli | Olacak |
 | Harita motoru | Leaflet + OpenStreetMap |
 | Isı haritası | Leaflet.heat ile kategori, olay sayısı ve tarih aralığına göre olacak |
-| Okul harita pinleri | Bildirim olmasa bile verilen koordinat listesine göre özel pin ile gösterilecek |
+| Okul harita pinleri | Bildirim olmasa bile verilen koordinat listesine göre Leaflet varsayılan pinleriyle gösterilecek |
 
 ## 3. Halka Açık Sayfa
 
@@ -117,7 +117,7 @@ Panelde bulunması gereken temel alanlar:
 
 ## 8. Harita ve Isı Haritası
 
-PGM panelinde Leaflet + OpenStreetMap tabanlı KKTC haritası kullanılmalıdır. Okullar harita üzerinde verilen özel pin görseliyle gösterilmelidir. Isı haritası için Leaflet.heat eklentisi kullanılacaktır.
+PGM panelinde Leaflet + OpenStreetMap tabanlı KKTC haritası kullanılmalıdır. Okullar harita üzerinde Leaflet varsayılan pinleriyle gösterilmelidir. Isı haritası için Leaflet.heat eklentisi kullanılacaktır.
 
 Mevcut demo aşamasında harita motoru gerçek Leaflet haritasıdır. Okul koordinatları verilen 60 okulluk enlem-boylam listesinden alınmıştır. Hiç bildirim yokken veya ısı haritası verisi oluşmamışken de tüm okul pinleri haritada görünür kalmalıdır.
 
