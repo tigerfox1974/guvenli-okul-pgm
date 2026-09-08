@@ -23,10 +23,11 @@ Korunacak temel kararlar:
 - PGM yönetim paneli olacak.
 - PGM panelindeki harita Leaflet + OpenStreetMap ile çalışacak.
 - Okullar harita üzerinde Leaflet varsayılan marker/pin görünümüyle gösterilecek.
-- Harita, bildirim veya ısı haritası verisi olmasa bile verilen 60 okulluk koordinat listesindeki tüm okul pinlerini gösterecek.
+- Harita, bildirim veya ısı haritası verisi olmasa bile `KKTC_Okullar_Tam_Koordinatlari(1).xlsx` kaynaklı 60 okulluk doğrulanmış koordinat listesindeki tüm okul pinlerini gösterecek.
 - Isı haritası için Leaflet.heat kullanılacak.
 - Harita üzerinde kategoriye, olay sayısına ve tarih aralığına göre ısı haritası görünümü olacak.
-- Isı haritası verisi boşsa okul pinleri gizlenmeyecek.
+- Okullar sabit kurum verisi; ısı haritası ayrı demo/gerçek bildirim verisinden üretilecek.
+- Isı haritası açıkken okul pinleri gizlenmeyecek.
 
 Halka açık bölümde şunlar olsun:
 - Kısa proje tanıtımı
@@ -75,7 +76,7 @@ PGM paneli alanları:
 - Yetkili notu ekleme
 - İlçe, okul, kategori ve tarih filtreleri
 - Leaflet tabanlı KKTC okul haritası
-- Verilen koordinat listesinden kalıcı okul pinleri
+- Excel kaynaklı doğrulanmış koordinat listesinden kalıcı okul pinleri
 - Leaflet.heat ısı haritası modu
 - Raporlama özetleri
 
