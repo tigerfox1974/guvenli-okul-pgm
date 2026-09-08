@@ -56,6 +56,13 @@
     .optional-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
     .admin-layout { display: grid; grid-template-columns: 320px 1fr; gap: 18px; }
     .security-card { margin-bottom: 18px; }
+    .admin-summary { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 18px; }
+    .summary-card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px; }
+    .summary-card span { display: block; color: var(--muted); font-size: 12px; margin-bottom: 6px; }
+    .summary-card strong { display: block; color: var(--navy); font-size: 24px; line-height: 1.15; }
+    .filter-result { border: 1px solid var(--line); border-radius: 8px; padding: 10px; background: #f8fafc; color: #374151; font-size: 13px; }
+    .row-button { border: 0; background: transparent; color: var(--blue); font-weight: 800; cursor: pointer; padding: 0; text-align: left; }
+    .empty-row { color: var(--muted); text-align: center; padding: 22px; }
     .security-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
     .security-item { border: 1px solid var(--line); border-radius: 8px; padding: 10px; background: #f8fafc; }
     .security-item span { display: block; color: var(--muted); font-size: 12px; margin-bottom: 4px; }
@@ -84,7 +91,7 @@
     .emergency-card { width: min(620px, 100%); background: #fff; border-radius: 8px; padding: 26px; text-align: center; box-shadow: 0 24px 70px rgba(0,0,0,.28); }
     .countdown { width: 74px; height: 74px; border-radius: 999px; display: grid; place-items: center; margin: 8px auto 16px; background: #fee2e2; color: var(--red); font-size: 34px; font-weight: 800; border: 3px solid #fecaca; }
     .emergency-card .primary:disabled { background: #9ca3af; cursor: wait; }
-    @media (max-width: 920px) { .hero, .admin-layout, form, .optional-grid, .security-grid { grid-template-columns: 1fr; } h1 { font-size: 30px; } main { padding: 16px; } }
+    @media (max-width: 920px) { .hero, .admin-layout, form, .optional-grid, .security-grid, .admin-summary { grid-template-columns: 1fr; } h1 { font-size: 30px; } main { padding: 16px; } }
   </style>
 </head>
 <body>
@@ -198,18 +205,38 @@
         <aside class="panel filters">
           <h2>PGM Paneli</h2>
           <label>İlçe
-            <select><option>Tümü</option><option>Lefkoşa</option><option>Girne</option><option>Gazimağusa</option><option>Güzelyurt</option><option>İskele</option><option>Lefke</option></select>
+            <select id="adminDistrictFilter"><option value="all">Tümü</option></select>
+          </label>
+          <label>Okul
+            <select id="adminSchoolFilter"><option value="all">Tüm okullar</option></select>
           </label>
           <label>Kategori
-            <select><option>Tüm kategoriler</option><option>Trafik güvenliği</option><option>Zorbalık</option><option>Şüpheli kişi / araç</option><option>Uyuşturucu şüphesi</option></select>
+            <select id="adminCategoryFilter"><option value="all">Tüm kategoriler</option></select>
+          </label>
+          <label>Durum
+            <select id="adminStatusFilter"><option value="all">Tüm durumlar</option></select>
           </label>
           <label>Tarih aralığı
-            <select><option>Son 7 gün</option><option>Son 30 gün</option><option>Bu yıl</option></select>
+            <select id="adminDateFilter">
+              <option value="all">Tüm demo kayıtları</option>
+              <option value="7">Son 7 gün</option>
+              <option value="30">Son 30 gün</option>
+              <option value="year">Bu yıl</option>
+            </select>
           </label>
           <button id="heatToggle" class="primary" type="button">Isı Haritasını Aç</button>
+          <button id="clearFilters" class="secondary" type="button">Filtreleri Temizle</button>
+          <div id="filterResult" class="filter-result">Demo bildirimleri filtrelenmeye hazır.</div>
           <p class="hint">Okul pinleri sabit kurum verisidir; ısı haritası demo/gerçek bildirim yoğunluğundan ayrıca üretilir.</p>
         </aside>
         <div>
+          <div class="admin-summary" aria-label="PGM panel özetleri">
+            <div class="summary-card"><span>Toplam bildirim</span><strong id="summaryTotalReports">0</strong></div>
+            <div class="summary-card"><span>Yeni bildirim</span><strong id="summaryNewReports">0</strong></div>
+            <div class="summary-card"><span>İncelenen bildirim</span><strong id="summaryReviewReports">0</strong></div>
+            <div class="summary-card"><span>En yoğun ilçe</span><strong id="summaryTopDistrict">-</strong></div>
+            <div class="summary-card"><span>En yoğun kategori</span><strong id="summaryTopCategory">-</strong></div>
+          </div>
           <div class="panel security-card">
             <h2>Teknik Güvenlik Kaydı Demo</h2>
             <p>Bu kart geçici test amaçlıdır. Normal web sayfasının alabileceği teknik bilgileri gösterir; IMEI, cihaz seri no ve MAC adresi web tarayıcısından alınamaz.</p>
@@ -242,11 +269,8 @@
           <div class="table-wrap" style="margin-top:18px;overflow:auto">
             <table>
               <thead><tr><th>Okul</th><th>İlçe</th><th>Kategori</th><th>Olay</th><th>Durum</th></tr></thead>
-              <tbody>
-                <tr><td>Bayraktar Türk Maarif Koleji</td><td>Lefkoşa</td><td>Trafik güvenliği</td><td>18</td><td><span class="badge review">İnceleniyor</span></td></tr>
-                <tr><td>Gazimağusa Türk Maarif Koleji</td><td>Gazimağusa</td><td>Şüpheli kişi / araç</td><td>11</td><td><span class="badge transferred">İlgili birime aktarıldı</span></td></tr>
-                <tr><td>Güzelyurt Türk Maarif Koleji</td><td>Güzelyurt</td><td>Aydınlatma eksikliği</td><td>6</td><td><span class="badge new">Yeni</span></td></tr>
-                <tr><td>İskele Ticaret Lisesi</td><td>İskele</td><td>Okul servisi</td><td>8</td><td><span class="badge review">İnceleniyor</span></td></tr>
+              <tbody id="adminReportRows">
+                <tr><td class="empty-row" colspan="5">Demo bildirimleri yükleniyor.</td></tr>
               </tbody>
             </table>
           </div>
@@ -947,76 +971,43 @@
 ];
 
     const demoReportData = [
-      {
-            "schoolId": 7,
-            "category": "Trafik güvenliği",
-            "reports": 18,
-            "status": "İnceleniyor"
-      },
-      {
-            "schoolId": 58,
-            "category": "Okul çevresi güvenliği",
-            "reports": 13,
-            "status": "Yeni"
-      },
-      {
-            "schoolId": 1,
-            "category": "Okul servisi / taşımacılık",
-            "reports": 9,
-            "status": "İnceleniyor"
-      },
-      {
-            "schoolId": 4,
-            "category": "Siber zorbalık / sosyal medya tehdidi",
-            "reports": 5,
-            "status": "Yeni"
-      },
-      {
-            "schoolId": 25,
-            "category": "Şüpheli kişi / araç",
-            "reports": 11,
-            "status": "İlgili birime aktarıldı"
-      },
-      {
-            "schoolId": 44,
-            "category": "Kavga / şiddet / zorbalık",
-            "reports": 7,
-            "status": "İnceleniyor"
-      },
-      {
-            "schoolId": 30,
-            "category": "Kamera / aydınlatma / giriş-çıkış eksikliği",
-            "reports": 6,
-            "status": "Yeni"
-      },
-      {
-            "schoolId": 37,
-            "category": "Trafik güvenliği",
-            "reports": 4,
-            "status": "Yeni"
-      },
-      {
-            "schoolId": 39,
-            "category": "Okul çevresi güvenliği",
-            "reports": 3,
-            "status": "Yeni"
-      },
-      {
-            "schoolId": 35,
-            "category": "Okul servisi / taşımacılık",
-            "reports": 8,
-            "status": "İnceleniyor"
-      },
-      {
-            "schoolId": 34,
-            "category": "Uyuşturucu veya zararlı madde şüphesi",
-            "reports": 6,
-            "status": "İnceleniyor"
-      }
+      { id: 'GO-2026-0001', schoolId: 7, category: 'Trafik güvenliği', reports: 18, status: 'İnceleniyor', date: '2026-09-07', title: 'Okul çevresinde tehlikeli araç yoğunluğu', description: 'Sabah giriş ve öğleden sonra çıkış saatlerinde okul önünde araç yığılması oluşuyor.' },
+      { id: 'GO-2026-0002', schoolId: 58, category: 'Okul çevresi güvenliği', reports: 13, status: 'Yeni', date: '2026-09-06', title: 'Okul çevresinde kontrolsüz geçiş', description: 'Öğrencilerin kullandığı geçiş noktasında yoğunluk ve kontrol eksikliği bildirildi.' },
+      { id: 'GO-2026-0003', schoolId: 1, category: 'Okul servisi / taşımacılık', reports: 9, status: 'İnceleniyor', date: '2026-09-05', title: 'Servis araçlarının bekleme düzeni', description: 'Servis araçlarının okul çevresinde düzensiz beklediği bildirildi.' },
+      { id: 'GO-2026-0004', schoolId: 4, category: 'Siber zorbalık / sosyal medya tehdidi', reports: 5, status: 'Yeni', date: '2026-09-04', title: 'Sosyal medya üzerinden rahatsızlık', description: 'Öğrenciler arasında sosyal medya kaynaklı rahatsızlık iddiası iletildi.' },
+      { id: 'GO-2026-0005', schoolId: 25, category: 'Şüpheli kişi / araç', reports: 11, status: 'İlgili birime aktarıldı', date: '2026-09-03', title: 'Okul çevresinde şüpheli araç', description: 'Okul çevresinde uzun süre bekleyen araçla ilgili tekrar eden bildirimler alındı.' },
+      { id: 'GO-2026-0006', schoolId: 44, category: 'Kavga / şiddet / zorbalık', reports: 7, status: 'İnceleniyor', date: '2026-08-29', title: 'Okul çıkışında zorbalık iddiası', description: 'Okul çıkış saatlerinde öğrenciler arasında zorbalık yaşandığı bildirildi.' },
+      { id: 'GO-2026-0007', schoolId: 30, category: 'Kamera / aydınlatma / giriş-çıkış eksikliği', reports: 6, status: 'Yeni', date: '2026-08-22', title: 'Aydınlatma eksikliği', description: 'Okul çevresindeki bazı geçiş noktalarının akşam saatlerinde yetersiz aydınlatıldığı bildirildi.' },
+      { id: 'GO-2026-0008', schoolId: 37, category: 'Trafik güvenliği', reports: 4, status: 'Yeni', date: '2026-08-17', title: 'Yaya geçidi riski', description: 'Okul çevresinde araçların yaya geçidine yaklaşırken hız kesmediği bildirildi.' },
+      { id: 'GO-2026-0009', schoolId: 39, category: 'Okul çevresi güvenliği', reports: 3, status: 'Sonuçlandı', date: '2026-07-28', title: 'Çevre güvenliği kontrolü', description: 'Okul çevresindeki riskli nokta saha kontrolü sonrası sonuçlandırıldı.' },
+      { id: 'GO-2026-0010', schoolId: 35, category: 'Okul servisi / taşımacılık', reports: 8, status: 'İnceleniyor', date: '2026-09-01', title: 'Servis indirme-bindirme alanı', description: 'Servislerin öğrencileri farklı noktalarda indirdiği bildirildi.' },
+      { id: 'GO-2026-0011', schoolId: 34, category: 'Uyuşturucu veya zararlı madde şüphesi', reports: 6, status: 'İlgili birime aktarıldı', date: '2026-08-30', title: 'Okul çevresinde zararlı madde şüphesi', description: 'Okul çevresinde zararlı madde kullanımına ilişkin şüpheli durum bildirildi.' }
 ];
 
+    function getSchoolById(schoolId) {
+      return schoolMapData.find(school => school.id === schoolId) || null;
+    }
+
     function getReportForSchool(schoolId) {
-      return demoReportData.find(report => report.schoolId === schoolId) || null;
+      const relatedReports = demoReportData.filter(report => report.schoolId === schoolId);
+      if (!relatedReports.length) return null;
+      return relatedReports.reduce((summary, report) => ({
+        ...summary,
+        reports: summary.reports + report.reports
+      }), { ...relatedReports[0], reports: 0 });
+    }
+
+    function getEnrichedReports() {
+      return demoReportData.map(report => {
+        const school = getSchoolById(report.schoolId);
+        return {
+          ...report,
+          schoolName: school ? school.name : 'Bilinmeyen okul',
+          district: school ? school.region : '-',
+          lat: school ? school.lat : null,
+          lng: school ? school.lng : null
+        };
+      });
     }
 
     const buttons = document.querySelectorAll('[data-view]');
@@ -1034,7 +1025,16 @@
     const optionalFileFields = Array.from(document.querySelectorAll('[data-optional-file]'));
     const submitButton = document.getElementById('submitButton');
     const locationButton = document.getElementById('locationButton');
+    const adminDistrictFilter = document.getElementById('adminDistrictFilter');
+    const adminSchoolFilter = document.getElementById('adminSchoolFilter');
+    const adminCategoryFilter = document.getElementById('adminCategoryFilter');
+    const adminStatusFilter = document.getElementById('adminStatusFilter');
+    const adminDateFilter = document.getElementById('adminDateFilter');
+    const clearFilters = document.getElementById('clearFilters');
+    const filterResult = document.getElementById('filterResult');
+    const adminReportRows = document.getElementById('adminReportRows');
     let countdownTimer;
+    let adminFiltersReady = false;
 
     function detectBrowser() {
       const ua = navigator.userAgent;
@@ -1120,6 +1120,108 @@
       return field.value.trim() !== '';
     }
 
+    function addFilterOptions(select, values, placeholder) {
+      select.innerHTML = '';
+      select.append(new Option(placeholder, 'all'));
+      values.forEach(value => select.append(new Option(value, value)));
+    }
+
+    function populateAdminFilters() {
+      if (adminFiltersReady) return;
+      const reports = getEnrichedReports();
+      addFilterOptions(adminDistrictFilter, [...new Set(schoolMapData.map(school => school.region))].sort((a, b) => a.localeCompare(b, 'tr')), 'Tümü');
+      addFilterOptions(adminCategoryFilter, [...new Set(reports.map(report => report.category))].sort((a, b) => a.localeCompare(b, 'tr')), 'Tüm kategoriler');
+      addFilterOptions(adminStatusFilter, [...new Set(reports.map(report => report.status))].sort((a, b) => a.localeCompare(b, 'tr')), 'Tüm durumlar');
+      updateAdminSchoolFilter();
+      adminFiltersReady = true;
+    }
+
+    function updateAdminSchoolFilter() {
+      const selectedDistrict = adminDistrictFilter.value;
+      const schools = schoolMapData
+        .filter(school => selectedDistrict === 'all' || school.region === selectedDistrict)
+        .map(school => school.name)
+        .sort((a, b) => a.localeCompare(b, 'tr'));
+      addFilterOptions(adminSchoolFilter, schools, 'Tüm okullar');
+    }
+
+    function reportMatchesDate(report) {
+      const dateFilter = adminDateFilter.value;
+      if (dateFilter === 'all') return true;
+      const reportDate = new Date(report.date + 'T00:00:00');
+      const now = new Date('2026-09-08T00:00:00');
+      if (dateFilter === 'year') return reportDate.getFullYear() === now.getFullYear();
+      const days = Number(dateFilter);
+      const diffDays = (now - reportDate) / 86400000;
+      return diffDays >= 0 && diffDays <= days;
+    }
+
+    function getFilteredReports() {
+      return getEnrichedReports().filter(report => {
+        return (adminDistrictFilter.value === 'all' || report.district === adminDistrictFilter.value) &&
+          (adminSchoolFilter.value === 'all' || report.schoolName === adminSchoolFilter.value) &&
+          (adminCategoryFilter.value === 'all' || report.category === adminCategoryFilter.value) &&
+          (adminStatusFilter.value === 'all' || report.status === adminStatusFilter.value) &&
+          reportMatchesDate(report);
+      });
+    }
+
+    function badgeClass(status) {
+      if (status === 'Yeni') return 'new';
+      if (status === 'İnceleniyor') return 'review';
+      return 'transferred';
+    }
+
+    function renderAdminSummary(reports) {
+      const total = reports.reduce((sum, report) => sum + report.reports, 0);
+      const newCount = reports.filter(report => report.status === 'Yeni').reduce((sum, report) => sum + report.reports, 0);
+      const reviewCount = reports.filter(report => report.status === 'İnceleniyor').reduce((sum, report) => sum + report.reports, 0);
+      const districtTotals = {};
+      const categoryTotals = {};
+      reports.forEach(report => {
+        districtTotals[report.district] = (districtTotals[report.district] || 0) + report.reports;
+        categoryTotals[report.category] = (categoryTotals[report.category] || 0) + report.reports;
+      });
+      const topDistrict = Object.entries(districtTotals).sort((a, b) => b[1] - a[1])[0];
+      const topCategory = Object.entries(categoryTotals).sort((a, b) => b[1] - a[1])[0];
+      document.getElementById('summaryTotalReports').textContent = total;
+      document.getElementById('summaryNewReports').textContent = newCount;
+      document.getElementById('summaryReviewReports').textContent = reviewCount;
+      document.getElementById('summaryTopDistrict').textContent = topDistrict ? topDistrict[0] : '-';
+      document.getElementById('summaryTopCategory').textContent = topCategory ? topCategory[0] : '-';
+    }
+
+    function renderAdminTable(reports) {
+      if (!reports.length) {
+        adminReportRows.innerHTML = '<tr><td class="empty-row" colspan="5">Seçilen filtrelere uygun demo bildirim bulunamadı.</td></tr>';
+        return;
+      }
+      adminReportRows.innerHTML = reports
+        .sort((a, b) => b.reports - a.reports)
+        .map(report => '<tr>' +
+          '<td><button class="row-button" type="button" data-school-id="' + report.schoolId + '">' + report.schoolName + '</button><br><span class="hint">' + report.id + ' / ' + report.title + '</span></td>' +
+          '<td>' + report.district + '</td>' +
+          '<td>' + report.category + '<br><span class="hint">' + new Date(report.date + 'T00:00:00').toLocaleDateString('tr-TR') + '</span></td>' +
+          '<td>' + report.reports + '</td>' +
+          '<td><span class="badge ' + badgeClass(report.status) + '">' + report.status + '</span></td>' +
+        '</tr>').join('');
+    }
+
+    function renderAdminPanel() {
+      const reports = getFilteredReports();
+      renderAdminSummary(reports);
+      renderAdminTable(reports);
+      filterResult.textContent = reports.length + ' demo kayıt, toplam ' + reports.reduce((sum, report) => sum + report.reports, 0) + ' bildirim gösteriliyor.';
+      updateHeatLayer();
+    }
+
+    function focusSchoolOnMap(schoolId) {
+      const school = getSchoolById(Number(schoolId));
+      if (!school) return;
+      initLeafletMap();
+      leafletMap.setView([school.lat, school.lng], 15);
+    }
+
     function updateSchoolOptions() {
       const district = districtSelect.value;
       const schools = schoolsByDistrict[district] || [];
@@ -1186,6 +1288,8 @@
       if (id === 'report') startEmergencyGate();
       if (id === 'admin') {
         updateSecurityCard();
+        populateAdminFilters();
+        renderAdminPanel();
         initLeafletMap();
         setTimeout(() => leafletMap && leafletMap.invalidateSize(), 150);
       }
@@ -1205,6 +1309,26 @@
     });
     reportForm.addEventListener('reset', resetFormFlow);
     locationButton.addEventListener('click', requestBrowserLocation);
+    [adminCategoryFilter, adminStatusFilter, adminDateFilter, adminSchoolFilter].forEach(filter => {
+      filter.addEventListener('change', renderAdminPanel);
+    });
+    adminDistrictFilter.addEventListener('change', () => {
+      updateAdminSchoolFilter();
+      renderAdminPanel();
+    });
+    clearFilters.addEventListener('click', () => {
+      adminDistrictFilter.value = 'all';
+      updateAdminSchoolFilter();
+      adminSchoolFilter.value = 'all';
+      adminCategoryFilter.value = 'all';
+      adminStatusFilter.value = 'all';
+      adminDateFilter.value = 'all';
+      renderAdminPanel();
+    });
+    adminReportRows.addEventListener('click', event => {
+      const button = event.target.closest('[data-school-id]');
+      if (button) focusSchoolOnMap(button.dataset.schoolId);
+    });
     updateSchoolOptions();
     updateFormFlow();
 
@@ -1243,25 +1367,30 @@
           .addTo(markerLayer);
       });
 
-      const schoolLookup = new Map(schoolMapData.map(school => [school.id, school]));
-      const heatData = demoReportData
-        .map(report => {
-          const school = schoolLookup.get(report.schoolId);
-          return school ? [school.lat, school.lng, Math.min(report.reports / 20, 1)] : null;
-        })
-        .filter(Boolean);
-
-      heatLayer = L.heatLayer(heatData, { radius: 34, blur: 24, maxZoom: 12 });
+      heatLayer = L.heatLayer(buildHeatData(), { radius: 34, blur: 24, maxZoom: 12 });
       leafletMap.fitBounds(markerLayer.getBounds(), { padding: [28, 28] });
 
       setTimeout(() => leafletMap.invalidateSize(), 150);
+    }
+
+    function buildHeatData() {
+      return getFilteredReports()
+        .filter(report => report.lat && report.lng && report.reports > 0)
+        .map(report => [report.lat, report.lng, Math.min(report.reports / 20, 1)]);
+    }
+
+    function updateHeatLayer() {
+      if (!leafletMap || !heatLayer) return;
+      if (leafletMap.hasLayer(heatLayer)) heatLayer.remove();
+      heatLayer = L.heatLayer(buildHeatData(), { radius: 34, blur: 24, maxZoom: 12 });
+      if (heatVisible && buildHeatData().length) heatLayer.addTo(leafletMap);
     }
 
     heatToggle.addEventListener('click', () => {
       initLeafletMap();
       heatVisible = !heatVisible;
 
-      const hasHeatData = demoReportData.some(report => report.reports > 0);
+      const hasHeatData = buildHeatData().length > 0;
 
       if (heatVisible && hasHeatData) {
         heatLayer.addTo(leafletMap);
