@@ -71,6 +71,10 @@ Bildirim kategorileri:
 PGM paneli alanları:
 - Toplam bildirim, yeni bildirim, incelenen bildirim, en yoğun ilçe ve en yoğun kategori özet kartları
 - Demo/gerçek bildirim verisine bağlı gelen bildirim listesi
+- Ana bildirim listesi okul + kategori bazlı gruplar halinde çalışacak
+- Grup satırında toplam bildirim sayısı ve renkli durum dağılımı bagetleri gösterilecek
+- Durum bagetlerinde tooltip metinleri kısa olacak: "3 yeni", "2 inceleniyor", "8 Aktarıldı", "1 sonuçlandı", "1 asılsız"
+- Grup satırına tıklanınca bağlı tekil bildirimler detay panelinde listelenecek
 - Bildirim listesinde okul adına tıklanınca haritanın ilgili okula yakınlaşması
 - Bildirim detay ekranı
 - Dosya/fotoğraf görüntüleme
@@ -85,10 +89,10 @@ PGM paneli alanları:
 Bildirim durumları:
 - Yeni
 - İnceleniyor
-- İlgili birime aktarıldı
+- Aktarıldı
 - Sonuçlandı
 - Arşivlendi
-- Asılsız / değerlendirme dışı
+- Asılsız
 
 Tasarım dili:
 Kurumsal, sade, mobil uyumlu, temiz ve güven veren bir arayüz oluştur. İlk ekran gerçek kullanılabilir ürünü göstersin. Gereksiz pazarlama dili kullanma. PGM panelini demo içinde görünür yap.
