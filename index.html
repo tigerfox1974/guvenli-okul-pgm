@@ -207,7 +207,7 @@
             <select><option>Son 7 gün</option><option>Son 30 gün</option><option>Bu yıl</option></select>
           </label>
           <button id="heatToggle" class="primary" type="button">Isı Haritasını Aç</button>
-          <p class="hint">Bildirim verisi yoksa ısı haritası yerine okul pinleri görünür kalır.</p>
+          <p class="hint">Okul pinleri sabit kurum verisidir; ısı haritası demo/gerçek bildirim yoğunluğundan ayrıca üretilir.</p>
         </aside>
         <div>
           <div class="panel security-card">
@@ -233,7 +233,7 @@
 
           <div class="panel map-panel">
             <div class="map-toolbar">
-              <div><h2>KKTC Okul Güvenliği Haritası</h2><p>Okul pinleri verilen koordinat listesine göre gösterilir. Bildirim verisi oluşursa ısı haritası ayrıca açılır.</p></div>
+              <div><h2>KKTC Okul Güvenliği Haritası</h2><p>Okul pinleri Excel koordinat listesine göre sabit gösterilir. Isı haritası ayrı demo bildirim verisinden üretilir.</p></div>
               <strong id="mapMode">Nokta görünümü</strong>
             </div>
             <div id="map" class="map" aria-label="Leaflet KKTC okul güvenliği haritası"></div>
@@ -269,442 +269,755 @@
   <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
   <script>
     const schoolsByDistrict = {
-      'Gazimağusa': ['Çanakkale Ortaokulu', 'Canbulat Özgürlük Ortaokulu', 'Cumhuriyet Lisesi', 'Doğu Akdeniz Doğa Koleji', 'Dr. Fazıl Küçük Endüstri Meslek Lisesi', 'Gazimağusa Meslek Lisesi', 'Gazimağusa Ticaret Lisesi', 'Gazimağusa Türk Maarif Koleji', 'Namık Kemal Lisesi', 'Polatpaşa Lisesi', 'Şht. Zeka Çorba Ortaokulu', 'Yakın Doğu Koleji Yeniboğaziçi'],
-      'Girne': ['19 Mayıs TMK', 'Anafartalar Lisesi', 'Dr. Suat Günsel Koleji', 'Esentepe Ortaokulu', 'Girne Amerikan Koleji', 'Girne Doğa College', 'Girne Turizm Meslek Lisesi', 'Lapta Yavuzlar Lisesi', 'Necat British College(Girne)', 'Oğuz Veli Ortaokulu', 'Osman Nejat Konuk Ortaokulu', 'The English School of Kyrenia'],
-      'Güzelyurt': ['Güzelyurt Meslek Lisesi', 'Güzelyurt Türk Maarif Koleji', 'Kurtuluş Lisesi', 'Şht. Turgut Ortaokulu'],
-      'Lefke': ['Cengiz Topel Endüstri Meslek Lisesi', 'Lefke Gazi Lisesi'],
-      'Lefkoşa': ['20 Temmuz Fen Lisesi', 'Anadolu Güzel Sanatlar Lisesi', 'Atatürk Meslek Lisesi', 'Atleks Sanverler Ortaokulu', 'Bayraktar Ortaokulu', 'Bülent Ecevit Anadolu Lisesi', 'Değirmenlik Lisesi', 'Demokrasi Ortaokulu', 'Esin Leman Lisesi', 'Hala Sultan İlahiyat Koleji', 'Haydarpaşa Ticaret Lisesi', 'İrsen Küçük Ortaokulu', 'Lefkoşa Türk Lisesi', 'Levent Koleji', 'Meral Vedat Ertüngü', 'Necat British College(Lefkoşa)', 'Osman Örek Meslek Lisesi', 'Rauf Raif Denktaş Meslek Lisesi', 'Sedat Simavi Endüstri Meslek Lisesi', 'Şht. Hüseyin Ruso Ortaokulu', 'TED Koleji', 'Türk Maarif Koleji', 'Yakın Doğu Koleji'],
-      'İskele': ['Bekirpaşa Lisesi', 'Dipkarpaz Recep Tayyip Erdoğan Ortaokulu', 'Erenköy Lisesi', 'İskele Evkaf Türk Maarif Koleji', 'İskele Ticaret Lisesi', 'Karpaz Meslek Lisesi', 'Muharrem Döveç Ortaokulu']
-    };
+      "Girne": [
+            "19 Mayıs TMK",
+            "Anafartalar Lisesi",
+            "Dr. Suat Günsel Koleji",
+            "Esentepe Ortaokulu",
+            "Girne Amerikan Koleji",
+            "Girne Doğa College",
+            "Girne Turizm Meslek Lisesi",
+            "Lapta Yavuzlar Lisesi",
+            "Necat British College(Girne)",
+            "Oğuz Veli Ortaokulu",
+            "Osman Nejat Konuk Ortaokulu",
+            "The English School of Kyrenia"
+      ],
+      "Lefkoşa": [
+            "20 Temmuz Fen Lisesi",
+            "Anadolu Güzel Sanatlar Lisesi",
+            "Atatürk Meslek Lisesi",
+            "Atleks Sanverler Ortaokulu",
+            "Bayraktar Ortaokulu",
+            "Bülent Ecevit Anadolu Lisesi",
+            "Değirmenlik Lisesi",
+            "Demokrasi Ortaokulu",
+            "Esin Leman Lisesi",
+            "Hala Sultan İlahiyat Koleji",
+            "Haydarpaşa Ticaret Lisesi",
+            "İrsen Küçük Ortaokulu",
+            "Lefkoşa Türk Lisesi",
+            "Levent Koleji",
+            "Meral Vedat Ertüngü",
+            "Necat British College(Lefkoşa)",
+            "Osman Örek Meslek Lisesi",
+            "Rauf Raif Denktaş Meslek Lisesi",
+            "Sedat Simavi Endüstri Meslek Lisesi",
+            "Şht. Hüseyin Ruso Ortaokulu",
+            "TED Koleji",
+            "Türk Maarif Koleji",
+            "Yakın Doğu Koleji"
+      ],
+      "İskele": [
+            "Bekirpaşa Lisesi",
+            "Dipkarpaz Recep Tayyip Erdoğan Ortaokulu",
+            "Erenköy Lisesi",
+            "İskele Evkaf Türk Maarif Koleji",
+            "İskele Ticaret Lisesi",
+            "Karpaz Meslek Lisesi",
+            "Muharrem Döveç Ortaokulu"
+      ],
+      "Gazimağusa": [
+            "Canbulat Özgürlük Ortaokulu",
+            "Cumhuriyet Lisesi",
+            "Çanakkale Ortaokulu",
+            "Doğu Akdeniz Doğa Koleji",
+            "Dr. Fazıl Küçük Endüstri Meslek Lisesi",
+            "Gazimağusa Meslek Lisesi",
+            "Gazimağusa Ticaret Lisesi",
+            "Gazimağusa Türk Maarif Koleji",
+            "Namık Kemal Lisesi",
+            "Polatpaşa Lisesi",
+            "Şht. Zeka Çorba Ortaokulu",
+            "Yakın  Doğu Koleji Yeniboğaziçi"
+      ],
+      "Lefke": [
+            "Cengiz Topel Endüstri Meslek Lisesi",
+            "Lefke Gazi Lisesi"
+      ],
+      "Güzelyurt": [
+            "Güzelyurt Meslek Lisesi",
+            "Güzelyurt Türk Maarif Koleji",
+            "Kurtuluş Lisesi",
+            "Şht. Turgut Ortaokulu"
+      ]
+};
 
     const schoolMapData = [
       {
-            id: 1,
-            name: '19 Mayıs TMK',
-            region: 'Girne',
-            lat: 35.3282,
-            lng: 33.3219
+            "id": 1,
+            "name": "19 Mayıs TMK",
+            "region": "Girne",
+            "lat": 35.3277707,
+            "lng": 33.3217066,
+            "verification": "Yüksek",
+            "source": "Google Haritalar okul kaydı",
+            "sourceUrl": "https://www.google.com/maps/search/?api=1&query=19%20May%C4%B1s%20TMK%20Girne%20KKTC"
       },
       {
-            id: 2,
-            name: '20 Temmuz Fen Lisesi',
-            region: 'Lefkoşa',
-            lat: 35.1841,
-            lng: 33.36
+            "id": 2,
+            "name": "20 Temmuz Fen Lisesi",
+            "region": "Lefkoşa",
+            "lat": 35.18412,
+            "lng": 33.359972,
+            "verification": "Yüksek",
+            "source": "OpenStreetMap okul bina kaydı",
+            "sourceUrl": "https://www.openstreetmap.org/way/1273604200"
       },
       {
-            id: 3,
-            name: 'Anadolu Güzel Sanatlar Lisesi',
-            region: 'Lefkoşa',
-            lat: 35.2048,
-            lng: 33.3402
+            "id": 3,
+            "name": "Anadolu Güzel Sanatlar Lisesi",
+            "region": "Lefkoşa",
+            "lat": 35.1835021,
+            "lng": 33.3607101,
+            "verification": "Yüksek",
+            "source": "Google Haritalar okul kaydı",
+            "sourceUrl": "https://www.google.com/maps/search/?api=1&query=Anadolu%20G%C3%BCzel%20Sanatlar%20Lisesi%20Lefko%C5%9Fa%20KKTC"
       },
       {
-            id: 4,
-            name: 'Anafartalar Lisesi',
-            region: 'Girne',
-            lat: 35.3372,
-            lng: 33.3179
+            "id": 4,
+            "name": "Anafartalar Lisesi",
+            "region": "Girne",
+            "lat": 35.3368523,
+            "lng": 33.3183041,
+            "verification": "Yüksek",
+            "source": "Google Haritalar okul kaydı",
+            "sourceUrl": "https://www.google.com/maps/search/?api=1&query=Anafartalar%20Lisesi%20Girne%20KKTC"
       },
       {
-            id: 5,
-            name: 'Atatürk Meslek Lisesi',
-            region: 'Lefkoşa',
-            lat: 35.1873,
-            lng: 33.3592
+            "id": 5,
+            "name": "Atatürk Meslek Lisesi",
+            "region": "Lefkoşa",
+            "lat": 35.194639,
+            "lng": 33.353866,
+            "verification": "Yüksek",
+            "source": "OpenStreetMap okul bina kaydı",
+            "sourceUrl": "https://www.openstreetmap.org/way/443941514"
       },
       {
-            id: 6,
-            name: 'Atleks Sanverler Ortaokulu',
-            region: 'Lefkoşa',
-            lat: 35.2091,
-            lng: 33.3475
+            "id": 6,
+            "name": "Atleks Sanverler Ortaokulu",
+            "region": "Lefkoşa",
+            "lat": 35.19424,
+            "lng": 33.358563,
+            "verification": "Yüksek",
+            "source": "OpenStreetMap okul bina kaydı",
+            "sourceUrl": "https://www.openstreetmap.org/way/435835140"
       },
       {
-            id: 7,
-            name: 'Bayraktar Ortaokulu',
-            region: 'Lefkoşa',
-            lat: 35.1972,
-            lng: 33.3715
+            "id": 7,
+            "name": "Bayraktar Ortaokulu",
+            "region": "Lefkoşa",
+            "lat": 35.210088,
+            "lng": 33.333933,
+            "verification": "Yüksek",
+            "source": "OpenStreetMap okul bina kaydı",
+            "sourceUrl": "https://www.openstreetmap.org/way/498102636"
       },
       {
-            id: 8,
-            name: 'Bekirpaşa Lisesi',
-            region: 'İskele',
-            lat: 35.2864,
-            lng: 33.8871
+            "id": 8,
+            "name": "Bekirpaşa Lisesi",
+            "region": "İskele",
+            "lat": 35.284527,
+            "lng": 33.897453,
+            "verification": "Yüksek",
+            "source": "OpenStreetMap okul bina kaydı",
+            "sourceUrl": "https://www.openstreetmap.org/way/498649489"
       },
       {
-            id: 9,
-            name: 'Bülent Ecevit Anadolu Lisesi',
-            region: 'Lefkoşa',
-            lat: 35.2046,
-            lng: 33.3391
+            "id": 9,
+            "name": "Bülent Ecevit Anadolu Lisesi",
+            "region": "Lefkoşa",
+            "lat": 35.204556,
+            "lng": 33.339126,
+            "verification": "Yüksek",
+            "source": "OpenStreetMap okul bina kaydı",
+            "sourceUrl": "https://www.openstreetmap.org/way/435600045"
       },
       {
-            id: 10,
-            name: 'Çanakkale Ortaokulu',
-            region: 'Gazimağusa',
-            lat: 35.1275,
-            lng: 33.9312
+            "id": 10,
+            "name": "Çanakkale Ortaokulu",
+            "region": "Gazimağusa",
+            "lat": 35.12217,
+            "lng": 33.927383,
+            "verification": "Yüksek",
+            "source": "OpenStreetMap okul bina kaydı",
+            "sourceUrl": "https://www.openstreetmap.org/way/334156229"
       },
       {
-            id: 11,
-            name: 'Canbulat Özgürlük Ortaokulu',
-            region: 'Gazimağusa',
-            lat: 35.1189,
-            lng: 33.9431
+            "id": 11,
+            "name": "Canbulat Özgürlük Ortaokulu",
+            "region": "Gazimağusa",
+            "lat": 35.1116459,
+            "lng": 33.9439912,
+            "verification": "Yüksek",
+            "source": "Google Haritalar okul kaydı",
+            "sourceUrl": "https://www.google.com/maps/search/?api=1&query=Canbulat%20%C3%96zg%C3%BCrl%C3%BCk%20Ortaokulu%20Gazima%C4%9Fusa%20KKTC"
       },
       {
-            id: 12,
-            name: 'Cengiz Topel Endüstri Meslek Lisesi',
-            region: 'Lefke',
-            lat: 35.1438,
-            lng: 32.8465
+            "id": 12,
+            "name": "Cengiz Topel Endüstri Meslek Lisesi",
+            "region": "Lefke",
+            "lat": 35.119213,
+            "lng": 32.848761,
+            "verification": "Yüksek",
+            "source": "OpenStreetMap okul bina kaydı",
+            "sourceUrl": "https://www.openstreetmap.org/way/1251984734"
       },
       {
-            id: 13,
-            name: 'Cumhuriyet Lisesi',
-            region: 'Gazimağusa',
-            lat: 35.1386,
-            lng: 33.9189
+            "id": 13,
+            "name": "Cumhuriyet Lisesi",
+            "region": "Gazimağusa",
+            "lat": 35.2558212,
+            "lng": 33.7266311,
+            "verification": "Yüksek",
+            "source": "Google Haritalar okul kaydı",
+            "sourceUrl": "https://www.google.com/maps/search/?api=1&query=Cumhuriyet%20Lisesi%20Gazima%C4%9Fusa%20KKTC"
       },
       {
-            id: 14,
-            name: 'Değirmenlik Lisesi',
-            region: 'Lefkoşa',
-            lat: 35.2195,
-            lng: 33.4981
+            "id": 14,
+            "name": "Değirmenlik Lisesi",
+            "region": "Lefkoşa",
+            "lat": 35.236059,
+            "lng": 33.484327,
+            "verification": "Yüksek",
+            "source": "OpenStreetMap okul bina kaydı",
+            "sourceUrl": "https://www.openstreetmap.org/way/435535950"
       },
       {
-            id: 15,
-            name: 'Demokrasi Ortaokulu',
-            region: 'Lefkoşa',
-            lat: 35.1884,
-            lng: 33.3622
+            "id": 15,
+            "name": "Demokrasi Ortaokulu",
+            "region": "Lefkoşa",
+            "lat": 35.184975,
+            "lng": 33.359614,
+            "verification": "Yüksek",
+            "source": "OpenStreetMap okul bina kaydı",
+            "sourceUrl": "https://www.openstreetmap.org/way/1281281461"
       },
       {
-            id: 16,
-            name: 'Dipkarpaz Recep Tayyip Erdoğan Ortaokulu',
-            region: 'İskele',
-            lat: 35.5997,
-            lng: 34.3812
+            "id": 16,
+            "name": "Dipkarpaz Recep Tayyip Erdoğan Ortaokulu",
+            "region": "İskele",
+            "lat": 35.600976,
+            "lng": 34.38046,
+            "verification": "Yüksek",
+            "source": "OpenStreetMap okul bina kaydı",
+            "sourceUrl": "https://www.openstreetmap.org/way/327668176"
       },
       {
-            id: 17,
-            name: 'Doğu Akdeniz Doğa Koleji',
-            region: 'Gazimağusa',
-            lat: 35.1458,
-            lng: 33.9056
+            "id": 17,
+            "name": "Doğu Akdeniz Doğa Koleji",
+            "region": "Gazimağusa",
+            "lat": 35.1430766,
+            "lng": 33.9052832,
+            "verification": "Yüksek",
+            "source": "Google Haritalar okul kaydı",
+            "sourceUrl": "https://www.google.com/maps/search/?api=1&query=Do%C4%9Fu%20Akdeniz%20Do%C4%9Fa%20Koleji%20Gazima%C4%9Fusa%20KKTC"
       },
       {
-            id: 18,
-            name: 'Dr. Fazıl Küçük Endüstri Meslek Lisesi',
-            region: 'Gazimağusa',
-            lat: 35.1185,
-            lng: 33.9348
+            "id": 18,
+            "name": "Dr. Fazıl Küçük Endüstri Meslek Lisesi",
+            "region": "Gazimağusa",
+            "lat": 35.112824,
+            "lng": 33.9455594,
+            "verification": "Yüksek",
+            "source": "Google Haritalar okul kaydı",
+            "sourceUrl": "https://www.google.com/maps/search/?api=1&query=Dr.%20Faz%C4%B1l%20K%C3%BC%C3%A7%C3%BCk%20End%C3%BCstri%20Meslek%20Lisesi%20Gazima%C4%9Fusa%20KKTC"
       },
       {
-            id: 19,
-            name: 'Dr. Suat Günsel Koleji',
-            region: 'Girne',
-            lat: 35.3187,
-            lng: 33.3442
+            "id": 19,
+            "name": "Dr. Suat Günsel Koleji",
+            "region": "Girne",
+            "lat": 35.329989,
+            "lng": 33.3424396,
+            "verification": "Yüksek",
+            "source": "Google Haritalar okul kaydı",
+            "sourceUrl": "https://www.google.com/maps/search/?api=1&query=Dr.%20Suat%20G%C3%BCnsel%20Koleji%20Girne%20KKTC"
       },
       {
-            id: 20,
-            name: 'Erenköy Lisesi',
-            region: 'İskele',
-            lat: 35.5342,
-            lng: 34.1865
+            "id": 20,
+            "name": "Erenköy Lisesi",
+            "region": "İskele",
+            "lat": 35.5360925,
+            "lng": 34.1944666,
+            "verification": "Yüksek",
+            "source": "Google Haritalar okul kaydı",
+            "sourceUrl": "https://www.google.com/maps/search/?api=1&query=Erenk%C3%B6y%20Lisesi%20%C4%B0skele%20KKTC"
       },
       {
-            id: 21,
-            name: 'Esentepe Ortaokulu',
-            region: 'Girne',
-            lat: 35.3378,
-            lng: 33.5856
+            "id": 21,
+            "name": "Esentepe Ortaokulu",
+            "region": "Girne",
+            "lat": 35.332379,
+            "lng": 33.585969,
+            "verification": "Yüksek",
+            "source": "OpenStreetMap okul bina kaydı",
+            "sourceUrl": "https://www.openstreetmap.org/way/545009499"
       },
       {
-            id: 22,
-            name: 'Esin Leman Lisesi',
-            region: 'Lefkoşa',
-            lat: 35.2015,
-            lng: 33.3312
+            "id": 22,
+            "name": "Esin Leman Lisesi",
+            "region": "Lefkoşa",
+            "lat": 35.198627,
+            "lng": 33.357723,
+            "verification": "Yüksek",
+            "source": "OpenStreetMap okul bina kaydı",
+            "sourceUrl": "https://www.openstreetmap.org/way/1487167899"
       },
       {
-            id: 23,
-            name: 'Gazimağusa Meslek Lisesi',
-            region: 'Gazimağusa',
-            lat: 35.1232,
-            lng: 33.9367
+            "id": 23,
+            "name": "Gazimağusa Meslek Lisesi",
+            "region": "Gazimağusa",
+            "lat": 35.113931,
+            "lng": 33.942292,
+            "verification": "Yüksek",
+            "source": "OpenStreetMap okul bina kaydı",
+            "sourceUrl": "https://www.openstreetmap.org/way/347628609"
       },
       {
-            id: 24,
-            name: 'Gazimağusa Ticaret Lisesi',
-            region: 'Gazimağusa',
-            lat: 35.1215,
-            lng: 33.9405
+            "id": 24,
+            "name": "Gazimağusa Ticaret Lisesi",
+            "region": "Gazimağusa",
+            "lat": 35.1108818,
+            "lng": 33.9433746,
+            "verification": "Yüksek",
+            "source": "Google Haritalar okul kaydı",
+            "sourceUrl": "https://www.google.com/maps/search/?api=1&query=Gazima%C4%9Fusa%20Ticaret%20Lisesi%20Gazima%C4%9Fusa%20KKTC"
       },
       {
-            id: 25,
-            name: 'Gazimağusa Türk Maarif Koleji',
-            region: 'Gazimağusa',
-            lat: 35.1325,
-            lng: 33.9248
+            "id": 25,
+            "name": "Gazimağusa Türk Maarif Koleji",
+            "region": "Gazimağusa",
+            "lat": 35.118878,
+            "lng": 33.955188,
+            "verification": "Yüksek",
+            "source": "OpenStreetMap okul bina kaydı",
+            "sourceUrl": "https://www.openstreetmap.org/way/838950740"
       },
       {
-            id: 26,
-            name: 'Girne Amerikan Koleji',
-            region: 'Girne',
-            lat: 35.3341,
-            lng: 33.2778
+            "id": 26,
+            "name": "Girne Amerikan Koleji",
+            "region": "Girne",
+            "lat": 35.333249,
+            "lng": 33.27529,
+            "verification": "Orta",
+            "source": "Google Haritalar + resmî okul adresi",
+            "sourceUrl": "https://www.gau-americancollege.k12.tr/108-contact-information"
       },
       {
-            id: 27,
-            name: 'Girne Doğa College',
-            region: 'Girne',
-            lat: 35.3215,
-            lng: 33.3082
+            "id": 27,
+            "name": "Girne Doğa College",
+            "region": "Girne",
+            "lat": 35.329651,
+            "lng": 33.35028,
+            "verification": "Yüksek",
+            "source": "Google Haritalar okul kaydı",
+            "sourceUrl": "https://www.google.com/maps/search/?api=1&query=Girne%20Do%C4%9Fa%20College%20Girne%20KKTC"
       },
       {
-            id: 28,
-            name: 'Girne Turizm Meslek Lisesi',
-            region: 'Girne',
-            lat: 35.3362,
-            lng: 33.3245
+            "id": 28,
+            "name": "Girne Turizm Meslek Lisesi",
+            "region": "Girne",
+            "lat": 35.33911,
+            "lng": 33.3183494,
+            "verification": "Yüksek",
+            "source": "Google Haritalar okul kaydı",
+            "sourceUrl": "https://www.google.com/maps/search/?api=1&query=Girne%20Turizm%20Meslek%20Lisesi%20Girne%20KKTC"
       },
       {
-            id: 29,
-            name: 'Güzelyurt Meslek Lisesi',
-            region: 'Güzelyurt',
-            lat: 35.1982,
-            lng: 32.9984
+            "id": 29,
+            "name": "Güzelyurt Meslek Lisesi",
+            "region": "Güzelyurt",
+            "lat": 35.191355,
+            "lng": 32.988632,
+            "verification": "Yüksek",
+            "source": "OpenStreetMap okul bina kaydı",
+            "sourceUrl": "https://www.openstreetmap.org/way/698261640"
       },
       {
-            id: 30,
-            name: 'Güzelyurt Türk Maarif Koleji',
-            region: 'Güzelyurt',
-            lat: 35.2031,
-            lng: 33.0045
+            "id": 30,
+            "name": "Güzelyurt Türk Maarif Koleji",
+            "region": "Güzelyurt",
+            "lat": 35.190924,
+            "lng": 32.997516,
+            "verification": "Yüksek",
+            "source": "OpenStreetMap okul bina kaydı",
+            "sourceUrl": "https://www.openstreetmap.org/way/717257033"
       },
       {
-            id: 31,
-            name: 'Hala Sultan İlahiyat Koleji',
-            region: 'Lefkoşa',
-            lat: 35.2155,
-            lng: 33.4352
+            "id": 31,
+            "name": "Hala Sultan İlahiyat Koleji",
+            "region": "Lefkoşa",
+            "lat": 35.219337,
+            "lng": 33.422464,
+            "verification": "Yüksek",
+            "source": "OpenStreetMap okul bina kaydı",
+            "sourceUrl": "https://www.openstreetmap.org/way/498576539"
       },
       {
-            id: 32,
-            name: 'Haydarpaşa Ticaret Lisesi',
-            region: 'Lefkoşa',
-            lat: 35.1812,
-            lng: 33.3645
+            "id": 32,
+            "name": "Haydarpaşa Ticaret Lisesi",
+            "region": "Lefkoşa",
+            "lat": 35.193757,
+            "lng": 33.352822,
+            "verification": "Yüksek",
+            "source": "OpenStreetMap okul bina kaydı",
+            "sourceUrl": "https://www.openstreetmap.org/way/443941515"
       },
       {
-            id: 33,
-            name: 'İrsen Küçük Ortaokulu',
-            region: 'Lefkoşa',
-            lat: 35.2178,
-            lng: 33.3621
+            "id": 33,
+            "name": "İrsen Küçük Ortaokulu",
+            "region": "Lefkoşa",
+            "lat": 35.195794,
+            "lng": 33.330229,
+            "verification": "Yüksek",
+            "source": "OpenStreetMap okul bina kaydı",
+            "sourceUrl": "https://www.openstreetmap.org/relation/2724616"
       },
       {
-            id: 34,
-            name: 'İskele Evkaf Türk Maarif Koleji',
-            region: 'İskele',
-            lat: 35.2892,
-            lng: 33.8895
+            "id": 34,
+            "name": "İskele Evkaf Türk Maarif Koleji",
+            "region": "İskele",
+            "lat": 35.2848317,
+            "lng": 33.8987798,
+            "verification": "Yüksek",
+            "source": "Google Haritalar okul kaydı",
+            "sourceUrl": "https://www.google.com/maps/search/?api=1&query=%C4%B0skele%20Evkaf%20T%C3%BCrk%20Maarif%20Koleji%20%C4%B0skele%20KKTC"
       },
       {
-            id: 35,
-            name: 'İskele Ticaret Lisesi',
-            region: 'İskele',
-            lat: 35.2845,
-            lng: 33.8824
+            "id": 35,
+            "name": "İskele Ticaret Lisesi",
+            "region": "İskele",
+            "lat": 35.286186,
+            "lng": 33.897788,
+            "verification": "Yüksek",
+            "source": "OpenStreetMap okul bina kaydı",
+            "sourceUrl": "https://www.openstreetmap.org/way/1141515043"
       },
       {
-            id: 36,
-            name: 'Karpaz Meslek Lisesi',
-            region: 'İskele',
-            lat: 35.5385,
-            lng: 34.1921
+            "id": 36,
+            "name": "Karpaz Meslek Lisesi",
+            "region": "İskele",
+            "lat": 35.418631,
+            "lng": 34.135107,
+            "verification": "Yüksek",
+            "source": "Google Haritalar okul kaydı",
+            "sourceUrl": "https://www.google.com/maps/search/?api=1&query=Karpaz%20Meslek%20Lisesi%20%C4%B0skele%20KKTC"
       },
       {
-            id: 37,
-            name: 'Kurtuluş Lisesi',
-            region: 'Güzelyurt',
-            lat: 35.2012,
-            lng: 32.9925
+            "id": 37,
+            "name": "Kurtuluş Lisesi",
+            "region": "Güzelyurt",
+            "lat": 35.191339,
+            "lng": 32.998077,
+            "verification": "Yüksek",
+            "source": "OpenStreetMap okul bina kaydı",
+            "sourceUrl": "https://www.openstreetmap.org/way/717257036"
       },
       {
-            id: 38,
-            name: 'Lapta Yavuzlar Lisesi',
-            region: 'Girne',
-            lat: 35.3421,
-            lng: 33.1678
+            "id": 38,
+            "name": "Lapta Yavuzlar Lisesi",
+            "region": "Girne",
+            "lat": 35.3408595,
+            "lng": 33.1868434,
+            "verification": "Yüksek",
+            "source": "Google Haritalar okul kaydı",
+            "sourceUrl": "https://www.google.com/maps/search/?api=1&query=Lapta%20Yavuzlar%20Lisesi%20Girne%20KKTC"
       },
       {
-            id: 39,
-            name: 'Lefke Gazi Lisesi',
-            region: 'Lefke',
-            lat: 35.1124,
-            lng: 32.8482
+            "id": 39,
+            "name": "Lefke Gazi Lisesi",
+            "region": "Lefke",
+            "lat": 35.106173,
+            "lng": 32.856786,
+            "verification": "Yüksek",
+            "source": "OpenStreetMap okul bina kaydı",
+            "sourceUrl": "https://www.openstreetmap.org/way/701173120"
       },
       {
-            id: 40,
-            name: 'Lefkoşa Türk Lisesi',
-            region: 'Lefkoşa',
-            lat: 35.1895,
-            lng: 33.3551
+            "id": 40,
+            "name": "Lefkoşa Türk Lisesi",
+            "region": "Lefkoşa",
+            "lat": 35.182878,
+            "lng": 33.361743,
+            "verification": "Yüksek",
+            "source": "OpenStreetMap okul bina kaydı",
+            "sourceUrl": "https://www.openstreetmap.org/way/1273604201"
       },
       {
-            id: 41,
-            name: 'Levent Koleji',
-            region: 'Lefkoşa',
-            lat: 35.2065,
-            lng: 33.3618
+            "id": 41,
+            "name": "Levent Koleji",
+            "region": "Lefkoşa",
+            "lat": 35.202908,
+            "lng": 33.336266,
+            "verification": "Yüksek",
+            "source": "OpenStreetMap okul bina kaydı",
+            "sourceUrl": "https://www.openstreetmap.org/way/451330279"
       },
       {
-            id: 42,
-            name: 'Meral Vedat Ertüngü Lisesi',
-            region: 'Lefkoşa',
-            lat: 35.2285,
-            lng: 33.3325
+            "id": 42,
+            "name": "Meral Vedat Ertüngü",
+            "region": "Lefkoşa",
+            "lat": 35.200041,
+            "lng": 33.308367,
+            "verification": "Yüksek",
+            "source": "OpenStreetMap okul bina kaydı",
+            "sourceUrl": "https://www.openstreetmap.org/way/967237431"
       },
       {
-            id: 43,
-            name: 'Muharrem Döveç Ortaokulu',
-            region: 'İskele',
-            lat: 35.2785,
-            lng: 33.8962
+            "id": 43,
+            "name": "Muharrem Döveç Ortaokulu",
+            "region": "İskele",
+            "lat": 35.2875416,
+            "lng": 33.9141093,
+            "verification": "Yüksek",
+            "source": "Google Haritalar okul kaydı",
+            "sourceUrl": "https://www.google.com/maps/search/?api=1&query=Muharrem%20D%C3%B6ve%C3%A7%20Ortaokulu%20%C4%B0skele%20KKTC"
       },
       {
-            id: 44,
-            name: 'Namık Kemal Lisesi',
-            region: 'Gazimağusa',
-            lat: 35.1178,
-            lng: 33.9411
+            "id": 44,
+            "name": "Namık Kemal Lisesi",
+            "region": "Gazimağusa",
+            "lat": 35.118669,
+            "lng": 33.940712,
+            "verification": "Yüksek",
+            "source": "OpenStreetMap okul bina kaydı",
+            "sourceUrl": "https://www.openstreetmap.org/way/348035497"
       },
       {
-            id: 45,
-            name: 'Necat British College (Girne)',
-            region: 'Girne',
-            lat: 35.3452,
-            lng: 33.2241
+            "id": 45,
+            "name": "Necat British College(Girne)",
+            "region": "Girne",
+            "lat": 35.3371435,
+            "lng": 33.2055603,
+            "verification": "Yüksek",
+            "source": "Google Haritalar okul kaydı",
+            "sourceUrl": "https://www.google.com/maps/search/?api=1&query=Necat%20British%20College(Girne)%20Girne%20KKTC"
       },
       {
-            id: 46,
-            name: 'Necat British College (Lefkoşa)',
-            region: 'Lefkoşa',
-            lat: 35.2125,
-            lng: 33.3156
+            "id": 46,
+            "name": "Necat British College(Lefkoşa)",
+            "region": "Lefkoşa",
+            "lat": 35.221727,
+            "lng": 33.360257,
+            "verification": "Yüksek",
+            "source": "OpenStreetMap okul bina kaydı",
+            "sourceUrl": "https://www.openstreetmap.org/way/872310299"
       },
       {
-            id: 47,
-            name: 'Oğuz Veli Ortaokulu',
-            region: 'Girne',
-            lat: 35.3345,
-            lng: 33.3152
+            "id": 47,
+            "name": "Oğuz Veli Ortaokulu",
+            "region": "Girne",
+            "lat": 35.339947,
+            "lng": 33.290164,
+            "verification": "Yüksek",
+            "source": "Google Haritalar okul kaydı",
+            "sourceUrl": "https://www.google.com/maps/search/?api=1&query=O%C4%9Fuz%20Veli%20Ortaokulu%20Girne%20KKTC"
       },
       {
-            id: 48,
-            name: 'Osman Nejat Konuk Ortaokulu',
-            region: 'Girne',
-            lat: 35.3385,
-            lng: 33.3051
+            "id": 48,
+            "name": "Osman Nejat Konuk Ortaokulu",
+            "region": "Girne",
+            "lat": 35.3318375,
+            "lng": 33.3497656,
+            "verification": "Yüksek",
+            "source": "Google Haritalar okul kaydı",
+            "sourceUrl": "https://www.google.com/maps/search/?api=1&query=Osman%20Nejat%20Konuk%20Ortaokulu%20Girne%20KKTC"
       },
       {
-            id: 49,
-            name: 'Osman Örek Meslek Lisesi',
-            region: 'Lefkoşa',
-            lat: 35.2085,
-            lng: 33.3421
+            "id": 49,
+            "name": "Osman Örek Meslek Lisesi",
+            "region": "Lefkoşa",
+            "lat": 35.210334,
+            "lng": 33.335831,
+            "verification": "Yüksek",
+            "source": "OpenStreetMap okul bina kaydı",
+            "sourceUrl": "https://www.openstreetmap.org/way/1278805616"
       },
       {
-            id: 50,
-            name: 'Polatpaşa Lisesi',
-            region: 'Gazimağusa',
-            lat: 35.1582,
-            lng: 33.7745
+            "id": 50,
+            "name": "Polatpaşa Lisesi",
+            "region": "Gazimağusa",
+            "lat": 35.105965,
+            "lng": 33.687441,
+            "verification": "Yüksek",
+            "source": "OpenStreetMap okul bina kaydı",
+            "sourceUrl": "https://www.openstreetmap.org/way/714739771"
       },
       {
-            id: 51,
-            name: 'Rauf Raif Denktaş Meslek Lisesi',
-            region: 'Lefkoşa',
-            lat: 35.2105,
-            lng: 33.3712
+            "id": 51,
+            "name": "Rauf Raif Denktaş Meslek Lisesi",
+            "region": "Lefkoşa",
+            "lat": 35.1889155,
+            "lng": 33.3204994,
+            "verification": "Yüksek",
+            "source": "Google Haritalar okul kaydı",
+            "sourceUrl": "https://www.google.com/maps/search/?api=1&query=Rauf%20Raif%20Denkta%C5%9F%20Meslek%20Lisesi%20Lefko%C5%9Fa%20KKTC"
       },
       {
-            id: 52,
-            name: 'Sedat Simavi Endüstri Meslek Lisesi',
-            region: 'Lefkoşa',
-            lat: 35.1912,
-            lng: 33.3582
+            "id": 52,
+            "name": "Sedat Simavi Endüstri Meslek Lisesi",
+            "region": "Lefkoşa",
+            "lat": 35.183886,
+            "lng": 33.36327,
+            "verification": "Yüksek",
+            "source": "OpenStreetMap okul bina kaydı",
+            "sourceUrl": "https://www.openstreetmap.org/way/1273604202"
       },
       {
-            id: 53,
-            name: 'Şht. Hüseyin Ruso Ortaokulu',
-            region: 'Lefkoşa',
-            lat: 35.1945,
-            lng: 33.3678
+            "id": 53,
+            "name": "Şht. Hüseyin Ruso Ortaokulu",
+            "region": "Lefkoşa",
+            "lat": 35.191772,
+            "lng": 33.36295,
+            "verification": "Yüksek",
+            "source": "OpenStreetMap okul bina kaydı",
+            "sourceUrl": "https://www.openstreetmap.org/way/506903835"
       },
       {
-            id: 54,
-            name: 'Şht. Turgut Ortaokulu',
-            region: 'Güzelyurt',
-            lat: 35.2045,
-            lng: 32.9962
+            "id": 54,
+            "name": "Şht. Turgut Ortaokulu",
+            "region": "Güzelyurt",
+            "lat": 35.191939,
+            "lng": 32.996821,
+            "verification": "Yüksek",
+            "source": "OpenStreetMap okul bina kaydı",
+            "sourceUrl": "https://www.openstreetmap.org/way/717257037"
       },
       {
-            id: 55,
-            name: 'Şht. Zeka Çorba Ortaokulu',
-            region: 'Gazimağusa',
-            lat: 35.1245,
-            lng: 33.9215
+            "id": 55,
+            "name": "Şht. Zeka Çorba Ortaokulu",
+            "region": "Gazimağusa",
+            "lat": 35.2625465,
+            "lng": 33.6626853,
+            "verification": "Yüksek",
+            "source": "Google Haritalar okul kaydı",
+            "sourceUrl": "https://www.google.com/maps/search/?api=1&query=%C5%9Eht.%20Zeka%20%C3%87orba%20Ortaokulu%20Gazima%C4%9Fusa%20KKTC"
       },
       {
-            id: 56,
-            name: 'TED Koleji',
-            region: 'Lefkoşa',
-            lat: 35.2215,
-            lng: 33.3785
+            "id": 56,
+            "name": "TED Koleji",
+            "region": "Lefkoşa",
+            "lat": 35.214167,
+            "lng": 33.328002,
+            "verification": "Yüksek",
+            "source": "OpenStreetMap okul bina kaydı",
+            "sourceUrl": "https://www.openstreetmap.org/way/435600044"
       },
       {
-            id: 57,
-            name: 'The English School of Kyrenia',
-            region: 'Girne',
-            lat: 35.3125,
-            lng: 33.3542
+            "id": 57,
+            "name": "The English School of Kyrenia",
+            "region": "Girne",
+            "lat": 35.316863,
+            "lng": 33.343078,
+            "verification": "Yüksek",
+            "source": "OpenStreetMap okul bina kaydı",
+            "sourceUrl": "https://www.openstreetmap.org/node/10020202117"
       },
       {
-            id: 58,
-            name: 'Türk Maarif Koleji',
-            region: 'Lefkoşa',
-            lat: 35.1925,
-            lng: 33.3642
+            "id": 58,
+            "name": "Türk Maarif Koleji",
+            "region": "Lefkoşa",
+            "lat": 35.192565,
+            "lng": 33.36332,
+            "verification": "Yüksek",
+            "source": "OpenStreetMap okul bina kaydı",
+            "sourceUrl": "https://www.openstreetmap.org/relation/19576522"
       },
       {
-            id: 59,
-            name: 'Yakın Doğu Koleji Yeniboğaziçi',
-            region: 'Gazimağusa',
-            lat: 35.1985,
-            lng: 33.8962
+            "id": 59,
+            "name": "Yakın  Doğu Koleji Yeniboğaziçi",
+            "region": "Gazimağusa",
+            "lat": 35.1851368,
+            "lng": 33.8906425,
+            "verification": "Yüksek",
+            "source": "Google Haritalar okul kaydı",
+            "sourceUrl": "https://www.google.com/maps/search/?api=1&query=Yak%C4%B1n%20%20Do%C4%9Fu%20Koleji%20Yenibo%C4%9Fazi%C3%A7i%20Gazima%C4%9Fusa%20KKTC"
       },
       {
-            id: 60,
-            name: 'Yakın Doğu Koleji',
-            region: 'Lefkoşa',
-            lat: 35.2268,
-            lng: 33.3245
+            "id": 60,
+            "name": "Yakın Doğu Koleji",
+            "region": "Lefkoşa",
+            "lat": 35.22721599650083,
+            "lng": 33.32145651654004,
+            "verification": "Yüksek",
+            "source": "Okulun resmî iletişim haritası",
+            "sourceUrl": "https://nec.k12.tr/iletisim/"
       }
-].map(school => ({
-      ...school,
-      district: school.region,
-      category: 'Bildirim yok',
-      reports: 0,
-      status: 'Okul konumu'
-    }));
+];
+
+    const demoReportData = [
+      {
+            "schoolId": 7,
+            "category": "Trafik güvenliği",
+            "reports": 18,
+            "status": "İnceleniyor"
+      },
+      {
+            "schoolId": 58,
+            "category": "Okul çevresi güvenliği",
+            "reports": 13,
+            "status": "Yeni"
+      },
+      {
+            "schoolId": 1,
+            "category": "Okul servisi / taşımacılık",
+            "reports": 9,
+            "status": "İnceleniyor"
+      },
+      {
+            "schoolId": 4,
+            "category": "Siber zorbalık / sosyal medya tehdidi",
+            "reports": 5,
+            "status": "Yeni"
+      },
+      {
+            "schoolId": 25,
+            "category": "Şüpheli kişi / araç",
+            "reports": 11,
+            "status": "İlgili birime aktarıldı"
+      },
+      {
+            "schoolId": 44,
+            "category": "Kavga / şiddet / zorbalık",
+            "reports": 7,
+            "status": "İnceleniyor"
+      },
+      {
+            "schoolId": 30,
+            "category": "Kamera / aydınlatma / giriş-çıkış eksikliği",
+            "reports": 6,
+            "status": "Yeni"
+      },
+      {
+            "schoolId": 37,
+            "category": "Trafik güvenliği",
+            "reports": 4,
+            "status": "Yeni"
+      },
+      {
+            "schoolId": 39,
+            "category": "Okul çevresi güvenliği",
+            "reports": 3,
+            "status": "Yeni"
+      },
+      {
+            "schoolId": 35,
+            "category": "Okul servisi / taşımacılık",
+            "reports": 8,
+            "status": "İnceleniyor"
+      },
+      {
+            "schoolId": 34,
+            "category": "Uyuşturucu veya zararlı madde şüphesi",
+            "reports": 6,
+            "status": "İnceleniyor"
+      }
+];
+
+    function getReportForSchool(schoolId) {
+      return demoReportData.find(report => report.schoolId === schoolId) || null;
+    }
 
     const buttons = document.querySelectorAll('[data-view]');
     const views = document.querySelectorAll('.view');
@@ -919,18 +1232,24 @@
       markerLayer = L.layerGroup().addTo(leafletMap);
 
       schoolMapData.forEach(school => {
+        const report = getReportForSchool(school.id);
         L.marker([school.lat, school.lng])
           .bindPopup('<strong>' + school.name + '</strong><br>' +
-            school.district + '<br>' +
-            'Koordinat: ' + school.lat.toFixed(4) + ', ' + school.lng.toFixed(4) + '<br>' +
-            'Bildirim sayısı: ' + school.reports + '<br>' +
-            'Durum: ' + school.status)
+            school.region + '<br>' +
+            'Koordinat: ' + school.lat.toFixed(6) + ', ' + school.lng.toFixed(6) + '<br>' +
+            'Doğrulama: ' + school.verification + '<br>' +
+            'Bildirim sayısı: ' + (report ? report.reports : 0) + '<br>' +
+            'Durum: ' + (report ? report.status : 'Okul konumu'))
           .addTo(markerLayer);
       });
 
-      const heatData = schoolMapData
-        .filter(school => school.reports > 0)
-        .map(school => [school.lat, school.lng, Math.min(school.reports / 20, 1)]);
+      const schoolLookup = new Map(schoolMapData.map(school => [school.id, school]));
+      const heatData = demoReportData
+        .map(report => {
+          const school = schoolLookup.get(report.schoolId);
+          return school ? [school.lat, school.lng, Math.min(report.reports / 20, 1)] : null;
+        })
+        .filter(Boolean);
 
       heatLayer = L.heatLayer(heatData, { radius: 34, blur: 24, maxZoom: 12 });
       leafletMap.fitBounds(markerLayer.getBounds(), { padding: [28, 28] });
@@ -942,11 +1261,11 @@
       initLeafletMap();
       heatVisible = !heatVisible;
 
-      const hasHeatData = schoolMapData.some(school => school.reports > 0);
+      const hasHeatData = demoReportData.some(report => report.reports > 0);
 
       if (heatVisible && hasHeatData) {
-        markerLayer.remove();
         heatLayer.addTo(leafletMap);
+        markerLayer.addTo(leafletMap);
       } else {
         heatVisible = false;
         heatLayer.remove();
