@@ -1252,6 +1252,110 @@
         '</div>').join('');
     }
 
+    function fieldHasValue(field) {
+      if (!field) return false;
+      return String(field.value || '').trim().length > 0;
+    }
+
+    function detectBrowser(userAgent) {
+      if (/Edg\//.test(userAgent)) return 'Microsoft Edge';
+      if (/Chrome\//.test(userAgent)) return 'Google Chrome';
+      if (/Firefox\//.test(userAgent)) return 'Mozilla Firefox';
+      if (/Safari\//.test(userAgent)) return 'Safari';
+      return 'Bilinmiyor';
+    }
+
+    function detectOs(userAgent) {
+      if (/Windows/i.test(userAgent)) return 'Windows';
+      if (/Android/i.test(userAgent)) return 'Android';
+      if (/iPhone|iPad|iPod/i.test(userAgent)) return 'iOS';
+      if (/Mac OS/i.test(userAgent)) return 'macOS';
+      if (/Linux/i.test(userAgent)) return 'Linux';
+      return 'Bilinmiyor';
+    }
+
+    function setSelectOptions(select, options, firstLabel) {
+      const currentValue = select.value || 'all';
+      select.innerHTML = '';
+      select.append(new Option(firstLabel, 'all'));
+      options.forEach(option => select.append(new Option(option.label, option.value)));
+      if ([...select.options].some(option => option.value === currentValue)) {
+        select.value = currentValue;
+      }
+    }
+
+    function populateAdminFilters() {
+      const districts = [...new Set(schoolMapData.map(school => school.region))].sort((a, b) => a.localeCompare(b, 'tr'));
+      const categories = [...new Set(demoReportData.map(report => report.category))].sort((a, b) => a.localeCompare(b, 'tr'));
+      setSelectOptions(adminDistrictFilter, districts.map(district => ({ label: district, value: district })), 'Tümü');
+      setSelectOptions(adminCategoryFilter, categories.map(category => ({ label: category, value: category })), 'Tüm kategoriler');
+      setSelectOptions(adminStatusFilter, statusOrder.map(status => ({ label: status, value: status })), 'Tüm durumlar');
+      updateAdminSchoolFilter();
+    }
+
+    function updateAdminSchoolFilter() {
+      const district = adminDistrictFilter.value;
+      const schools = schoolMapData
+        .filter(school => district === 'all' || school.region === district)
+        .sort((a, b) => a.name.localeCompare(b.name, 'tr'));
+      setSelectOptions(adminSchoolFilter, schools.map(school => ({ label: school.name, value: String(school.id) })), 'Tüm okullar');
+    }
+
+    function reportMatchesDateFilter(report) {
+      const selectedRange = adminDateFilter.value;
+      if (selectedRange === 'all') return true;
+      const reportDate = new Date(report.date + 'T00:00:00');
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (selectedRange === 'year') return reportDate.getFullYear() === today.getFullYear();
+      const days = Number(selectedRange);
+      if (!Number.isFinite(days)) return true;
+      const threshold = new Date(today);
+      threshold.setDate(today.getDate() - days);
+      return reportDate >= threshold;
+    }
+
+    function getFilteredReports() {
+      return demoReportData.filter(report => {
+        if (adminDistrictFilter.value !== 'all' && report.district !== adminDistrictFilter.value) return false;
+        if (adminSchoolFilter.value !== 'all' && String(report.schoolId) !== adminSchoolFilter.value) return false;
+        if (adminCategoryFilter.value !== 'all' && report.category !== adminCategoryFilter.value) return false;
+        if (adminStatusFilter.value !== 'all' && report.status !== adminStatusFilter.value) return false;
+        return reportMatchesDateFilter(report);
+      });
+    }
+
+    function updateSecurityCard() {
+      const userAgent = navigator.userAgent || '';
+      document.getElementById('visitorIp').textContent = 'Web arayüzü tek başına alamaz; sunucu tarafı kayıtla tutulabilir';
+      document.getElementById('visitorDevice').textContent = /Mobi|Android/i.test(userAgent) ? 'Mobil cihaz' : 'Masaüstü / dizüstü';
+      document.getElementById('visitorBrowser').textContent = detectBrowser(userAgent);
+      document.getElementById('visitorOs').textContent = detectOs(userAgent);
+      document.getElementById('visitorLanguage').textContent = navigator.language || 'Bilinmiyor';
+      document.getElementById('visitorTimezone').textContent = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Bilinmiyor';
+      document.getElementById('visitorScreen').textContent = window.screen ? window.screen.width + ' x ' + window.screen.height : 'Bilinmiyor';
+      document.getElementById('visitorTime').textContent = new Date().toLocaleString('tr-TR');
+    }
+
+    function requestBrowserLocation() {
+      const locationValue = document.getElementById('visitorLocation');
+      const accuracyValue = document.getElementById('visitorAccuracy');
+      if (!navigator.geolocation) {
+        locationValue.textContent = 'Tarayıcı konum izni desteklemiyor';
+        accuracyValue.textContent = '-';
+        return;
+      }
+      locationValue.textContent = 'Konum izni bekleniyor';
+      accuracyValue.textContent = '-';
+      navigator.geolocation.getCurrentPosition(position => {
+        locationValue.textContent = position.coords.latitude.toFixed(6) + ', ' + position.coords.longitude.toFixed(6);
+        accuracyValue.textContent = 'Yaklaşık ' + Math.round(position.coords.accuracy) + ' metre';
+      }, () => {
+        locationValue.textContent = 'Konum izni verilmedi veya alınamadı';
+        accuracyValue.textContent = '-';
+      }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+    }
+
     function renderAdminPanel() {
       const reports = getFilteredReports();
       const groups = getGroupedReports(reports);
