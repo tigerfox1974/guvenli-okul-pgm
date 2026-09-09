@@ -1535,6 +1535,7 @@
     let markerLayer;
     let countLayer;
     let heatLayer;
+    let islandBounds;
     let heatVisible = false;
     let markersVisible = true;
     let countsVisible = true;
@@ -1545,6 +1546,10 @@
       leafletMap = L.map('map', {
         center: [35.18, 33.36],
         zoom: 9,
+        zoomSnap: 0.5,
+        zoomDelta: 0.5,
+        wheelPxPerZoomLevel: 120,
+        zoomAnimation: true,
         scrollWheelZoom: true
       });
 
@@ -1560,10 +1565,29 @@
       updateCountLayer();
 
       heatLayer = createHeatLayer();
-      leafletMap.fitBounds(markerLayer.getBounds(), { padding: [28, 28] });
+      islandBounds = markerLayer.getBounds();
+      fitIslandBounds();
+
+      leafletMap.on('click', () => fitIslandBounds());
+      leafletMap.on('zoomend', () => {
+        if (heatVisible) {
+          updateHeatLayer();
+          updateMapLayers();
+        }
+      });
 
       setTimeout(() => leafletMap.invalidateSize(), 150);
       updateMapLayers();
+    }
+
+    function fitIslandBounds() {
+      if (!leafletMap || !islandBounds) return;
+      leafletMap.fitBounds(islandBounds, {
+        padding: [28, 28],
+        maxZoom: 9,
+        animate: true,
+        duration: 0.55
+      });
     }
 
     function renderSchoolMarkers() {
@@ -1585,20 +1609,33 @@
     function buildHeatData() {
       return getGroupedReports(getFilteredReports())
         .filter(group => group.lat && group.lng && group.total > 0)
-        .map(group => [group.lat, group.lng, Math.min(group.total / 18, 1)]);
+        .map(group => [group.lat, group.lng, Math.min((group.total + 3) / 18, 1)]);
+    }
+
+    function getHeatOptions() {
+      const zoom = leafletMap ? leafletMap.getZoom() : 9;
+      if (zoom <= 8) {
+        return { radius: 58, blur: 34, minOpacity: 0.42 };
+      }
+      if (zoom <= 10) {
+        return { radius: 46, blur: 28, minOpacity: 0.34 };
+      }
+      return { radius: 34, blur: 20, minOpacity: 0.26 };
     }
 
     function createHeatLayer() {
       if (typeof L === 'undefined' || typeof L.heatLayer !== 'function') return null;
+      const heatOptions = getHeatOptions();
       return L.heatLayer(buildHeatData(), {
-        radius: 36,
-        blur: 22,
+        radius: heatOptions.radius,
+        blur: heatOptions.blur,
+        minOpacity: heatOptions.minOpacity,
         maxZoom: 12,
         gradient: {
-          0.15: '#fee2e2',
-          0.35: '#fca5a5',
-          0.55: '#f97316',
-          0.75: '#dc2626',
+          0.12: '#fee2e2',
+          0.32: '#fca5a5',
+          0.52: '#fb923c',
+          0.72: '#dc2626',
           1.0: '#7f1d1d'
         }
       });
