@@ -84,6 +84,10 @@
     .filters .primary, .filters .secondary { min-height: 42px; }
     .map-panel { padding: 16px; overflow: hidden; }
     .map-toolbar { display: flex; justify-content: space-between; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+    .map-controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; justify-content: flex-end; }
+    .map-controls button { border: 1px solid var(--line); background: #fff; color: var(--ink); border-radius: 999px; padding: 8px 11px; cursor: pointer; font-weight: 800; font-size: 12px; }
+    .map-controls button.active { border-color: var(--blue); background: #dbeafe; color: #1e40af; }
+    .map-controls button.heat.active { border-color: var(--red); background: #fee2e2; color: #991b1b; }
     .map { position: relative; min-height: 500px; background: #e5e7eb; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
     .map .leaflet-container { font: inherit; }
     .leaflet-popup-content { margin: 10px 12px; line-height: 1.45; }
@@ -92,6 +96,10 @@
     .dot { width: 11px; height: 11px; border-radius: 999px; display: inline-block; }
     .dot.blue { background: var(--blue); }
     .dot.red { background: var(--red); }
+    .count-marker { width: 32px; height: 32px; border-radius: 999px; display: grid; place-items: center; background: #b91c1c; color: #fff; border: 3px solid #fff; box-shadow: 0 6px 16px rgba(127, 29, 29, .35); font-weight: 900; font-size: 13px; }
+    .count-marker.small { background: #f97316; }
+    .count-marker.medium { background: #dc2626; }
+    .count-marker.large { background: #991b1b; }
     table { width: 100%; border-collapse: collapse; }
     th, td { padding: 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
     th { background: #f3f4f6; font-size: 13px; }
@@ -282,6 +290,8 @@
               <option value="year">Bu yıl</option>
             </select>
           </label>
+          <button id="markerToggle" class="secondary" type="button">Okul Pinlerini Gizle</button>
+          <button id="countToggle" class="secondary" type="button">Olay Sayılarını Gizle</button>
           <button id="heatToggle" class="primary" type="button">Isı Haritasını Aç</button>
           <button id="clearFilters" class="secondary" type="button">Filtreleri Temizle</button>
           <div id="filterResult" class="filter-result">Demo bildirimleri filtrelenmeye hazır.</div>
@@ -298,10 +308,15 @@
           <div class="panel map-panel">
             <div class="map-toolbar">
               <div><h2>KKTC Okul Güvenliği Haritası</h2><p>Okul pinleri Excel koordinat listesine göre sabit gösterilir. Isı haritası ayrı demo bildirim verisinden üretilir.</p></div>
-              <strong id="mapMode">Nokta görünümü</strong>
+              <div class="map-controls" aria-label="Harita katmanları">
+                <button id="mapMarkerToggle" class="active" type="button">Okul Pinleri</button>
+                <button id="mapCountToggle" class="active" type="button">Olay Sayıları</button>
+                <button id="mapHeatToggle" class="heat" type="button">Kırmızı Isı Haritası</button>
+              </div>
+              <strong id="mapMode">Okul pinleri ve olay sayıları görünümü</strong>
             </div>
             <div id="map" class="map" aria-label="Leaflet KKTC okul güvenliği haritası"></div>
-            <div class="legend"><span><i class="dot blue"></i> Okul noktası</span><span><i class="dot red"></i> Bildirim yoğunluğu / ısı haritası</span></div>
+            <div class="legend"><span><i class="dot blue"></i> Okul noktası</span><span><i class="dot red"></i> Kırmızı bildirim yoğunluğu</span><span><i class="count-marker small" style="display:inline-grid;width:22px;height:22px;font-size:11px;border-width:2px">8</i> Okuldaki olay sayısı</span></div>
           </div>
           <div class="table-wrap" style="margin-top:18px;overflow:auto">
             <table>
@@ -1378,6 +1393,8 @@
       renderGroupDetail(selectedGroupKey, reports);
       filterResult.textContent = groups.length + ' grup, toplam ' + reports.length + ' tekil bildirim gösteriliyor.';
       updateHeatLayer();
+      updateCountLayer();
+      updateMapLayers();
     }
 
     function focusSchoolOnMap(schoolId) {
@@ -1508,11 +1525,19 @@
     updateFormFlow();
 
     const heatToggle = document.getElementById('heatToggle');
+    const markerToggle = document.getElementById('markerToggle');
+    const countToggle = document.getElementById('countToggle');
+    const mapHeatToggle = document.getElementById('mapHeatToggle');
+    const mapMarkerToggle = document.getElementById('mapMarkerToggle');
+    const mapCountToggle = document.getElementById('mapCountToggle');
     const mapMode = document.getElementById('mapMode');
     let leafletMap;
     let markerLayer;
+    let countLayer;
     let heatLayer;
     let heatVisible = false;
+    let markersVisible = true;
+    let countsVisible = true;
 
     function initLeafletMap() {
       if (leafletMap || typeof L === 'undefined') return;
@@ -1529,7 +1554,21 @@
       }).addTo(leafletMap);
 
       markerLayer = L.layerGroup().addTo(leafletMap);
+      countLayer = L.layerGroup().addTo(leafletMap);
 
+      renderSchoolMarkers();
+      updateCountLayer();
+
+      heatLayer = createHeatLayer();
+      leafletMap.fitBounds(markerLayer.getBounds(), { padding: [28, 28] });
+
+      setTimeout(() => leafletMap.invalidateSize(), 150);
+      updateMapLayers();
+    }
+
+    function renderSchoolMarkers() {
+      if (!markerLayer || typeof L === 'undefined') return;
+      markerLayer.clearLayers();
       schoolMapData.forEach(school => {
         const report = getReportForSchool(school.id);
         L.marker([school.lat, school.lng])
@@ -1541,44 +1580,129 @@
             'Durum: ' + (report ? report.status : 'Okul konumu'))
           .addTo(markerLayer);
       });
-
-      heatLayer = typeof L.heatLayer === 'function' ? L.heatLayer(buildHeatData(), { radius: 34, blur: 24, maxZoom: 12 }) : null;
-      leafletMap.fitBounds(markerLayer.getBounds(), { padding: [28, 28] });
-
-      setTimeout(() => leafletMap.invalidateSize(), 150);
     }
 
     function buildHeatData() {
       return getGroupedReports(getFilteredReports())
         .filter(group => group.lat && group.lng && group.total > 0)
-        .map(group => [group.lat, group.lng, Math.min(group.total / 20, 1)]);
+        .map(group => [group.lat, group.lng, Math.min(group.total / 18, 1)]);
+    }
+
+    function createHeatLayer() {
+      if (typeof L === 'undefined' || typeof L.heatLayer !== 'function') return null;
+      return L.heatLayer(buildHeatData(), {
+        radius: 36,
+        blur: 22,
+        maxZoom: 12,
+        gradient: {
+          0.15: '#fee2e2',
+          0.35: '#fca5a5',
+          0.55: '#f97316',
+          0.75: '#dc2626',
+          1.0: '#7f1d1d'
+        }
+      });
+    }
+
+    function getSchoolReportTotals() {
+      const totals = new Map();
+      getFilteredReports().forEach(report => {
+        totals.set(report.schoolId, (totals.get(report.schoolId) || 0) + 1);
+      });
+      return totals;
+    }
+
+    function countMarkerClass(count) {
+      if (count >= 15) return 'large';
+      if (count >= 7) return 'medium';
+      return 'small';
+    }
+
+    function updateCountLayer() {
+      if (!leafletMap || !countLayer || typeof L === 'undefined') return;
+      countLayer.clearLayers();
+      const totals = getSchoolReportTotals();
+      schoolMapData.forEach(school => {
+        const count = totals.get(school.id) || 0;
+        if (!count) return;
+        const icon = L.divIcon({
+          className: '',
+          html: '<div class="count-marker ' + countMarkerClass(count) + '" title="' + school.name + ' / ' + count + ' bildirim">' + count + '</div>',
+          iconSize: [32, 32],
+          iconAnchor: [-8, 28]
+        });
+        L.marker([school.lat, school.lng], { icon })
+          .bindPopup('<strong>' + school.name + '</strong><br>' + school.region + '<br>Toplam bildirim: ' + count)
+          .addTo(countLayer);
+      });
     }
 
     function updateHeatLayer() {
-      if (!leafletMap || typeof L.heatLayer !== 'function') return;
+      if (!leafletMap) return;
       if (heatLayer && leafletMap.hasLayer(heatLayer)) heatLayer.remove();
-      heatLayer = L.heatLayer(buildHeatData(), { radius: 34, blur: 24, maxZoom: 12 });
-      if (heatVisible && buildHeatData().length) heatLayer.addTo(leafletMap);
+      heatLayer = createHeatLayer();
     }
 
-    heatToggle.addEventListener('click', () => {
-      initLeafletMap();
-      heatVisible = !heatVisible;
+    function updateLayerButtons() {
+      markerToggle.textContent = markersVisible ? 'Okul Pinlerini Gizle' : 'Okul Pinlerini Göster';
+      countToggle.textContent = countsVisible ? 'Olay Sayılarını Gizle' : 'Olay Sayılarını Göster';
+      heatToggle.textContent = heatVisible ? 'Isı Haritasını Gizle' : 'Isı Haritasını Aç';
+      mapMarkerToggle.classList.toggle('active', markersVisible);
+      mapCountToggle.classList.toggle('active', countsVisible);
+      mapHeatToggle.classList.toggle('active', heatVisible);
+    }
 
+    function updateMapModeText(hasHeatData) {
+      const visible = [];
+      if (markersVisible) visible.push('okul pinleri');
+      if (countsVisible) visible.push('olay sayıları');
+      if (heatVisible && hasHeatData) visible.push('kırmızı ısı haritası');
+      mapMode.textContent = visible.length ? visible.join(' + ') + ' görünümü' : 'Tüm harita katmanları kapalı';
+      if (heatVisible && !hasHeatData) mapMode.textContent = 'Isı haritası için bildirim verisi yok';
+    }
+
+    function updateMapLayers() {
+      if (!leafletMap) return;
       const hasHeatData = buildHeatData().length > 0;
 
-      if (heatVisible && hasHeatData && heatLayer) {
-        heatLayer.addTo(leafletMap);
-        markerLayer.addTo(leafletMap);
-      } else {
-        heatVisible = false;
-        if (heatLayer) heatLayer.remove();
-        markerLayer.addTo(leafletMap);
-      }
+      if (markersVisible) markerLayer.addTo(leafletMap);
+      else if (leafletMap.hasLayer(markerLayer)) markerLayer.remove();
 
-      heatToggle.textContent = heatVisible ? 'Nokta Görünümüne Dön' : 'Isı Haritasını Aç';
-      mapMode.textContent = heatVisible ? 'Leaflet ısı haritası görünümü' : (hasHeatData ? 'Okul pinleri görünümü' : 'Isı haritası için bildirim verisi yok');
-    });
+      if (countsVisible) countLayer.addTo(leafletMap);
+      else if (leafletMap.hasLayer(countLayer)) countLayer.remove();
+
+      if (heatVisible && hasHeatData && heatLayer) heatLayer.addTo(leafletMap);
+      else if (heatLayer && leafletMap.hasLayer(heatLayer)) heatLayer.remove();
+
+      updateLayerButtons();
+      updateMapModeText(hasHeatData);
+    }
+
+    function toggleHeatLayer() {
+      initLeafletMap();
+      heatVisible = !heatVisible;
+      updateHeatLayer();
+      updateMapLayers();
+    }
+
+    function toggleMarkerLayer() {
+      initLeafletMap();
+      markersVisible = !markersVisible;
+      updateMapLayers();
+    }
+
+    function toggleCountLayer() {
+      initLeafletMap();
+      countsVisible = !countsVisible;
+      updateMapLayers();
+    }
+
+    heatToggle.addEventListener('click', toggleHeatLayer);
+    mapHeatToggle.addEventListener('click', toggleHeatLayer);
+    markerToggle.addEventListener('click', toggleMarkerLayer);
+    mapMarkerToggle.addEventListener('click', toggleMarkerLayer);
+    countToggle.addEventListener('click', toggleCountLayer);
+    mapCountToggle.addEventListener('click', toggleCountLayer);
   </script>
 </body>
 </html>
