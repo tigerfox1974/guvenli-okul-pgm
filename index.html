@@ -100,8 +100,6 @@
     .count-marker.small { background: #f97316; }
     .count-marker.medium { background: #dc2626; }
     .count-marker.large { background: #991b1b; }
-    .heat-overlay { position: absolute; inset: 0; pointer-events: none; z-index: 450; overflow: hidden; }
-    .heat-spot { position: absolute; border-radius: 999px; transform: translate(-50%, -50%); mix-blend-mode: multiply; will-change: transform; }
     table { width: 100%; border-collapse: collapse; }
     th, td { padding: 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
     th { background: #f3f4f6; font-size: 13px; }
@@ -1633,17 +1631,14 @@
       renderSchoolMarkers();
       updateCountLayer();
 
-      heatLayer = null;
+      heatLayer = createHeatLayer();
       islandBounds = markerLayer.getBounds();
       fitIslandBounds();
 
       leafletMap.on('click', () => fitIslandBounds());
       leafletMap.on('zoomend', () => {
-        if (heatVisible) refreshHeatLayer();
+        if (heatVisible && heatLayer && typeof heatLayer.redraw === 'function') heatLayer.redraw();
         updateMapLayers();
-      });
-      leafletMap.on('moveend', () => {
-        if (heatVisible) refreshHeatLayer();
       });
 
       setTimeout(() => {
@@ -1683,30 +1678,28 @@
     function buildHeatData() {
       return getGroupedReports(getFilteredReports())
         .filter(group => group.lat && group.lng && group.total > 0)
-        .map(group => [group.lat, group.lng, Math.min((group.total + 3) / 18, 1), group.total]);
+        .map(group => [group.lat, group.lng, Math.min((group.total + 3) / 18, 1)]);
     }
 
     function getHeatOptions() {
-      const zoom = leafletMap ? leafletMap.getZoom() : 9;
-      if (zoom <= 7) {
-        return { radius: 118, opacity: 0.82 };
-      }
-      if (zoom <= 8.5) {
-        return { radius: 92, opacity: 0.78 };
-      }
-      if (zoom <= 10.5) {
-        return { radius: 68, opacity: 0.74 };
-      }
-      return { radius: 48, opacity: 0.7 };
+      return {
+        radius: 42,
+        blur: 26,
+        minOpacity: 0.28,
+        maxZoom: 12,
+        gradient: {
+          0.18: '#fff33b',
+          0.38: '#fdc70c',
+          0.58: '#f3903f',
+          0.78: '#ed683c',
+          1.0: '#e93e3a'
+        }
+      };
     }
 
     function createHeatLayer() {
-      const container = leafletMap && leafletMap.getContainer ? leafletMap.getContainer() : null;
-      if (!container) return null;
-      const overlay = document.createElement('div');
-      overlay.className = 'heat-overlay';
-      container.appendChild(overlay);
-      return overlay;
+      if (typeof L === 'undefined' || typeof L.heatLayer !== 'function') return null;
+      return L.heatLayer(buildHeatData(), getHeatOptions());
     }
 
     function getSchoolReportTotals() {
@@ -1742,40 +1735,26 @@
       });
     }
 
-    function removeHeatLayer() {
-      if (!heatLayer) return;
-      heatLayer.innerHTML = '';
-      if (heatLayer.parentNode) heatLayer.parentNode.removeChild(heatLayer);
-      heatLayer = null;
+    function ensureHeatLayer() {
+      if (!leafletMap) return null;
+      if (!heatLayer) heatLayer = createHeatLayer();
+      return heatLayer;
     }
 
-    function renderHeatOverlay() {
-      if (!leafletMap || !heatLayer || !heatVisible) return;
-      const heatData = buildHeatData();
-      const options = getHeatOptions();
-      heatLayer.innerHTML = heatData.map(point => {
-        const pixel = leafletMap.latLngToContainerPoint([point[0], point[1]]);
-        const radius = Math.round(options.radius * (0.72 + point[2] * 0.42));
-        const opacity = Math.min(options.opacity, 0.38 + point[2] * 0.44);
-        return '<div class="heat-spot" title="' + point[3] + ' bildirim" style="' +
-          'left:' + pixel.x.toFixed(1) + 'px;' +
-          'top:' + pixel.y.toFixed(1) + 'px;' +
-          'width:' + radius + 'px;' +
-          'height:' + radius + 'px;' +
-          'opacity:' + opacity.toFixed(2) + ';' +
-          'background:radial-gradient(circle, #e93e3a 0%, #ed683c 34%, #f3903f 55%, #fdc70c 74%, #fff33b00 100%);' +
-        '"></div>';
-      }).join('');
+    function removeHeatLayer() {
+      if (!leafletMap || !heatLayer) return;
+      if (leafletMap.hasLayer(heatLayer)) leafletMap.removeLayer(heatLayer);
     }
 
     function refreshHeatLayer() {
       if (!leafletMap) return;
-      if (!heatVisible || !buildHeatData().length) {
-        removeHeatLayer();
-        return;
-      }
-      if (!heatLayer) heatLayer = createHeatLayer();
-      renderHeatOverlay();
+      const layer = ensureHeatLayer();
+      if (!layer) return;
+      const data = buildHeatData();
+      if (typeof layer.setLatLngs === 'function') layer.setLatLngs(data);
+      if (heatVisible && data.length && !leafletMap.hasLayer(layer)) layer.addTo(leafletMap);
+      if ((!heatVisible || !data.length) && leafletMap.hasLayer(layer)) leafletMap.removeLayer(layer);
+      if (typeof layer.redraw === 'function') layer.redraw();
     }
 
     function updateHeatLayer() {
