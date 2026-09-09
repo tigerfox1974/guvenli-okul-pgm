@@ -56,6 +56,14 @@
     .optional-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
     .admin-layout { display: grid; grid-template-columns: 320px 1fr; gap: 18px; align-items: start; }
     .security-card { margin-bottom: 18px; }
+    .security-compact { display: grid; gap: 12px; padding: 14px; border: 1px solid #bfdbfe; background: #eff6ff; border-radius: 8px; }
+    .security-compact h2 { margin-bottom: 6px; }
+    .security-compact p { margin-bottom: 0; }
+    .security-compact-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+    .security-compact .security-item { padding: 8px; background: #fff; }
+    .security-compact .security-item span { font-size: 11px; }
+    .security-compact .security-item strong { font-size: 12px; line-height: 1.35; }
+    .security-compact-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; color: var(--muted); font-size: 12px; }
     .admin-summary { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 18px; }
     .summary-card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px; }
     .summary-card span { display: block; color: var(--muted); font-size: 12px; margin-bottom: 6px; }
@@ -119,7 +127,7 @@
     .emergency-card { width: min(620px, 100%); background: #fff; border-radius: 8px; padding: 26px; text-align: center; box-shadow: 0 24px 70px rgba(0,0,0,.28); }
     .countdown { width: 74px; height: 74px; border-radius: 999px; display: grid; place-items: center; margin: 8px auto 16px; background: #fee2e2; color: var(--red); font-size: 34px; font-weight: 800; border: 3px solid #fecaca; }
     .emergency-card .primary:disabled { background: #9ca3af; cursor: wait; }
-    @media (max-width: 920px) { .hero, .admin-layout, form, .optional-grid, .security-grid, .admin-summary { grid-template-columns: 1fr; } h1 { font-size: 30px; } main { padding: 16px; } }
+    @media (max-width: 920px) { .hero, .admin-layout, form, .optional-grid, .security-grid, .security-compact-grid, .admin-summary { grid-template-columns: 1fr; } h1 { font-size: 30px; } main { padding: 16px; } }
   </style>
 </head>
 <body>
@@ -159,8 +167,28 @@
 
     <section id="report" class="view">
       <div class="panel">
-        <h2>Anonim Güvenlik Bildirimi</h2>
-        <p>Form adım adım açılır. Zorunlu alan tamamlanmadan bir sonraki alan aktif olmaz. Ad soyad, telefon ve e-posta isteğe bağlıdır.</p>
+        <div class="security-card security-compact">
+          <div>
+            <h2>Anonim Güvenlik Bildirimi</h2>
+            <p>Form adım adım açılır. Zorunlu alan tamamlanmadan bir sonraki alan aktif olmaz. Ad soyad, telefon ve e-posta isteğe bağlıdır.</p>
+          </div>
+          <div class="security-compact-grid" aria-label="Teknik güvenlik kaydı">
+            <div class="security-item"><span>Cihaz</span><strong id="visitorDevice">-</strong></div>
+            <div class="security-item"><span>Tarayıcı</span><strong id="visitorBrowser">-</strong></div>
+            <div class="security-item"><span>İşletim sistemi</span><strong id="visitorOs">-</strong></div>
+            <div class="security-item"><span>Dil</span><strong id="visitorLanguage">-</strong></div>
+            <div class="security-item"><span>Saat dilimi</span><strong id="visitorTimezone">-</strong></div>
+            <div class="security-item"><span>Ekran</span><strong id="visitorScreen">-</strong></div>
+            <div class="security-item"><span>Kayıt zamanı</span><strong id="visitorTime">-</strong></div>
+            <div class="security-item"><span>IP adresi</span><strong id="visitorIp">Sunucu tarafı kayıtla tutulabilir</strong></div>
+            <div class="security-item"><span>Konum</span><strong id="visitorLocation">İzin istenmedi</strong></div>
+            <div class="security-item"><span>Doğruluk</span><strong id="visitorAccuracy">-</strong></div>
+          </div>
+          <div class="security-compact-actions">
+            <button id="locationButton" class="secondary" type="button">Konum İzni İste</button>
+            <span>IMEI, cihaz seri no ve MAC adresi web tarayıcısından alınamaz.</span>
+          </div>
+        </div>
         <form id="reportForm">
           <label>İlçe *
             <select id="districtSelect" required data-step="0">
@@ -265,27 +293,6 @@
             <div class="summary-card"><span>En yoğun ilçe</span><strong id="summaryTopDistrict">-</strong></div>
             <div class="summary-card"><span>En yoğun kategori</span><strong id="summaryTopCategory">-</strong></div>
           </div>
-          <div class="panel security-card">
-            <h2>Teknik Güvenlik Kaydı Demo</h2>
-            <p>Bu kart geçici test amaçlıdır. Normal web sayfasının alabileceği teknik bilgileri gösterir; IMEI, cihaz seri no ve MAC adresi web tarayıcısından alınamaz.</p>
-            <div class="security-grid">
-              <div class="security-item"><span>IP adresi</span><strong id="visitorIp">Alınıyor...</strong></div>
-              <div class="security-item"><span>Cihaz türü</span><strong id="visitorDevice">-</strong></div>
-              <div class="security-item"><span>Tarayıcı</span><strong id="visitorBrowser">-</strong></div>
-              <div class="security-item"><span>İşletim sistemi</span><strong id="visitorOs">-</strong></div>
-              <div class="security-item"><span>Dil</span><strong id="visitorLanguage">-</strong></div>
-              <div class="security-item"><span>Saat dilimi</span><strong id="visitorTimezone">-</strong></div>
-              <div class="security-item"><span>Ekran boyutu</span><strong id="visitorScreen">-</strong></div>
-              <div class="security-item"><span>Kayıt zamanı</span><strong id="visitorTime">-</strong></div>
-              <div class="security-item"><span>Tarayıcı konumu</span><strong id="visitorLocation">İzin istenmedi</strong></div>
-              <div class="security-item"><span>Konum doğruluğu</span><strong id="visitorAccuracy">-</strong></div>
-            </div>
-            <div class="actions">
-              <button id="locationButton" class="secondary" type="button">Konum İzni İste</button>
-            </div>
-            <p class="security-note">Üretim sürümünde bu bilgiler yalnızca kötüye kullanım ve bilgi kirliliğini azaltmak için sınırlı teknik güvenlik kaydı olarak tutulmalıdır. Kesin konum bilgisi ancak kullanıcının açık tarayıcı izniyle alınabilir.</p>
-          </div>
-
           <div class="panel map-panel">
             <div class="map-toolbar">
               <div><h2>KKTC Okul Güvenliği Haritası</h2><p>Okul pinleri Excel koordinat listesine göre sabit gösterilir. Isı haritası ayrı demo bildirim verisinden üretilir.</p></div>
@@ -1439,7 +1446,10 @@
       views.forEach(view => view.classList.toggle('active', view.id === id));
       navButtons.forEach(button => button.classList.toggle('active', button.dataset.view === id));
       window.scrollTo({ top: 0, behavior: 'smooth' });
-      if (id === 'report') startEmergencyGate();
+      if (id === 'report') {
+        updateSecurityCard();
+        startEmergencyGate();
+      }
       if (id === 'admin') {
         updateSecurityCard();
         populateAdminFilters();
