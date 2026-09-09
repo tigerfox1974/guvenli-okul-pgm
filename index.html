@@ -73,6 +73,12 @@
     .regional-risk { margin-bottom: 18px; padding: 16px; }
     .regional-risk-head { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; flex-wrap: wrap; margin-bottom: 12px; }
     .regional-risk-head p { margin-bottom: 0; font-size: 13px; }
+    .regional-matrix-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 12px; }
+    .regional-matrix { min-width: 760px; }
+    .regional-matrix th, .regional-matrix td { padding: 9px 10px; font-size: 13px; white-space: nowrap; }
+    .regional-matrix th { color: var(--navy); }
+    .regional-matrix td:not(:first-child), .regional-matrix th:not(:first-child) { text-align: right; }
+    .matrix-district-button { border: 0; background: transparent; color: var(--blue); font-weight: 800; cursor: pointer; padding: 0; text-align: left; }
     .regional-risk-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
     .risk-district { border: 1px solid var(--line); border-radius: 8px; background: #f8fafc; padding: 11px; display: grid; gap: 9px; cursor: pointer; text-align: left; font: inherit; color: inherit; }
     .risk-district:hover, .risk-district.active { border-color: var(--blue); background: #eff6ff; }
@@ -340,6 +346,12 @@
                 <p>İlçe bazında öne çıkan kategori yoğunlukları. İlçeye veya kategoriye tıklayınca panel filtrelenir.</p>
               </div>
               <button id="clearRiskFocus" class="secondary" type="button">Risk Odağını Temizle</button>
+            </div>
+            <div class="regional-matrix-wrap">
+              <table class="regional-matrix">
+                <thead><tr><th>İlçe</th><th>Trafik</th><th>Kavga/Zorbalık</th><th>Şüpheli kişi/araç</th><th>Servis</th><th>Diğer</th><th>Toplam</th></tr></thead>
+                <tbody id="regionalRiskMatrix"><tr><td class="empty-row" colspan="7">Bölgesel özet hazırlanıyor.</td></tr></tbody>
+              </table>
             </div>
             <div id="regionalRiskGrid" class="regional-risk-grid" aria-label="İlçe ve kategori risk özeti"></div>
           </div>
@@ -1119,6 +1131,7 @@
     const clearFilters = document.getElementById('clearFilters');
     const clearRiskFocus = document.getElementById('clearRiskFocus');
     const filterResult = document.getElementById('filterResult');
+    const regionalRiskMatrix = document.getElementById('regionalRiskMatrix');
     const regionalRiskGrid = document.getElementById('regionalRiskGrid');
     const adminReportRows = document.getElementById('adminReportRows');
     const detailIntro = document.getElementById('detailIntro');
@@ -1303,12 +1316,57 @@
         topCategories: Object.entries(row.categories)
           .sort((a, b) => b[1] - a[1])
           .slice(0, 3)
-          .map(([category, count]) => ({ category, count, width: Math.max(12, Math.round(count / maxCategoryCount * 100)) }))
+        .map(([category, count]) => ({ category, count, width: Math.max(12, Math.round(count / maxCategoryCount * 100)) }))
       }));
+    }
+
+    function riskMatrixBucket(category) {
+      if (category === 'Trafik güvenliği') return 'traffic';
+      if (category === 'Kavga / şiddet / zorbalık') return 'violence';
+      if (category === 'Şüpheli kişi / araç') return 'suspicious';
+      if (category === 'Okul servisi / taşımacılık') return 'service';
+      return 'other';
+    }
+
+    function renderRegionalRiskMatrix(reports) {
+      const rows = new Map();
+      reports.forEach(report => {
+        if (!rows.has(report.district)) {
+          rows.set(report.district, {
+            district: report.district,
+            traffic: 0,
+            violence: 0,
+            suspicious: 0,
+            service: 0,
+            other: 0,
+            total: 0
+          });
+        }
+        const row = rows.get(report.district);
+        row[riskMatrixBucket(report.category)] += 1;
+        row.total += 1;
+      });
+      const sortedRows = [...rows.values()].sort((a, b) => b.total - a.total);
+      if (!sortedRows.length) {
+        regionalRiskMatrix.innerHTML = '<tr><td class="empty-row" colspan="7">Seçilen filtrelere göre bölgesel özet yok.</td></tr>';
+        return;
+      }
+      regionalRiskMatrix.innerHTML = sortedRows.map(row =>
+        '<tr>' +
+          '<td><button class="matrix-district-button" type="button" data-risk-district="' + row.district + '">' + row.district + '</button></td>' +
+          '<td>' + row.traffic + '</td>' +
+          '<td>' + row.violence + '</td>' +
+          '<td>' + row.suspicious + '</td>' +
+          '<td>' + row.service + '</td>' +
+          '<td>' + row.other + '</td>' +
+          '<td><strong>' + row.total + '</strong></td>' +
+        '</tr>'
+      ).join('');
     }
 
     function renderRegionalRiskPanel(reports) {
       const rows = getRegionalRiskRows(reports);
+      renderRegionalRiskMatrix(reports);
       if (!rows.length) {
         regionalRiskGrid.innerHTML = '<div class="empty-row">Seçilen filtrelere göre bölgesel risk verisi yok.</div>';
         return;
@@ -1673,17 +1731,28 @@
       renderAdminPanel();
       focusDistrictOnMap('all');
     });
-    regionalRiskGrid.addEventListener('click', event => {
-      const button = event.target.closest('[data-risk-district]');
-      if (!button) return;
+    function applyRiskFocusFromButton(button) {
       adminDistrictFilter.value = button.dataset.riskDistrict;
       updateAdminSchoolFilter();
       adminSchoolFilter.value = 'all';
       if (button.dataset.riskCategory) {
         adminCategoryFilter.value = button.dataset.riskCategory;
+      } else {
+        adminCategoryFilter.value = 'all';
       }
       renderAdminPanel();
       focusDistrictOnMap(button.dataset.riskDistrict);
+    }
+
+    regionalRiskMatrix.addEventListener('click', event => {
+      const button = event.target.closest('[data-risk-district]');
+      if (!button) return;
+      applyRiskFocusFromButton(button);
+    });
+    regionalRiskGrid.addEventListener('click', event => {
+      const button = event.target.closest('[data-risk-district]');
+      if (!button) return;
+      applyRiskFocusFromButton(button);
     });
     adminReportRows.addEventListener('click', event => {
       const button = event.target.closest('[data-group-key]');
@@ -1791,26 +1860,15 @@
       });
     }
 
-    function heatOffsetForReport(report) {
-      const seed = String(report.id || report.schoolId).split('').reduce((total, character) => {
-        return ((total << 5) - total + character.charCodeAt(0)) >>> 0;
-      }, 0);
-      const angle = (seed % 360) * Math.PI / 180;
-      const distance = 0.0018 + ((seed >>> 8) % 1000) / 1000 * 0.0075;
-      const lngScale = Math.max(Math.cos(report.lat * Math.PI / 180), 0.7);
-      return {
-        lat: Math.cos(angle) * distance,
-        lng: Math.sin(angle) * distance / lngScale
-      };
-    }
-
     function buildHeatData() {
-      return getFilteredReports()
-        .filter(report => report.lat && report.lng)
-        .map(report => {
-          const offset = heatOffsetForReport(report);
-          return [report.lat + offset.lat, report.lng + offset.lng, 0.62];
-        });
+      const groups = getGroupedReports(getFilteredReports())
+        .filter(group => group.lat && group.lng && group.total > 0);
+      const maxTotal = Math.max(...groups.map(group => group.total), 1);
+      return groups.map(group => [
+        group.lat,
+        group.lng,
+        Math.max(0.22, Math.min(group.total / maxTotal, 1))
+      ]);
     }
 
     function getHeatOptions() {
