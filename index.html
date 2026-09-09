@@ -100,6 +100,8 @@
     .count-marker.small { background: #f97316; }
     .count-marker.medium { background: #dc2626; }
     .count-marker.large { background: #991b1b; }
+    .heat-overlay { position: absolute; inset: 0; pointer-events: none; z-index: 450; overflow: hidden; }
+    .heat-spot { position: absolute; border-radius: 999px; transform: translate(-50%, -50%); mix-blend-mode: multiply; will-change: transform; }
     table { width: 100%; border-collapse: collapse; }
     th, td { padding: 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
     th { background: #f3f4f6; font-size: 13px; }
@@ -1637,10 +1639,11 @@
 
       leafletMap.on('click', () => fitIslandBounds());
       leafletMap.on('zoomend', () => {
-        if (heatVisible) {
-          updateHeatLayer();
-          updateMapLayers();
-        }
+        if (heatVisible) refreshHeatLayer();
+        updateMapLayers();
+      });
+      leafletMap.on('moveend', () => {
+        if (heatVisible) refreshHeatLayer();
       });
 
       setTimeout(() => {
@@ -1680,36 +1683,30 @@
     function buildHeatData() {
       return getGroupedReports(getFilteredReports())
         .filter(group => group.lat && group.lng && group.total > 0)
-        .map(group => [group.lat, group.lng, Math.min((group.total + 3) / 18, 1)]);
+        .map(group => [group.lat, group.lng, Math.min((group.total + 3) / 18, 1), group.total]);
     }
 
     function getHeatOptions() {
       const zoom = leafletMap ? leafletMap.getZoom() : 9;
-      if (zoom <= 8) {
-        return { radius: 58, blur: 34, minOpacity: 0.42 };
+      if (zoom <= 7) {
+        return { radius: 118, opacity: 0.82 };
       }
-      if (zoom <= 10) {
-        return { radius: 46, blur: 28, minOpacity: 0.34 };
+      if (zoom <= 8.5) {
+        return { radius: 92, opacity: 0.78 };
       }
-      return { radius: 34, blur: 20, minOpacity: 0.26 };
+      if (zoom <= 10.5) {
+        return { radius: 68, opacity: 0.74 };
+      }
+      return { radius: 48, opacity: 0.7 };
     }
 
     function createHeatLayer() {
-      if (typeof L === 'undefined' || typeof L.heatLayer !== 'function') return null;
-      const heatOptions = getHeatOptions();
-      return L.heatLayer(buildHeatData(), {
-        radius: heatOptions.radius,
-        blur: heatOptions.blur,
-        minOpacity: heatOptions.minOpacity,
-        maxZoom: 12,
-        gradient: {
-          0.12: '#fee2e2',
-          0.32: '#fca5a5',
-          0.52: '#fb923c',
-          0.72: '#dc2626',
-          1.0: '#7f1d1d'
-        }
-      });
+      const container = leafletMap && leafletMap.getContainer ? leafletMap.getContainer() : null;
+      if (!container) return null;
+      const overlay = document.createElement('div');
+      overlay.className = 'heat-overlay';
+      container.appendChild(overlay);
+      return overlay;
     }
 
     function getSchoolReportTotals() {
@@ -1747,20 +1744,38 @@
 
     function removeHeatLayer() {
       if (!heatLayer) return;
-      if (leafletMap && leafletMap.hasLayer(heatLayer)) {
-        leafletMap.removeLayer(heatLayer);
-      } else if (typeof heatLayer.remove === 'function') {
-        heatLayer.remove();
-      }
+      heatLayer.innerHTML = '';
+      if (heatLayer.parentNode) heatLayer.parentNode.removeChild(heatLayer);
       heatLayer = null;
+    }
+
+    function renderHeatOverlay() {
+      if (!leafletMap || !heatLayer || !heatVisible) return;
+      const heatData = buildHeatData();
+      const options = getHeatOptions();
+      heatLayer.innerHTML = heatData.map(point => {
+        const pixel = leafletMap.latLngToContainerPoint([point[0], point[1]]);
+        const radius = Math.round(options.radius * (0.72 + point[2] * 0.42));
+        const opacity = Math.min(options.opacity, 0.38 + point[2] * 0.44);
+        return '<div class="heat-spot" title="' + point[3] + ' bildirim" style="' +
+          'left:' + pixel.x.toFixed(1) + 'px;' +
+          'top:' + pixel.y.toFixed(1) + 'px;' +
+          'width:' + radius + 'px;' +
+          'height:' + radius + 'px;' +
+          'opacity:' + opacity.toFixed(2) + ';' +
+          'background:radial-gradient(circle, rgba(233,62,58,.95) 0%, rgba(237,104,60,.76) 34%, rgba(243,144,63,.58) 55%, rgba(253,199,12,.34) 74%, rgba(255,243,59,0) 100%);' +
+        '"></div>';
+      }).join('');
     }
 
     function refreshHeatLayer() {
       if (!leafletMap) return;
-      removeHeatLayer();
-      if (!heatVisible || !buildHeatData().length) return;
-      heatLayer = createHeatLayer();
-      if (heatLayer) heatLayer.addTo(leafletMap);
+      if (!heatVisible || !buildHeatData().length) {
+        removeHeatLayer();
+        return;
+      }
+      if (!heatLayer) heatLayer = createHeatLayer();
+      renderHeatOverlay();
     }
 
     function updateHeatLayer() {
@@ -1796,7 +1811,7 @@
       else if (leafletMap.hasLayer(countLayer)) countLayer.remove();
 
       if (!heatVisible || !hasHeatData) removeHeatLayer();
-      else if (!heatLayer) refreshHeatLayer();
+      else refreshHeatLayer();
 
       updateLayerButtons();
       updateMapModeText(hasHeatData);
