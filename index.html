@@ -1683,15 +1683,26 @@
       });
     }
 
+    function heatOffsetForReport(report) {
+      const seed = String(report.id || report.schoolId).split('').reduce((total, character) => {
+        return ((total << 5) - total + character.charCodeAt(0)) >>> 0;
+      }, 0);
+      const angle = (seed % 360) * Math.PI / 180;
+      const distance = 0.0018 + ((seed >>> 8) % 1000) / 1000 * 0.0075;
+      const lngScale = Math.max(Math.cos(report.lat * Math.PI / 180), 0.7);
+      return {
+        lat: Math.cos(angle) * distance,
+        lng: Math.sin(angle) * distance / lngScale
+      };
+    }
+
     function buildHeatData() {
-      const groups = getGroupedReports(getFilteredReports())
-        .filter(group => group.lat && group.lng && group.total > 0);
-      const maxTotal = Math.max(...groups.map(group => group.total), 1);
-      return groups.map(group => [
-        group.lat,
-        group.lng,
-        Math.max(0.16, Math.min(group.total / maxTotal, 1))
-      ]);
+      return getFilteredReports()
+        .filter(report => report.lat && report.lng)
+        .map(report => {
+          const offset = heatOffsetForReport(report);
+          return [report.lat + offset.lat, report.lng + offset.lng, 0.62];
+        });
     }
 
     function getHeatOptions() {
