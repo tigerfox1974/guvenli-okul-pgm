@@ -59,6 +59,7 @@
     .security-compact { display: grid; gap: 12px; padding: 14px; border: 1px solid #bfdbfe; background: #eff6ff; border-radius: 8px; }
     .security-compact h2 { margin-bottom: 6px; }
     .security-compact p { margin-bottom: 0; }
+    .security-privacy { color: #1e3a8a; font-size: 13px; line-height: 1.45; }
     .security-compact-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
     .security-compact .security-item { padding: 8px; background: #fff; }
     .security-compact .security-item span { font-size: 11px; }
@@ -171,6 +172,7 @@
           <div>
             <h2>Anonim Güvenlik Bildirimi</h2>
             <p>Form adım adım açılır. Zorunlu alan tamamlanmadan bir sonraki alan aktif olmaz. Ad soyad, telefon ve e-posta isteğe bağlıdır.</p>
+            <p class="security-privacy">Bildirimler anonim olarak alınır. Sistemde görülebilen sınırlı teknik bilgiler, yalnızca kötüye kullanımın, gereksiz bildirimlerin ve bilgi kirliliğinin azaltılması amacıyla güvenlik kaydı olarak değerlendirilir. Konum bilgisi ancak kullanıcının açık tarayıcı izniyle alınabilir; IMEI, cihaz seri no ve MAC adresi ise web tarayıcısı üzerinden alınamaz.</p>
           </div>
           <div class="security-compact-grid" aria-label="Teknik güvenlik kaydı">
             <div class="security-item"><span>Cihaz</span><strong id="visitorDevice">-</strong></div>
@@ -180,13 +182,12 @@
             <div class="security-item"><span>Saat dilimi</span><strong id="visitorTimezone">-</strong></div>
             <div class="security-item"><span>Ekran</span><strong id="visitorScreen">-</strong></div>
             <div class="security-item"><span>Kayıt zamanı</span><strong id="visitorTime">-</strong></div>
-            <div class="security-item"><span>IP adresi</span><strong id="visitorIp">Sunucu tarafı kayıtla tutulabilir</strong></div>
             <div class="security-item"><span>Konum</span><strong id="visitorLocation">İzin istenmedi</strong></div>
             <div class="security-item"><span>Doğruluk</span><strong id="visitorAccuracy">-</strong></div>
           </div>
           <div class="security-compact-actions">
             <button id="locationButton" class="secondary" type="button">Konum İzni İste</button>
-            <span>IMEI, cihaz seri no ve MAC adresi web tarayıcısından alınamaz.</span>
+
           </div>
         </div>
         <form id="reportForm">
@@ -1337,7 +1338,8 @@
 
     function updateSecurityCard() {
       const userAgent = navigator.userAgent || '';
-      document.getElementById('visitorIp').textContent = 'Web arayüzü tek başına alamaz; sunucu tarafı kayıtla tutulabilir';
+      const visitorIp = document.getElementById('visitorIp');
+      if (visitorIp) visitorIp.textContent = 'Sunucu tarafı kayıtla tutulabilir';
       document.getElementById('visitorDevice').textContent = /Mobi|Android/i.test(userAgent) ? 'Mobil cihaz' : 'Masaüstü / dizüstü';
       document.getElementById('visitorBrowser').textContent = detectBrowser(userAgent);
       document.getElementById('visitorOs').textContent = detectOs(userAgent);
