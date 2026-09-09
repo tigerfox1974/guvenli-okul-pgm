@@ -30,12 +30,47 @@ create index if not exists idx_anonymous_reports_category on public.anonymous_re
 
 alter table public.anonymous_reports enable row level security;
 
-drop policy if exists "public_insert_anonymous_reports" on public.anonymous_reports;
+grant usage on schema public to anon, authenticated;
+grant insert, update on table public.anonymous_reports to anon, authenticated;
 
-create policy "public_insert_anonymous_reports"
+do $$
+declare
+  policy_record record;
+begin
+  for policy_record in
+    select policyname
+    from pg_policies
+    where schemaname = 'public' and tablename = 'anonymous_reports'
+  loop
+    execute format('drop policy if exists %I on public.anonymous_reports;', policy_record.policyname);
+  end loop;
+end
+$$;
+
+create policy "public_insert_anonymous_reports_anon"
   on public.anonymous_reports
   for insert
   to anon
+  with check (true);
+
+create policy "public_insert_anonymous_reports_authenticated"
+  on public.anonymous_reports
+  for insert
+  to authenticated
+  with check (true);
+
+create policy "public_update_anonymous_reports_anon"
+  on public.anonymous_reports
+  for update
+  to anon
+  using (true)
+  with check (true);
+
+create policy "public_update_anonymous_reports_authenticated"
+  on public.anonymous_reports
+  for update
+  to authenticated
+  using (true)
   with check (true);
 
 -- Optional: If later you want authenticated dashboard reads from Supabase,

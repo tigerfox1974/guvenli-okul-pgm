@@ -192,6 +192,17 @@ Kontrol noktası:
 4. Yanlış anahtar kullanılmış olabilir. service_role yerine anon public anahtar olmalı.
 5. Tarayıcı konsolunda hata olabilir. F12 ile Console sekmesini açıp hata mesajını kontrol edin.
 
+Eger su hatayi gorurseniz:
+1. Supabase request failed (401)
+2. new row violates row-level security policy for table anonymous_reports
+
+Su adimlari uygulayin:
+1. Supabase SQL Editor acin.
+2. [docs/supabase-setup.sql](docs/supabase-setup.sql) dosyasinin guncel halini tekrar calistirin.
+3. Table Editor ekraninda anonymous_reports tablosunu acin.
+4. Tablo icinde RLS acik kalacak; insert policy hem anon hem authenticated role icin olusacak.
+5. Uygulamada yeni bir test bildirimi daha gonderin.
+
 ### Aşama 9: Bağlantı Kesilirse Ne Olur?
 
 1. İnternet kesilirse bildirim yine yerel kayda yazılır.
