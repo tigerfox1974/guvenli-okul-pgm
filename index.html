@@ -1631,7 +1631,7 @@
       renderSchoolMarkers();
       updateCountLayer();
 
-      heatLayer = createHeatLayer();
+      heatLayer = null;
       islandBounds = markerLayer.getBounds();
       fitIslandBounds();
 
@@ -1643,7 +1643,11 @@
         }
       });
 
-      setTimeout(() => leafletMap.invalidateSize(), 150);
+      setTimeout(() => {
+        leafletMap.invalidateSize();
+        refreshHeatLayer();
+        updateMapLayers();
+      }, 150);
       updateMapLayers();
     }
 
@@ -1741,10 +1745,26 @@
       });
     }
 
-    function updateHeatLayer() {
+    function removeHeatLayer() {
+      if (!heatLayer) return;
+      if (leafletMap && leafletMap.hasLayer(heatLayer)) {
+        leafletMap.removeLayer(heatLayer);
+      } else if (typeof heatLayer.remove === 'function') {
+        heatLayer.remove();
+      }
+      heatLayer = null;
+    }
+
+    function refreshHeatLayer() {
       if (!leafletMap) return;
-      if (heatLayer && leafletMap.hasLayer(heatLayer)) heatLayer.remove();
+      removeHeatLayer();
+      if (!heatVisible || !buildHeatData().length) return;
       heatLayer = createHeatLayer();
+      if (heatLayer) heatLayer.addTo(leafletMap);
+    }
+
+    function updateHeatLayer() {
+      refreshHeatLayer();
     }
 
     function updateLayerButtons() {
@@ -1775,8 +1795,8 @@
       if (countsVisible) countLayer.addTo(leafletMap);
       else if (leafletMap.hasLayer(countLayer)) countLayer.remove();
 
-      if (heatVisible && hasHeatData && heatLayer) heatLayer.addTo(leafletMap);
-      else if (heatLayer && leafletMap.hasLayer(heatLayer)) heatLayer.remove();
+      if (!heatVisible || !hasHeatData) removeHeatLayer();
+      else if (!heatLayer) refreshHeatLayer();
 
       updateLayerButtons();
       updateMapModeText(hasHeatData);
@@ -1785,7 +1805,7 @@
     function toggleHeatLayer() {
       initLeafletMap();
       heatVisible = !heatVisible;
-      updateHeatLayer();
+      refreshHeatLayer();
       updateMapLayers();
     }
 
