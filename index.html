@@ -132,12 +132,18 @@
     .detail-item { border: 1px solid var(--line); border-radius: 8px; padding: 12px; background: #f8fafc; }
     .detail-item-head { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
     .detail-meta { color: var(--muted); font-size: 13px; }
+    .detail-actions { display: grid; grid-template-columns: 190px 1fr auto; gap: 10px; align-items: end; margin-top: 10px; }
+    .detail-actions label { font-size: 12px; }
+    .detail-actions select, .detail-actions input { min-height: 38px; padding: 8px 10px; }
+    .detail-actions button { min-height: 38px; padding: 8px 12px; }
+    .history-list { margin-top: 10px; display: grid; gap: 6px; }
+    .history-entry { border-left: 3px solid var(--blue); padding-left: 8px; color: #374151; font-size: 12px; }
     .emergency-gate { position: fixed; inset: 0; z-index: 20; display: none; align-items: center; justify-content: center; padding: 18px; background: rgba(15, 23, 42, .72); }
     .emergency-gate.active { display: flex; }
     .emergency-card { width: min(620px, 100%); background: #fff; border-radius: 8px; padding: 26px; text-align: center; box-shadow: 0 24px 70px rgba(0,0,0,.28); }
     .countdown { width: 74px; height: 74px; border-radius: 999px; display: grid; place-items: center; margin: 8px auto 16px; background: #fee2e2; color: var(--red); font-size: 34px; font-weight: 800; border: 3px solid #fecaca; }
     .emergency-card .primary:disabled { background: #9ca3af; cursor: wait; }
-    @media (max-width: 920px) { .hero, .admin-layout, form, .optional-grid, .security-grid, .security-compact-grid, .admin-summary { grid-template-columns: 1fr; } h1 { font-size: 30px; } main { padding: 16px; } }
+    @media (max-width: 920px) { .hero, .admin-layout, form, .optional-grid, .security-grid, .security-compact-grid, .admin-summary, .detail-actions { grid-template-columns: 1fr; } h1 { font-size: 30px; } main { padding: 16px; } }
   </style>
 </head>
 <body>
@@ -1114,7 +1120,11 @@
               ip: 'Demo kayıt',
               device: sequence % 2 === 0 ? 'Mobil' : 'Masaüstü',
               location: 'Kullanıcı iznine bağlı'
-            }
+            },
+            processNote: '',
+            history: [
+              { status: 'Yeni', note: 'Bildirim sisteme düştü.', time: group.date + ' 09:00' }
+            ]
           });
         }
       });
@@ -1255,6 +1265,29 @@
         '</tr>').join('');
     }
 
+    function escapeHtml(value) {
+      return String(value || '').replace(/[&<>"']/g, character => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      }[character]));
+    }
+
+    function renderStatusOptions(currentStatus) {
+      return statusOrder
+        .map(status => '<option value="' + status + '"' + (status === currentStatus ? ' selected' : '') + '>' + status + '</option>')
+        .join('');
+    }
+
+    function renderHistory(report) {
+      const entries = report.history && report.history.length ? report.history : [{ status: report.status, note: 'Demo kayıt oluşturuldu.', time: report.date }];
+      return '<div class="history-list">' + entries.slice(-4).map(entry =>
+        '<div class="history-entry"><strong>' + entry.status + '</strong> / ' + entry.time + '<br>' + escapeHtml(entry.note) + '</div>'
+      ).join('') + '</div>';
+    }
+
     function renderGroupDetail(groupKey, reports) {
       const group = getGroupedReports(reports).find(item => item.key === groupKey);
       if (!group) {
@@ -1271,12 +1304,38 @@
       detailMapButton.dataset.schoolId = group.schoolId;
       detailList.innerHTML = group.reports
         .sort((a, b) => statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status) || a.id.localeCompare(b.id))
-        .map(report => '<div class="detail-item">' +
+        .map(report => '<div class="detail-item" data-report-id="' + report.id + '">' +
           '<div class="detail-item-head"><strong>' + report.id + '</strong><span class="badge ' + statusBadgeClass(report.status) + '">' + report.status + '</span></div>' +
           '<div class="detail-meta">' + new Date(report.date + 'T00:00:00').toLocaleDateString('tr-TR') + ' / ' + report.technical.device + ' / ' + report.file + '</div>' +
-          '<p>' + report.description + '</p>' +
+          '<p>' + escapeHtml(report.description) + '</p>' +
           '<div class="detail-meta">Teknik kayıt: ' + report.technical.ip + ' / Konum: ' + report.technical.location + '</div>' +
+          '<div class="detail-actions">' +
+            '<label>Durum değiştir<select data-report-status="' + report.id + '">' + renderStatusOptions(report.status) + '</select></label>' +
+            '<label>İşlem notu<input type="text" data-report-note="' + report.id + '" value="' + escapeHtml(report.processNote) + '" placeholder="Örn: Okul idaresiyle görüşüldü"></label>' +
+            '<button class="secondary" type="button" data-save-report="' + report.id + '">Kaydet</button>' +
+          '</div>' +
+          renderHistory(report) +
         '</div>').join('');
+    }
+
+    function updateDemoReport(reportId, status, note) {
+      const report = demoReportData.find(item => item.id === reportId);
+      if (!report) return;
+      const cleanNote = String(note || '').trim() || 'Durum güncellendi.';
+      const changed = report.status !== status || report.processNote !== cleanNote;
+      report.status = status;
+      report.processNote = cleanNote;
+      if (changed) {
+        report.history.push({
+          status,
+          note: cleanNote,
+          time: new Date().toLocaleString('tr-TR')
+        });
+      }
+      renderAdminPanel();
+      updateHeatLayer();
+      updateCountLayer();
+      updateMapLayers();
     }
 
     function fieldHasValue(field) {
@@ -1517,6 +1576,14 @@
         renderAdminPanel();
         focusSchoolOnMap(button.dataset.schoolId);
       }
+    });
+    detailList.addEventListener('click', event => {
+      const button = event.target.closest('[data-save-report]');
+      if (!button) return;
+      const reportId = button.dataset.saveReport;
+      const statusField = detailList.querySelector('[data-report-status="' + reportId + '"]');
+      const noteField = detailList.querySelector('[data-report-note="' + reportId + '"]');
+      updateDemoReport(reportId, statusField ? statusField.value : 'Yeni', noteField ? noteField.value : '');
     });
     detailMapButton.addEventListener('click', () => {
       if (detailMapButton.dataset.schoolId) focusSchoolOnMap(detailMapButton.dataset.schoolId);
