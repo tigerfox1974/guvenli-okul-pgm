@@ -92,19 +92,43 @@ Not:
 1. Supabase sol menüden Project Settings ekranına girin.
 2. API sekmesine tıklayın.
 3. Project URL değerini kopyalayın.
-4. anon public anahtarını kopyalayın.
+4. Public anahtarınızı kopyalayın.
+5. Anahtar değeri iki formatta olabilir:
+6. sb_publishable_... formatı yeni anahtardır.
+7. eyJ... formatı legacy anon anahtardır.
+8. İkisi de bu istemci kullanımında çalışır.
+
+Eger API sekmesi acilmiyorsa:
+1. General settings ekranindaki Project ID satirinda bulunan Copy butonuna basin.
+2. Kopyalanan degeri bir not defterine yapistirip kontrol edin.
+3. Tarayicida su adresi acin ve PROJECT_ID yerine kendi kopyaladiginiz degeri yazin:
+4. https://supabase.com/dashboard/project/PROJECT_ID/settings/api
+5. Hala acilmiyorsa once su adrese gidin:
+6. https://supabase.com/dashboard/project/PROJECT_ID
+7. Proje acildiktan sonra sol menuden Settings icindeki API veya Data API ekranina gecin.
+
+Eger Data API ekranina ulasip key goremiyorsaniz:
+1. Tarayicida su adrese gidin (PROJECT_ID degerini degistirin):
+2. https://supabase.com/dashboard/project/PROJECT_ID?showConnect=true
+3. Acilan Connect penceresinde JavaScript veya plain API secin.
+4. Burada URL ve Publishable key birlikte gorunur.
+5. Publishable key degerini kopyalayin.
 
 Güvenlik kuralı:
 1. service_role anahtarını tarayıcı tarafındaki bu projeye koymayın.
-2. Sadece anon public anahtarı kullanın.
+2. Sadece public/publishable veya legacy anon anahtarı kullanın.
 
 ### Aşama 4: Projede Supabase Ayarını Doldur
 
 1. VS Code'da [js/config/supabase.config.js](js/config/supabase.config.js) dosyasını açın.
 2. url alanındaki boş metni Project URL ile değiştirin.
-3. anonKey alanındaki boş metni anon public anahtar ile değiştirin.
+3. anonKey alanındaki boş metni public/publishable anahtar ile değiştirin.
 4. schema değeri public olarak kalsın.
 5. reportsTable değeri anonymous_reports olarak kalsın.
+
+Not:
+1. Data API ekraninda gordugunuz URL /rest/v1/ ile bitiyorsa da bu projede kullanabilirsiniz.
+2. Sistem otomatik olarak uygun taban URL formatina normalize eder.
 
 Ornek görünüm:
 

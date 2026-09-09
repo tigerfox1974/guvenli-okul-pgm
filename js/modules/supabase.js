@@ -176,7 +176,6 @@ async function upsertRows(rows) {
   const headers = {
     'Content-Type': 'application/json',
     apikey: getConfiguredAnonKey(),
-    Authorization: `Bearer ${getConfiguredAnonKey()}`,
     Prefer: 'resolution=merge-duplicates,return=minimal',
     'Accept-Profile': schema,
     'Content-Profile': schema
@@ -209,7 +208,11 @@ function buildUpsertEndpoint() {
 }
 
 function getConfiguredBaseUrl() {
-  return String(SUPABASE_CONFIG.url || '').trim().replace(/\/+$/, '');
+  const rawValue = String(SUPABASE_CONFIG.url || '').trim().replace(/\/+$/, '');
+  if (!rawValue) return '';
+
+  // Allow users to paste either project URL or Data API URL ending with /rest/v1.
+  return rawValue.replace(/\/rest\/v1$/i, '');
 }
 
 function getConfiguredAnonKey() {
