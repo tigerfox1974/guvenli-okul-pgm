@@ -43,62 +43,133 @@ Supabase entegrasyonu test edilirken `file://` yerine yerel HTTP sunucu ile açm
 2. `python -m http.server 5500` komutunu çalıştırın.
 3. Tarayıcıdan `http://localhost:5500` adresine gidin.
 
-## Supabase ile Kalıcı Kayıt
+## Supabase ile Kalıcı Kayıt (Sıfırdan Kurulum Rehberi)
 
-Anonim bildirim formu artık local kayıt yanında Supabase'e de yazacak altyapıya sahiptir.
+Anonim bildirim formu, yerel kayıt yanında Supabase veritabanına da yazacak şekilde hazırdır.
+Bu rehber, daha önce hiç Supabase kullanmamış bir kullanıcıya göre yazılmıştır.
 
-### 1. Supabase Projesi Aç
+### Aşama 0: Kuruluma Başlamadan Önce
 
-1. [https://supabase.com](https://supabase.com) adresine gir.
-2. Yeni bir proje oluştur.
-3. Proje kurulduktan sonra sol menüden SQL Editor'u aç.
+1. Supabase hesabınız olmalı.
+2. Bu proje klasörü bilgisayarınızda açık olmalı.
+3. İnternet bağlantınız açık olmalı.
+4. Terminal ve tarayıcıyı birlikte kullanacaksınız.
 
-### 2. Veritabanı Altyapısını Kur
+### Aşama 1: Supabase Projesi Oluştur
 
-1. Projedeki [docs/supabase-setup.sql](docs/supabase-setup.sql) dosyasını aç.
-2. Tüm SQL içeriğini kopyala.
-3. Supabase SQL Editor'a yapıştır.
-4. Run ile çalıştır.
+1. Tarayıcıdan [https://supabase.com](https://supabase.com) adresine girin.
+2. Sign in ile hesabınıza giriş yapın.
+3. Dashboard ekranında New project butonuna tıklayın.
+4. Organization olarak kişisel hesabınızı seçin.
+5. Name alanına proje adı yazın. Ornek: guvenli-okul-pgm
+6. Database Password alanına güçlü bir şifre yazın ve bu şifreyi bir yere not edin.
+7. Region alanında size yakın bir bölge seçin. Ornek: Frankfurt (Europe West).
+8. Create new project butonuna tıklayın.
+9. Proje hazırlanırken 1-3 dakika bekleyin.
 
-Bu script şunları yapar:
-- `public.anonymous_reports` tablosunu oluşturur.
-- Gerekli indexleri ekler.
-- RLS'i (Row Level Security) aktif eder.
-- Anonim kullanıcı (`anon`) için sadece insert policy tanımlar.
+Kontrol noktası:
+1. Sol menüde Table Editor ve SQL Editor görünüyorsa proje hazırdır.
 
-### 3. Proje İçine Supabase Anahtarlarını Gir
+### Aşama 2: Veritabanı Tablosunu ve Politikaları Kur
 
-1. Bu dosyayı aç: [js/config/supabase.config.js](js/config/supabase.config.js)
-2. `url` ve `anonKey` alanlarını doldur.
+1. VS Code'da [docs/supabase-setup.sql](docs/supabase-setup.sql) dosyasını açın.
+2. Dosyadaki tüm metni seçip kopyalayın.
+3. Supabase'e dönün, sol menüden SQL Editor ekranını açın.
+4. New query butonuna tıklayın.
+5. Kopyaladığınız SQL metnini sorgu alanına yapıştırın.
+6. Run butonuna tıklayın.
 
-Örnek:
+Kontrol noktası:
+1. Ekranda hata yerine başarı mesajı görünmeli.
+2. Sol menüden Table Editor ekranına gidin.
+3. public şeması altında anonymous_reports tablosu görünmeli.
 
-```js
+Not:
+1. Bu script tabloyu, indexleri ve RLS insert politikasını sizin için otomatik kurar.
+
+### Aşama 3: Supabase API Bilgilerini Al
+
+1. Supabase sol menüden Project Settings ekranına girin.
+2. API sekmesine tıklayın.
+3. Project URL değerini kopyalayın.
+4. anon public anahtarını kopyalayın.
+
+Güvenlik kuralı:
+1. service_role anahtarını tarayıcı tarafındaki bu projeye koymayın.
+2. Sadece anon public anahtarı kullanın.
+
+### Aşama 4: Projede Supabase Ayarını Doldur
+
+1. VS Code'da [js/config/supabase.config.js](js/config/supabase.config.js) dosyasını açın.
+2. url alanındaki boş metni Project URL ile değiştirin.
+3. anonKey alanındaki boş metni anon public anahtar ile değiştirin.
+4. schema değeri public olarak kalsın.
+5. reportsTable değeri anonymous_reports olarak kalsın.
+
+Ornek görünüm:
+
 export const SUPABASE_CONFIG = Object.freeze({
-	url: 'https://YOUR_PROJECT_REF.supabase.co',
-	anonKey: 'YOUR_SUPABASE_ANON_KEY',
-	schema: 'public',
-	reportsTable: 'anonymous_reports',
-	requestTimeoutMs: 10000
+  url: 'https://SIZIN-PROJE-REF.supabase.co',
+  anonKey: 'SIZIN_ANON_PUBLIC_ANAHTARINIZ',
+  schema: 'public',
+  reportsTable: 'anonymous_reports',
+  requestTimeoutMs: 10000
 });
-```
 
-Anahtarları Supabase panelinden bulma yolu:
-1. Project Settings -> API
-2. `Project URL` değerini `url` alanına kopyala.
-3. `anon public` key değerini `anonKey` alanına kopyala.
+Kontrol noktası:
+1. url https ile başlamalı.
+2. anonKey boş olmamalı.
 
-Güvenlik notu:
-- `service_role` key bu projede tarayıcı tarafına konulmamalıdır.
-- Sadece `anon public` key kullan.
+### Aşama 5: Uygulamayı Doğru Şekilde Aç
 
-### 4. Çalıştığını Doğrula
+Supabase testinde file ile açmak yerine yerel sunucu kullanın.
 
-1. Tarayıcıda sayfayı yenile.
-2. Anonim bildirim formundan yeni kayıt gönder.
-3. Supabase Table Editor -> `anonymous_reports` tablosunu aç.
-4. Yeni satırın geldiğini doğrula.
+Yontem A (Python varsa):
+1. VS Code terminalini açın.
+2. Proje klasöründe olduğunuzu kontrol edin.
+3. Şu komutu çalıştırın: python -m http.server 5500
+4. Tarayıcıda şu adrese gidin: http://localhost:5500
 
-### 5. Bağlantı Kesilirse Ne Olur?
+Yontem B (Python yoksa, Node varsa):
+1. VS Code terminalini açın.
+2. Şu komutu çalıştırın: npx serve . -l 5500
+3. Tarayıcıda şu adrese gidin: http://localhost:5500
 
-Bağlantı problemi olursa form kaydı yine localStorage'a yazılır ve Supabase gönderimi kuyruklanır. Bağlantı geri geldiğinde (veya sayfa yeniden açıldığında) kuyruktaki kayıtlar otomatik tekrar gönderilir.
+Kontrol noktası:
+1. Site localhost adresinde açılmalı.
+2. Terminal açık kalmalı.
+
+### Aşama 6: Test Bildirimi Gönder
+
+1. Sitede Bildirim Yap ekranına geçin.
+2. Zorunlu alanları doldurun:
+3. İlçe
+4. Okul
+5. Bildirim kategorisi
+6. Sorunun kısa başlığı
+7. Açıklama
+8. Bildirimi Gönder butonuna basın.
+
+Kontrol noktası:
+1. Ekranda bildirimin alındığına dair onay modalı görünmeli.
+
+### Aşama 7: Kaydın Supabase'e Yazıldığını Doğrula
+
+1. Supabase paneline geri dönün.
+2. Table Editor ekranına girin.
+3. anonymous_reports tablosunu açın.
+4. En yeni satırda biraz önce gönderdiğiniz başlık, kategori ve okul bilgisi görünmeli.
+
+### Aşama 8: Çalışmazsa Hızlı Sorun Giderme
+
+1. url ve anonKey yanlış veya eksik olabilir.
+2. SQL scripti çalışmamış olabilir.
+3. Uygulamayı file yerine localhost ile açmamış olabilirsiniz.
+4. Yanlış anahtar kullanılmış olabilir. service_role yerine anon public anahtar olmalı.
+5. Tarayıcı konsolunda hata olabilir. F12 ile Console sekmesini açıp hata mesajını kontrol edin.
+
+### Aşama 9: Bağlantı Kesilirse Ne Olur?
+
+1. İnternet kesilirse bildirim yine yerel kayda yazılır.
+2. Supabase'e gönderim otomatik kuyruklanır.
+3. Bağlantı geri geldiğinde veya sayfa yeniden açıldığında sistem kuyruktaki kayıtları tekrar göndermeyi dener.
