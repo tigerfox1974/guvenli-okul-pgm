@@ -96,6 +96,14 @@
     .dot { width: 11px; height: 11px; border-radius: 999px; display: inline-block; }
     .dot.blue { background: var(--blue); }
     .dot.red { background: var(--red); }
+    .heat-swatch {
+      width: 36px;
+      height: 12px;
+      border-radius: 999px;
+      display: inline-block;
+      background: linear-gradient(90deg, #7b61ff 0%, #38bdf8 24%, #22c55e 46%, #fff33b 66%, #f97316 82%, #ef1b1b 100%);
+      box-shadow: inset 0 0 0 1px rgba(17, 24, 39, .12);
+    }
     .count-marker { width: 32px; height: 32px; border-radius: 999px; display: grid; place-items: center; background: #b91c1c; color: #fff; border: 3px solid #fff; box-shadow: 0 6px 16px rgba(127, 29, 29, .35); font-weight: 900; font-size: 13px; }
     .count-marker.small { background: #f97316; }
     .count-marker.medium { background: #dc2626; }
@@ -317,12 +325,12 @@
               <div class="map-controls" aria-label="Harita katmanları">
                 <button id="mapMarkerToggle" class="active" type="button">Okul Pinleri</button>
                 <button id="mapCountToggle" class="active" type="button">Olay Sayıları</button>
-                <button id="mapHeatToggle" class="heat" type="button">Kırmızı Isı Haritası</button>
+                <button id="mapHeatToggle" class="heat" type="button">Renkli Isı Haritası</button>
               </div>
               <strong id="mapMode">Okul pinleri ve olay sayıları görünümü</strong>
             </div>
             <div id="map" class="map" aria-label="Leaflet KKTC okul güvenliği haritası"></div>
-            <div class="legend"><span><i class="dot blue"></i> Okul noktası</span><span><i class="dot red"></i> Kırmızı bildirim yoğunluğu</span><span><i class="count-marker small" style="display:inline-grid;width:22px;height:22px;font-size:11px;border-width:2px">8</i> Okuldaki olay sayısı</span></div>
+            <div class="legend"><span><i class="dot blue"></i> Okul noktası</span><span><i class="heat-swatch"></i> Renkli bildirim yoğunluğu</span><span><i class="count-marker small" style="display:inline-grid;width:22px;height:22px;font-size:11px;border-width:2px">8</i> Okuldaki olay sayısı</span></div>
           </div>
           <div class="table-wrap" style="margin-top:18px;overflow:auto">
             <table>
@@ -1676,23 +1684,30 @@
     }
 
     function buildHeatData() {
-      return getGroupedReports(getFilteredReports())
-        .filter(group => group.lat && group.lng && group.total > 0)
-        .map(group => [group.lat, group.lng, Math.min((group.total + 3) / 18, 1)]);
+      const groups = getGroupedReports(getFilteredReports())
+        .filter(group => group.lat && group.lng && group.total > 0);
+      const maxTotal = Math.max(...groups.map(group => group.total), 1);
+      return groups.map(group => [
+        group.lat,
+        group.lng,
+        Math.max(0.16, Math.min(group.total / maxTotal, 1))
+      ]);
     }
 
     function getHeatOptions() {
       return {
-        radius: 42,
-        blur: 26,
-        minOpacity: 0.28,
+        radius: 46,
+        blur: 30,
+        minOpacity: 0.24,
+        max: 1,
         maxZoom: 12,
         gradient: {
-          0.18: '#fff33b',
-          0.38: '#fdc70c',
-          0.58: '#f3903f',
-          0.78: '#ed683c',
-          1.0: '#e93e3a'
+          0.12: '#7b61ff',
+          0.28: '#38bdf8',
+          0.46: '#22c55e',
+          0.64: '#fff33b',
+          0.82: '#f97316',
+          1.0: '#ef1b1b'
         }
       };
     }
@@ -1774,7 +1789,7 @@
       const visible = [];
       if (markersVisible) visible.push('okul pinleri');
       if (countsVisible) visible.push('olay sayıları');
-      if (heatVisible && hasHeatData) visible.push('kırmızı ısı haritası');
+      if (heatVisible && hasHeatData) visible.push('renkli ısı haritası');
       mapMode.textContent = visible.length ? visible.join(' + ') + ' görünümü' : 'Tüm harita katmanları kapalı';
       if (heatVisible && !hasHeatData) mapMode.textContent = 'Isı haritası için bildirim verisi yok';
     }
