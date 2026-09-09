@@ -5,7 +5,10 @@ let selectedFiles = [];
 const PUBLIC_REPORTS_STORAGE_KEY = 'pgm-public-reports-demo-v1';
 const LEGACY_REPORTS_STORAGE_KEY = 'reports';
 const EMERGENCY_GATE_SECONDS = 5;
+const SUBMIT_NOTICE_SECONDS = 5;
 let emergencyGateTimerId = null;
+let submitNoticeTimerId = null;
+let pendingSubmitCompletion = null;
 
 export function initForm() {
   const form = document.getElementById('reportForm');
@@ -28,6 +31,8 @@ export function initForm() {
 
   initVisitorSnapshot();
   initLocationRequest();
+  initSubmitNoticeModal();
+  initFileUploadNoticeModal();
 
   districtSelect.addEventListener('change', () => {
     updateSchoolList(districtSelect.value);
@@ -58,9 +63,7 @@ export function initForm() {
   descriptionInput.addEventListener('input', syncFormState);
 
   if (fileInput) {
-    fileInput.addEventListener('change', () => {
-      selectedFiles = Array.from(fileInput.files || []);
-    });
+    blockFileUploadInteraction(fileInput);
   }
 
   submitButton.addEventListener('click', handleSubmit);
@@ -102,20 +105,17 @@ function populateDistrictSelect(districtSelect) {
 
 function updateSchoolList(district) {
   const schoolSelect = document.getElementById('schoolSelect');
-  const schoolHint = document.getElementById('schoolHint');
   if (!schoolSelect) return;
 
+  const normalizedDistrict = normalizeDistrictName(district, '');
   schoolSelect.innerHTML = '<option value="">Önce ilçe seçiniz</option>';
 
-  if (!district) {
+  if (!normalizedDistrict) {
     schoolSelect.disabled = true;
-    if (schoolHint) {
-      schoolHint.textContent = 'Okul listesi seçilen ilçeye göre gösterilir.';
-    }
+    updateSchoolCountLabel('', schools.length);
     return;
   }
 
-  const normalizedDistrict = normalizeDistrictName(district, '');
   const filtered = schools
     .filter(school => school.district === normalizedDistrict)
     .sort((left, right) => left.name.localeCompare(right.name, 'tr'));
@@ -130,12 +130,19 @@ function updateSchoolList(district) {
   });
 
   schoolSelect.disabled = false;
+  updateSchoolCountLabel(normalizedDistrict, filtered.length);
+}
 
-  if (schoolHint) {
-    schoolHint.textContent = filtered.length > 0
-      ? `${filtered.length} okul listelendi.`
-      : 'Bu ilçe için okul verisi bulunamadı.';
+function updateSchoolCountLabel(district, count) {
+  const schoolCountText = document.getElementById('schoolCountText');
+  if (!schoolCountText) return;
+
+  if (!district) {
+    schoolCountText.textContent = `(Toplam ${schools.length} okul)`;
+    return;
   }
+
+  schoolCountText.textContent = `(${count} okul)`;
 }
 
 function handleSubmit() {
@@ -196,19 +203,19 @@ function handleSubmit() {
   };
 
   saveReport(report);
-
-  alert('Bildiriminiz başarıyla gönderildi. Teşekkürler!');
-
-  form.reset();
-  selectedFiles = [];
-  if (fileInput) {
-    fileInput.value = '';
-  }
-
-  updateSchoolList('');
-  syncFormState();
-
   document.dispatchEvent(new CustomEvent('reports:updated', { detail: { report } }));
+
+  showSubmitNoticeModal(() => {
+    form.reset();
+    selectedFiles = [];
+    if (fileInput) {
+      fileInput.value = '';
+    }
+
+    updateSchoolList('');
+    syncFormState();
+    navigateToHomeView();
+  });
 }
 
 function saveReport(report) {
@@ -333,9 +340,7 @@ export function showEmergencyGateOnReportEntry() {
   if (!gate || !countdown || !continueButton) return;
 
   setReportInteractionLock(true);
-  gate.hidden = false;
-  gate.setAttribute('aria-hidden', 'false');
-  document.body.classList.add('modal-open');
+  setModalState(gate, true);
 
   let seconds = EMERGENCY_GATE_SECONDS;
   countdown.textContent = String(seconds);
@@ -367,9 +372,7 @@ export function showEmergencyGateOnReportEntry() {
   continueButton.onclick = () => {
     if (continueButton.disabled) return;
 
-    gate.hidden = true;
-    gate.setAttribute('aria-hidden', 'true');
-    document.body.classList.remove('modal-open');
+    setModalState(gate, false);
     setReportInteractionLock(false);
   };
 }
@@ -393,11 +396,11 @@ function initVisitorSnapshot() {
   setText('visitorDevice', /Android|iPhone|iPad|iPod|Mobi/i.test(navigator.userAgent) ? 'Mobil' : 'Masaustu');
   setText('visitorBrowser', detectBrowser(navigator.userAgent));
   setText('visitorOs', detectOs(navigator.userAgent));
-  setText('visitorLanguage', navigator.language || '-');
+  setText('visitorLanguage', getPreferredLanguage());
   setText('visitorTimezone', Intl.DateTimeFormat().resolvedOptions().timeZone || '-');
   setText('visitorScreen', `${window.screen.width}x${window.screen.height}`);
   setText('visitorTime', new Date().toLocaleString('tr-TR'));
-  setText('visitorLocation', 'İzin istenmedi');
+  setText('visitorLocation', 'Konum izni verilmedi');
   setText('visitorAccuracy', '-');
 
   document.addEventListener('visibilitychange', () => {
@@ -427,7 +430,7 @@ function initLocationRequest() {
         locationField.textContent = 'Tarayıcı konumu desteklemiyor';
       }
       locationButton.disabled = false;
-      locationButton.textContent = 'Konum İzni İste';
+      locationButton.textContent = 'Konum İzni Ver';
       return;
     }
 
@@ -459,12 +462,175 @@ function initLocationRequest() {
           accuracyField.textContent = '-';
         }
 
-        locationButton.textContent = 'Konum İzni İste';
+        locationButton.textContent = 'Konum İzni Ver';
         locationButton.disabled = false;
       },
       { enableHighAccuracy: true, timeout: 10000 }
     );
   });
+}
+
+function getPreferredLanguage() {
+  const candidateLanguages = Array.isArray(navigator.languages)
+    ? navigator.languages
+    : [navigator.language || ''];
+
+  const turkishLanguage = candidateLanguages.find(language =>
+    typeof language === 'string' && language.toLowerCase().startsWith('tr')
+  );
+
+  if (!turkishLanguage) {
+    return 'tr-TR';
+  }
+
+  return turkishLanguage.toLowerCase() === 'tr' ? 'tr-TR' : turkishLanguage;
+}
+
+function blockFileUploadInteraction(fileInput) {
+  fileInput.addEventListener('click', event => {
+    event.preventDefault();
+    showFileUploadNoticeModal();
+  });
+
+  fileInput.addEventListener('keydown', event => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    showFileUploadNoticeModal();
+  });
+
+  fileInput.addEventListener('change', () => {
+    fileInput.value = '';
+    selectedFiles = [];
+  });
+}
+
+function initSubmitNoticeModal() {
+  const continueButton = document.getElementById('submitContinueButton');
+  if (!continueButton) return;
+
+  continueButton.addEventListener('click', () => {
+    if (continueButton.disabled) return;
+
+    const modal = document.getElementById('reportSubmitNoticeModal');
+    if (submitNoticeTimerId) {
+      window.clearInterval(submitNoticeTimerId);
+      submitNoticeTimerId = null;
+    }
+
+    if (modal) {
+      setModalState(modal, false);
+    }
+
+    const completion = pendingSubmitCompletion;
+    pendingSubmitCompletion = null;
+    if (typeof completion === 'function') {
+      completion();
+    }
+  });
+}
+
+function showSubmitNoticeModal(onComplete) {
+  const modal = document.getElementById('reportSubmitNoticeModal');
+  const countdown = document.getElementById('submitCountdown');
+  const continueButton = document.getElementById('submitContinueButton');
+
+  if (!modal || !countdown || !continueButton) {
+    if (typeof onComplete === 'function') {
+      onComplete();
+    }
+    return;
+  }
+
+  pendingSubmitCompletion = typeof onComplete === 'function' ? onComplete : null;
+
+  let seconds = SUBMIT_NOTICE_SECONDS;
+  countdown.textContent = String(seconds);
+  continueButton.disabled = true;
+  continueButton.textContent = `${seconds} saniye sonra ana ekrana dön`;
+  setModalState(modal, true);
+
+  if (submitNoticeTimerId) {
+    window.clearInterval(submitNoticeTimerId);
+    submitNoticeTimerId = null;
+  }
+
+  submitNoticeTimerId = window.setInterval(() => {
+    seconds -= 1;
+
+    if (seconds <= 0) {
+      if (submitNoticeTimerId) {
+        window.clearInterval(submitNoticeTimerId);
+        submitNoticeTimerId = null;
+      }
+      countdown.textContent = '0';
+      continueButton.disabled = false;
+      continueButton.textContent = 'Tamam ve Ana Ekrana Dön';
+      return;
+    }
+
+    countdown.textContent = String(seconds);
+    continueButton.textContent = `${seconds} saniye sonra ana ekrana dön`;
+  }, 1000);
+}
+
+function initFileUploadNoticeModal() {
+  const modal = document.getElementById('fileUploadNoticeModal');
+  const closeButton = document.getElementById('fileUploadNoticeClose');
+  if (!modal || !closeButton) return;
+
+  closeButton.addEventListener('click', () => {
+    setModalState(modal, false);
+  });
+
+  modal.addEventListener('click', event => {
+    if (event.target === modal) {
+      setModalState(modal, false);
+    }
+  });
+}
+
+function showFileUploadNoticeModal() {
+  const modal = document.getElementById('fileUploadNoticeModal');
+  if (!modal) return;
+
+  setModalState(modal, true);
+}
+
+function navigateToHomeView() {
+  const homeTrigger = document.querySelector('header nav button[data-view="home"]')
+    || document.querySelector('[data-view="home"]');
+
+  if (homeTrigger) {
+    homeTrigger.click();
+    return;
+  }
+
+  const homeView = document.getElementById('home');
+  const reportView = document.getElementById('report');
+  if (homeView) {
+    homeView.classList.add('active');
+  }
+  if (reportView) {
+    reportView.classList.remove('active');
+  }
+}
+
+function setModalState(modalElement, isVisible) {
+  if (!modalElement) return;
+
+  modalElement.hidden = !isVisible;
+  modalElement.setAttribute('aria-hidden', isVisible ? 'false' : 'true');
+  syncBodyModalState();
+}
+
+function syncBodyModalState() {
+  const modalIds = ['emergencyGate', 'reportSubmitNoticeModal', 'fileUploadNoticeModal'];
+  const hasVisibleModal = modalIds.some(id => {
+    const modal = document.getElementById(id);
+    return Boolean(modal && !modal.hidden && modal.getAttribute('aria-hidden') === 'false');
+  });
+
+  document.body.classList.toggle('modal-open', hasVisibleModal);
 }
 
 function detectBrowser(userAgent) {

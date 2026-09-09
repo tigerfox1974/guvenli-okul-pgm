@@ -47,7 +47,11 @@
         <div class="security-card security-compact">
           <div>
             <h2>Anonim Güvenlik Bildirimi</h2>
-            <p class="security-privacy">Bildirimler anonim olarak alınır. Sistemde görülebilen sınırlı teknik bilgiler, yalnızca kötüye kullanımın, gereksiz bildirimlerin ve bilgi kirliliğinin azaltılması amacıyla güvenlik kaydı olarak değerlendirilir. Konum bilgisi ancak kullanıcının açık tarayıcı izniyle alınabilir; IMEI, cihaz seri no ve MAC adresi ise web tarayıcısı üzerinden alınamaz.</p>
+            <p class="security-privacy">
+              Bildirimler anonim olarak alınır. Sistemde görülebilen sınırlı teknik bilgiler,
+              <strong class="security-privacy-emphasis">yalnızca kötüye kullanımın, gereksiz bildirimlerin ve bilgi kirliliğinin azaltılması amacıyla</strong>
+              güvenlik kaydı olarak değerlendirilir. Konum bilgisi ancak kullanıcının açık tarayıcı izniyle alınabilir; IMEI, cihaz seri no ve MAC adresi ise web tarayıcısı üzerinden alınamaz.
+            </p>
           </div>
           <div class="security-compact-grid" aria-label="Teknik güvenlik kaydı">
             <div class="security-item"><span>Cihaz</span><strong id="visitorDevice">-</strong></div>
@@ -57,11 +61,11 @@
             <div class="security-item"><span>Saat dilimi</span><strong id="visitorTimezone">-</strong></div>
             <div class="security-item"><span>Ekran</span><strong id="visitorScreen">-</strong></div>
             <div class="security-item"><span>Kayıt zamanı</span><strong id="visitorTime">-</strong></div>
-            <div class="security-item"><span>Konum</span><strong id="visitorLocation">İzin istenmedi</strong></div>
+            <div class="security-item"><span>Konum</span><strong id="visitorLocation">Konum izni verilmedi</strong></div>
             <div class="security-item"><span>Doğruluk</span><strong id="visitorAccuracy">-</strong></div>
           </div>
           <div class="security-compact-actions">
-            <button id="locationButton" class="secondary" type="button">Konum İzni İste</button>
+            <button id="locationButton" class="secondary" type="button">Konum İzni Ver</button>
 
           </div>
         </div>
@@ -72,11 +76,10 @@
               <option value="">İlçe seçiniz</option>
             </select>
           </label>
-          <label>Okul *
+          <label>Okul * <span id="schoolCountText" class="field-meta" aria-live="polite"></span>
             <select id="schoolSelect" required data-step="1" disabled>
               <option value="">Önce ilçe seçiniz</option>
             </select>
-            <span id="schoolHint" class="hint">Okul listesi seçilen ilçeye göre gösterilir.</span>
           </label>
           <label>Bildirim kategorisi *
             <select id="categorySelect" required data-step="2" disabled>
@@ -263,6 +266,26 @@
       <p>Devam eden kavga, yaralanma, silah, yangın, ciddi tehdit veya anlık tehlike varsa lütfen bu formu kullanmayın.</p>
       <p><strong>Bu durumlar derhal 155 Polis İmdat veya 112 Acil Çağrı Merkezi telefon hattına bildirilmelidir.</strong></p>
       <button id="continueReport" class="primary" type="button" disabled>5 saniye sonra bildirim formuna geç</button>
+    </div>
+  </div>
+
+  <div id="reportSubmitNoticeModal" class="system-modal" role="dialog" aria-modal="true" aria-labelledby="reportSubmitNoticeTitle" aria-hidden="true" hidden>
+    <div class="system-modal-card">
+      <div id="submitCountdown" class="countdown">5</div>
+      <h2 id="reportSubmitNoticeTitle">Bildiriminiz Alındı</h2>
+      <p>Bizimle bu güvenlik bilgisini paylaştığınız için teşekkür ederiz.</p>
+      <p><strong>Bildiriminiz resmi şikayet başvurusu değil, ön değerlendirme güvenlik kaydı olarak işleme alınmıştır.</strong></p>
+      <p>Bildirim kaydı ilgili birimlere iletilir; doğrulama, risk önceliği ve saha değerlendirme sürecinin ardından işlem sırasına alınır.</p>
+      <button id="submitContinueButton" class="primary" type="button" disabled>5 saniye sonra ana ekrana dön</button>
+    </div>
+  </div>
+
+  <div id="fileUploadNoticeModal" class="system-modal" role="dialog" aria-modal="true" aria-labelledby="fileUploadNoticeTitle" aria-hidden="true" hidden>
+    <div class="system-modal-card compact">
+      <h2 id="fileUploadNoticeTitle">Dosya Yükleme Geçici Olarak Kapalı</h2>
+      <p>Tarafınızdan dosya alımı yapılabilmesi için teknik çalışmalar devam etmektedir.</p>
+      <p>Bu sürümde fotoğraf ve dosya ekleme özelliği geçici olarak devre dışıdır.</p>
+      <button id="fileUploadNoticeClose" class="primary" type="button">Tamam</button>
     </div>
   </div>
 
