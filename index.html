@@ -70,6 +70,20 @@
     .summary-card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px; }
     .summary-card span { display: block; color: var(--muted); font-size: 12px; margin-bottom: 6px; }
     .summary-card strong { display: block; color: var(--navy); font-size: 24px; line-height: 1.15; }
+    .regional-risk { margin-bottom: 18px; padding: 16px; }
+    .regional-risk-head { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; flex-wrap: wrap; margin-bottom: 12px; }
+    .regional-risk-head p { margin-bottom: 0; font-size: 13px; }
+    .regional-risk-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .risk-district { border: 1px solid var(--line); border-radius: 8px; background: #f8fafc; padding: 11px; display: grid; gap: 9px; cursor: pointer; text-align: left; font: inherit; color: inherit; }
+    .risk-district:hover, .risk-district.active { border-color: var(--blue); background: #eff6ff; }
+    .risk-district-title { display: flex; justify-content: space-between; gap: 8px; align-items: center; font-weight: 900; color: var(--navy); border: 0; background: transparent; padding: 0; cursor: pointer; width: 100%; text-align: left; font: inherit; }
+    .risk-total { display: inline-flex; align-items: center; justify-content: center; min-width: 30px; height: 24px; border-radius: 999px; background: var(--blue); color: #fff; font-size: 12px; }
+    .risk-categories { display: grid; gap: 6px; }
+    .risk-category { display: grid; grid-template-columns: minmax(90px, 1fr) minmax(90px, 1.1fr) auto; gap: 8px; align-items: center; font-size: 12px; color: #374151; }
+    .risk-bar { height: 8px; border-radius: 999px; background: #e5e7eb; overflow: hidden; }
+    .risk-bar-fill { height: 100%; border-radius: inherit; background: linear-gradient(90deg, #38bdf8, #22c55e, #fff33b, #f97316, #ef1b1b); }
+    .risk-category button { border: 0; background: transparent; color: var(--blue); cursor: pointer; font-weight: 800; padding: 0; text-align: left; }
+    .risk-category-count { font-weight: 900; color: var(--ink); }
     .filter-result { border: 1px solid var(--line); border-radius: 8px; padding: 10px; background: #f8fafc; color: #374151; font-size: 13px; }
     .row-button { border: 0; background: transparent; color: var(--blue); font-weight: 800; cursor: pointer; padding: 0; text-align: left; }
     .empty-row { color: var(--muted); text-align: center; padding: 22px; }
@@ -151,7 +165,7 @@
     .emergency-card { width: min(620px, 100%); background: #fff; border-radius: 8px; padding: 26px; text-align: center; box-shadow: 0 24px 70px rgba(0,0,0,.28); }
     .countdown { width: 74px; height: 74px; border-radius: 999px; display: grid; place-items: center; margin: 8px auto 16px; background: #fee2e2; color: var(--red); font-size: 34px; font-weight: 800; border: 3px solid #fecaca; }
     .emergency-card .primary:disabled { background: #9ca3af; cursor: wait; }
-    @media (max-width: 920px) { .hero, .admin-layout, form, .optional-grid, .security-grid, .security-compact-grid, .admin-summary, .detail-actions { grid-template-columns: 1fr; } h1 { font-size: 30px; } main { padding: 16px; } }
+    @media (max-width: 920px) { .hero, .admin-layout, form, .optional-grid, .security-grid, .security-compact-grid, .admin-summary, .regional-risk-grid, .detail-actions { grid-template-columns: 1fr; } h1 { font-size: 30px; } main { padding: 16px; } }
   </style>
 </head>
 <body>
@@ -318,6 +332,16 @@
             <div class="summary-card"><span>İncelenen bildirim</span><strong id="summaryReviewReports">0</strong></div>
             <div class="summary-card"><span>En yoğun ilçe</span><strong id="summaryTopDistrict">-</strong></div>
             <div class="summary-card"><span>En yoğun kategori</span><strong id="summaryTopCategory">-</strong></div>
+          </div>
+          <div class="panel regional-risk">
+            <div class="regional-risk-head">
+              <div>
+                <h2>Bölgesel Risk Özeti</h2>
+                <p>İlçe bazında öne çıkan kategori yoğunlukları. İlçeye veya kategoriye tıklayınca panel filtrelenir.</p>
+              </div>
+              <button id="clearRiskFocus" class="secondary" type="button">Risk Odağını Temizle</button>
+            </div>
+            <div id="regionalRiskGrid" class="regional-risk-grid" aria-label="İlçe ve kategori risk özeti"></div>
           </div>
           <div class="panel map-panel">
             <div class="map-toolbar">
@@ -1093,7 +1117,9 @@
     const adminStatusFilter = document.getElementById('adminStatusFilter');
     const adminDateFilter = document.getElementById('adminDateFilter');
     const clearFilters = document.getElementById('clearFilters');
+    const clearRiskFocus = document.getElementById('clearRiskFocus');
     const filterResult = document.getElementById('filterResult');
+    const regionalRiskGrid = document.getElementById('regionalRiskGrid');
     const adminReportRows = document.getElementById('adminReportRows');
     const detailIntro = document.getElementById('detailIntro');
     const detailMapButton = document.getElementById('detailMapButton');
@@ -1255,6 +1281,50 @@
       document.getElementById('summaryReviewReports').textContent = reviewCount;
       document.getElementById('summaryTopDistrict').textContent = topDistrict ? topDistrict[0] : '-';
       document.getElementById('summaryTopCategory').textContent = topCategory ? topCategory[0] : '-';
+    }
+
+    function getRegionalRiskRows(reports) {
+      const districts = new Map();
+      reports.forEach(report => {
+        if (!districts.has(report.district)) {
+          districts.set(report.district, { district: report.district, total: 0, categories: {} });
+        }
+        const row = districts.get(report.district);
+        row.total += 1;
+        row.categories[report.category] = (row.categories[report.category] || 0) + 1;
+      });
+      const rows = [...districts.values()].sort((a, b) => b.total - a.total);
+      const maxCategoryCount = Math.max(
+        ...rows.flatMap(row => Object.values(row.categories)),
+        1
+      );
+      return rows.map(row => ({
+        ...row,
+        topCategories: Object.entries(row.categories)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 3)
+          .map(([category, count]) => ({ category, count, width: Math.max(12, Math.round(count / maxCategoryCount * 100)) }))
+      }));
+    }
+
+    function renderRegionalRiskPanel(reports) {
+      const rows = getRegionalRiskRows(reports);
+      if (!rows.length) {
+        regionalRiskGrid.innerHTML = '<div class="empty-row">Seçilen filtrelere göre bölgesel risk verisi yok.</div>';
+        return;
+      }
+      regionalRiskGrid.innerHTML = rows.map(row =>
+        '<div class="risk-district' + (adminDistrictFilter.value === row.district ? ' active' : '') + '">' +
+          '<button class="risk-district-title" type="button" data-risk-district="' + row.district + '"><span>' + row.district + '</span><span class="risk-total">' + row.total + '</span></button>' +
+          '<div class="risk-categories">' + row.topCategories.map(item =>
+            '<div class="risk-category">' +
+              '<button type="button" data-risk-district="' + row.district + '" data-risk-category="' + escapeHtml(item.category) + '">' + escapeHtml(item.category) + '</button>' +
+              '<span class="risk-bar" aria-hidden="true"><span class="risk-bar-fill" style="width:' + item.width + '%"></span></span>' +
+              '<span class="risk-category-count">' + item.count + '</span>' +
+            '</div>'
+          ).join('') + '</div>' +
+        '</div>'
+      ).join('');
     }
 
     function renderAdminTable(groups) {
@@ -1456,6 +1526,7 @@
       const reports = getFilteredReports();
       const groups = getGroupedReports(reports);
       renderAdminSummary(reports);
+      renderRegionalRiskPanel(reports);
       renderAdminTable(groups);
       renderGroupDetail(selectedGroupKey, reports);
       filterResult.textContent = groups.length + ' grup, toplam ' + reports.length + ' tekil bildirim gösteriliyor.';
@@ -1469,6 +1540,23 @@
       if (!school) return;
       initLeafletMap();
       leafletMap.setView([school.lat, school.lng], 15);
+    }
+
+    function focusDistrictOnMap(district) {
+      if (!district || district === 'all') {
+        fitIslandBounds();
+        return;
+      }
+      initLeafletMap();
+      const districtSchools = schoolMapData.filter(school => school.region === district);
+      if (!districtSchools.length || typeof L === 'undefined') return;
+      const bounds = L.latLngBounds(districtSchools.map(school => [school.lat, school.lng]));
+      leafletMap.fitBounds(bounds, {
+        padding: [34, 34],
+        maxZoom: 11,
+        animate: true,
+        duration: 0.5
+      });
     }
 
     function updateSchoolOptions() {
@@ -1576,6 +1664,26 @@
       adminStatusFilter.value = 'all';
       adminDateFilter.value = 'all';
       renderAdminPanel();
+    });
+    clearRiskFocus.addEventListener('click', () => {
+      adminDistrictFilter.value = 'all';
+      updateAdminSchoolFilter();
+      adminSchoolFilter.value = 'all';
+      adminCategoryFilter.value = 'all';
+      renderAdminPanel();
+      focusDistrictOnMap('all');
+    });
+    regionalRiskGrid.addEventListener('click', event => {
+      const button = event.target.closest('[data-risk-district]');
+      if (!button) return;
+      adminDistrictFilter.value = button.dataset.riskDistrict;
+      updateAdminSchoolFilter();
+      adminSchoolFilter.value = 'all';
+      if (button.dataset.riskCategory) {
+        adminCategoryFilter.value = button.dataset.riskCategory;
+      }
+      renderAdminPanel();
+      focusDistrictOnMap(button.dataset.riskDistrict);
     });
     adminReportRows.addEventListener('click', event => {
       const button = event.target.closest('[data-group-key]');
