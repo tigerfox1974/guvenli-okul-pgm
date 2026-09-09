@@ -1627,7 +1627,7 @@
         attribution: '&copy; OpenStreetMap katkıda bulunanlar'
       }).addTo(leafletMap);
 
-      markerLayer = L.layerGroup().addTo(leafletMap);
+      markerLayer = L.featureGroup().addTo(leafletMap);
       countLayer = L.layerGroup().addTo(leafletMap);
 
       renderSchoolMarkers();
