@@ -1,5 +1,6 @@
 import { schools } from '../data/schools.js';
 import { generateId, getDistrictOptions, normalizeDistrictName } from './utils.js';
+import { persistReportToSupabase, syncPendingSupabaseReports } from './supabase.js';
 
 let selectedFiles = [];
 const PUBLIC_REPORTS_STORAGE_KEY = 'pgm-public-reports-demo-v1';
@@ -9,6 +10,7 @@ const SUBMIT_NOTICE_SECONDS = 5;
 let emergencyGateTimerId = null;
 let submitNoticeTimerId = null;
 let pendingSubmitCompletion = null;
+let onlineSyncInitialized = false;
 
 export function initForm() {
   const form = document.getElementById('reportForm');
@@ -33,6 +35,7 @@ export function initForm() {
   initLocationRequest();
   initSubmitNoticeModal();
   initFileUploadNoticeModal();
+  bootSupabaseSync();
 
   districtSelect.addEventListener('change', () => {
     updateSchoolList(districtSelect.value);
@@ -198,12 +201,14 @@ function handleSubmit() {
     contactPhone: phoneInput?.value.trim() || '',
     contactEmail: emailInput?.value.trim() || '',
     status: 'Yeni',
+    technicalMeta: collectVisitorSnapshot(),
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };
 
   saveReport(report);
   document.dispatchEvent(new CustomEvent('reports:updated', { detail: { report } }));
+  void syncReportToCloud(report);
 
   showSubmitNoticeModal(() => {
     form.reset();
@@ -222,6 +227,39 @@ function saveReport(report) {
   const reports = getReports();
   reports.push(report);
   localStorage.setItem(PUBLIC_REPORTS_STORAGE_KEY, JSON.stringify(reports));
+}
+
+async function syncReportToCloud(report) {
+  try {
+    const pendingSyncResult = await syncPendingSupabaseReports();
+    if (pendingSyncResult.status === 'queued') {
+      console.warn('Supabase kuyruğu senkronlanamadı:', pendingSyncResult.reason);
+    }
+
+    const reportSyncResult = await persistReportToSupabase(report);
+    if (reportSyncResult.status === 'queued') {
+      console.warn('Bildirim Supabase kuyruğuna alındı:', reportSyncResult.reason);
+    }
+    if (reportSyncResult.status === 'skipped') {
+      console.info('Supabase yapılandırması tamamlanmadı; bildirim local kayda yazıldı.');
+    }
+  } catch (error) {
+    console.error('Supabase senkronizasyonunda beklenmeyen hata oluştu:', error);
+  }
+}
+
+function bootSupabaseSync() {
+  void syncPendingSupabaseReports();
+
+  if (onlineSyncInitialized) {
+    return;
+  }
+
+  window.addEventListener('online', () => {
+    void syncPendingSupabaseReports();
+  });
+
+  onlineSyncInitialized = true;
 }
 
 export function getReports() {
@@ -258,6 +296,10 @@ function normalizeReport(report) {
       ? report.files
       : [];
 
+  const technicalMeta = report.technicalMeta && typeof report.technicalMeta === 'object'
+    ? report.technicalMeta
+    : null;
+
   return {
     ...report,
     district,
@@ -275,6 +317,7 @@ function normalizeReport(report) {
       phone: contactPhone,
       email: contactEmail
     },
+    technicalMeta,
     contactName,
     contactPhone,
     contactEmail,
@@ -649,6 +692,53 @@ function detectOs(userAgent) {
   if (/Mac OS X/.test(userAgent)) return 'macOS';
   if (/Linux/.test(userAgent)) return 'Linux';
   return 'Bilinmiyor';
+}
+
+function collectVisitorSnapshot() {
+  const locationText = readText('visitorLocation');
+  const accuracyText = readText('visitorAccuracy');
+
+  return {
+    device: readText('visitorDevice'),
+    browser: readText('visitorBrowser'),
+    os: readText('visitorOs'),
+    language: readText('visitorLanguage'),
+    timezone: readText('visitorTimezone'),
+    screen: readText('visitorScreen'),
+    capturedAt: new Date().toISOString(),
+    location: parseLocationSnapshot(locationText, accuracyText)
+  };
+}
+
+function parseLocationSnapshot(locationText, accuracyText) {
+  if (!locationText || locationText === 'Konum izni verilmedi' || locationText === 'Konum alınıyor...') {
+    return null;
+  }
+
+  const [latitudeText, longitudeText] = locationText.split(',').map(value => value.trim());
+  const latitude = Number(latitudeText);
+  const longitude = Number(longitudeText);
+
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+    return null;
+  }
+
+  const accuracyMeters = Number.parseInt(String(accuracyText || '').replace(/[^\d]/g, ''), 10);
+
+  return {
+    latitude,
+    longitude,
+    accuracyMeters: Number.isFinite(accuracyMeters) ? accuracyMeters : null
+  };
+}
+
+function readText(id) {
+  const element = document.getElementById(id);
+  if (!element || typeof element.textContent !== 'string') {
+    return '';
+  }
+
+  return element.textContent.trim();
 }
 
 function setText(id, value) {
