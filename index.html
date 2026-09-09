@@ -92,8 +92,8 @@
               <option>Diğer</option>
             </select>
           </label>
-          <label>Olay tarihi / yaklaşık saat *
-            <input id="eventDateInput" type="datetime-local" required data-step="3" disabled>
+          <label>Olay tarihi / yaklaşık saat
+            <input id="eventDateInput" type="datetime-local" data-step="3" disabled>
           </label>
           <label class="full">Sorunun kısa başlığı *
             <input id="titleInput" type="text" required data-step="4" disabled placeholder="Örn: Okul çıkışında tehlikeli araç yoğunluğu" maxlength="120">
@@ -256,7 +256,7 @@
     </section>
   </main>
 
-  <div id="emergencyGate" class="emergency-gate" role="dialog" aria-modal="true" aria-labelledby="emergencyTitle">
+  <div id="emergencyGate" class="emergency-gate" role="dialog" aria-modal="true" aria-labelledby="emergencyTitle" aria-hidden="true" hidden>
     <div class="emergency-card">
       <div id="countdown" class="countdown">5</div>
       <h2 id="emergencyTitle">Acil durum bildirimi bu sistemden alınmaz</h2>

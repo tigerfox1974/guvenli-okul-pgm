@@ -43,6 +43,10 @@ Sayfada bulunması gereken bölümler:
 
 Bildirim sayfasına girildiğinde form hemen kullanıma açılmamalıdır. Önce 5 saniyelik zorunlu bir uyarı ekranı gösterilmelidir.
 
+Uyarı, uygulama açılışında otomatik başlamamalı; kullanıcı Bildirim Yap görünümünü aktif ettiğinde modal olarak açılmalıdır.
+
+Uyarı aktifken form etkileşimi kapalı kalmalı, sayaç tamamlandıktan sonra kullanıcı devam düğmesine basana kadar form kullanılmamalıdır.
+
 Uyarı amacı:
 
 - Sistemin acil olay bildirimi almadığını açıkça anlatmak
@@ -67,6 +71,8 @@ Uyarı amacı:
 | Olay tarihi / yaklaşık saat | Hayır | Kullanıcı bilmiyorsa boş bırakabilir |
 | Fotoğraf / dosya | Hayır | PDF, JPG, PNG |
 | İletişim bilgisi | Hayır | Tamamen isteğe bağlı |
+
+Olay tarihi alanı opsiyoneldir. Kullanıcı bu alanı boş bıraksa da form, diğer zorunlu alanlar tamamlandığında gönderilebilir.
 
 Formda acil durum veya aciliyet seçimi bulunmamalıdır. Bu sistem yalnızca acil olmayan okul güvenliği bildirimleri için kullanılmalıdır.
 

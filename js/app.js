@@ -1,4 +1,4 @@
-import { initForm } from './modules/form.js';
+import { initForm, showEmergencyGateOnReportEntry } from './modules/form.js';
 
 const ADMIN_SESSION_KEY = 'pgm-demo-admin-session-v1';
 const OPERATOR_ROLES = new Set(['operator', 'supervisor']);
@@ -72,6 +72,10 @@ function showPublicView(viewId) {
   navButtons.forEach(button => {
     button.classList.toggle('active', button.dataset.view === viewId);
   });
+
+  if (viewId === 'report') {
+    showEmergencyGateOnReportEntry();
+  }
 }
 
 function initAdminGate() {

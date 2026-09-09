@@ -72,6 +72,51 @@ textarea { min-height: 118px; resize: vertical; }
 .security-card { margin-bottom: 18px; }
 .security-compact { display: grid; gap: 12px; padding: 14px; border: 1px solid #bfdbfe; background: #eff6ff; border-radius: 8px; }
 .security-compact h2 { margin-bottom: 6px; }
+body.modal-open { overflow: hidden; }
+.report-locked .panel { filter: saturate(0.88); }
+.emergency-gate[hidden] { display: none; }
+.emergency-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 1400;
+  padding: 20px;
+  display: grid;
+  place-items: center;
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(2px);
+}
+.emergency-card {
+  width: min(640px, 100%);
+  background: #ffffff;
+  border: 1px solid #fecaca;
+  border-radius: 14px;
+  box-shadow: 0 24px 56px rgba(0, 0, 0, 0.34);
+  padding: 26px 24px;
+}
+.emergency-card h2 {
+  color: #7f1d1d;
+  margin-bottom: 10px;
+}
+.emergency-card p {
+  color: #1f2937;
+}
+.emergency-card .primary {
+  width: 100%;
+  margin-top: 10px;
+}
+.countdown {
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 14px;
+  font-size: 24px;
+  font-weight: 800;
+  color: #7f1d1d;
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+}
 @media (max-width: 780px) {
   .hero { grid-template-columns: 1fr; }
   .grid { grid-template-columns: 1fr 1fr; }
@@ -79,6 +124,7 @@ textarea { min-height: 118px; resize: vertical; }
   form { grid-template-columns: 1fr; }
   .optional-grid { grid-template-columns: 1fr 1fr; }
   .map { min-height: 320px; height: clamp(320px, 46vh, 500px); }
+  .emergency-card { padding: 22px 18px; }
 }
 @media (max-width: 480px) {
   .grid { grid-template-columns: 1fr; }

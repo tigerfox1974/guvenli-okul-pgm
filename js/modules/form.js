@@ -4,6 +4,8 @@ import { generateId, getDistrictOptions, normalizeDistrictName } from './utils.j
 let selectedFiles = [];
 const PUBLIC_REPORTS_STORAGE_KEY = 'pgm-public-reports-demo-v1';
 const LEGACY_REPORTS_STORAGE_KEY = 'reports';
+const EMERGENCY_GATE_SECONDS = 5;
+let emergencyGateTimerId = null;
 
 export function initForm() {
   const form = document.getElementById('reportForm');
@@ -24,7 +26,6 @@ export function initForm() {
 
   populateDistrictSelect(districtSelect);
 
-  initEmergencyGate();
   initVisitorSnapshot();
   initLocationRequest();
 
@@ -157,11 +158,11 @@ function handleSubmit() {
   const district = normalizeDistrictName(districtSelect.value.trim(), '');
   const schoolId = Number(schoolSelect.value);
   const category = categorySelect.value.trim();
-  const eventDate = eventDateInput.value;
+  const eventDate = eventDateInput.value || '';
   const title = titleInput.value.trim();
   const description = descriptionInput.value.trim();
 
-  if (!district || !schoolId || !category || !eventDate || !title || !description) {
+  if (!district || !schoolId || !category || !title || !description) {
     alert('Lütfen tüm zorunlu alanları doldurun.');
     return;
   }
@@ -298,10 +299,9 @@ function syncFormState() {
   const hasCategory = hasSchool && Boolean(categorySelect.value);
   eventDateInput.disabled = !hasCategory;
 
-  const hasEventDate = hasCategory && Boolean(eventDateInput.value);
-  titleInput.disabled = !hasEventDate;
+  titleInput.disabled = !hasCategory;
 
-  const hasTitle = hasEventDate && Boolean(titleInput.value.trim());
+  const hasTitle = hasCategory && Boolean(titleInput.value.trim());
   descriptionInput.disabled = !hasTitle;
 
   const hasDescription = hasTitle && Boolean(descriptionInput.value.trim());
@@ -325,23 +325,35 @@ function setOptionalFieldsEnabled(enabled) {
   }
 }
 
-function initEmergencyGate() {
+export function showEmergencyGateOnReportEntry() {
   const gate = document.getElementById('emergencyGate');
   const countdown = document.getElementById('countdown');
   const continueButton = document.getElementById('continueReport');
 
   if (!gate || !countdown || !continueButton) return;
 
-  let seconds = 5;
+  setReportInteractionLock(true);
+  gate.hidden = false;
+  gate.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('modal-open');
+
+  let seconds = EMERGENCY_GATE_SECONDS;
   countdown.textContent = String(seconds);
   continueButton.disabled = true;
   continueButton.textContent = `${seconds} saniye sonra bildirim formuna geç`;
 
-  const timer = window.setInterval(() => {
+  if (emergencyGateTimerId) {
+    window.clearInterval(emergencyGateTimerId);
+  }
+
+  emergencyGateTimerId = window.setInterval(() => {
     seconds -= 1;
 
     if (seconds <= 0) {
-      window.clearInterval(timer);
+      if (emergencyGateTimerId) {
+        window.clearInterval(emergencyGateTimerId);
+        emergencyGateTimerId = null;
+      }
       countdown.textContent = '0';
       continueButton.disabled = false;
       continueButton.textContent = 'Bildirim formuna geç';
@@ -352,9 +364,29 @@ function initEmergencyGate() {
     continueButton.textContent = `${seconds} saniye sonra bildirim formuna geç`;
   }, 1000);
 
-  continueButton.addEventListener('click', () => {
-    gate.style.display = 'none';
-  }, { once: true });
+  continueButton.onclick = () => {
+    if (continueButton.disabled) return;
+
+    gate.hidden = true;
+    gate.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('modal-open');
+    setReportInteractionLock(false);
+  };
+}
+
+function setReportInteractionLock(locked) {
+  const reportView = document.getElementById('report');
+  if (!reportView) return;
+
+  reportView.classList.toggle('report-locked', locked);
+
+  if (locked) {
+    reportView.setAttribute('inert', '');
+    return;
+  }
+
+  reportView.removeAttribute('inert');
+  syncFormState();
 }
 
 function initVisitorSnapshot() {

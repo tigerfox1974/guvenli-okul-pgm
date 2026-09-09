@@ -1,4 +1,4 @@
-import { getReports } from './form.js';
+import { getReports, showEmergencyGateOnReportEntry } from './form.js';
 import {
   fitToIsland,
   getMapLayerVisibility,
@@ -128,6 +128,11 @@ function activateView(viewId, navButtons) {
   navButtons.forEach(button => {
     button.classList.toggle('active', button.dataset.view === viewId);
   });
+
+  if (viewId === 'report') {
+    showEmergencyGateOnReportEntry();
+    return;
+  }
 
   if (viewId === 'admin') {
     renderAdminPanel();
