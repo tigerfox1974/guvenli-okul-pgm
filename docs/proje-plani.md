@@ -22,6 +22,7 @@ Sistem iki ana yüzeyden oluşur:
 | Acil olay bildirimi | Alınmayacak |
 | Bildirim giriş uyarısı | 5 saniyelik telefon yönlendirme ekranı olacak |
 | Yönetim paneli | Olacak |
+| Yönetim paneli erişimi | Halka açık derlemede demo rol kapısı (mock auth) zorunlu |
 | Harita motoru | Leaflet + OpenStreetMap |
 | Isı haritası | Leaflet.heat ile kategori, olay sayısı ve tarih aralığına göre olacak |
 | Okul harita pinleri | Bildirim olmasa bile Excel koordinat listesine göre Leaflet varsayılan pinleriyle gösterilecek |
@@ -93,6 +94,10 @@ Formda acil durum veya aciliyet seçimi bulunmamalıdır. Bu sistem yalnızca ac
 Not: Bu kategoriler acil olay alma amacı taşımaz. Devam eden tehlike içeren olaylar 155 veya 112 telefon hattına yönlendirilmelidir.
 
 ## 7. PGM Yönetim Paneli
+
+Yönetim paneli anonim yüzeyden ayrılmalıdır. Halka açık derlemede panel yalnızca demo amaçlı görünür olabilir; erişim rol doğrulaması (operatör/süpervizör) arkasında olmalıdır.
+
+Bu demoda kullanılan giriş mekanizması mock authentication seviyesindedir. Gerçek idari veya hassas veri akışı, sunucu taraflı kimlik doğrulama ve rol bazlı yetkilendirme eklenmeden panelle entegre edilmemelidir.
 
 Panelde bulunması gereken temel alanlar:
 
@@ -180,6 +185,7 @@ Normal web sayfası IMEI, cihaz seri numarası ve MAC adresi alamaz. Bu bilgiler
 - Veritabanı: Supabase PostgreSQL
 - Dosya depolama: Supabase Storage
 - Kimlik doğrulama: PGM yetkili kullanıcıları için rol bazlı giriş
+- Halka açık build koruması: Operatör modülleri yetki olmadan başlatılmamalı, admin veri yolları public katmanda taşınmamalı
 - Harita: Leaflet + OpenStreetMap, KKTC okul koordinatları ile okul noktaları
 - Isı haritası: Leaflet.heat ile olay yoğunluğu katmanı
 - Raporlama: İlçe, okul, kategori ve tarih bazlı analizler
