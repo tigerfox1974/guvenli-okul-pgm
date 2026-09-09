@@ -59,7 +59,8 @@
     .security-compact { display: grid; gap: 12px; padding: 14px; border: 1px solid #bfdbfe; background: #eff6ff; border-radius: 8px; }
     .security-compact h2 { margin-bottom: 6px; }
     .security-compact p { margin-bottom: 0; }
-    .security-privacy { color: #1e3a8a; font-size: 13px; line-height: 1.45; }
+    .security-privacy { color: var(--red); font-size: 13px; line-height: 1.45; font-weight: 700; }
+    .form-flow-note { margin: 2px 0 14px; color: #374151; }
     .security-compact-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
     .security-compact .security-item { padding: 8px; background: #fff; }
     .security-compact .security-item span { font-size: 11px; }
@@ -171,7 +172,6 @@
         <div class="security-card security-compact">
           <div>
             <h2>Anonim Güvenlik Bildirimi</h2>
-            <p>Form adım adım açılır. Zorunlu alan tamamlanmadan bir sonraki alan aktif olmaz. Ad soyad, telefon ve e-posta isteğe bağlıdır.</p>
             <p class="security-privacy">Bildirimler anonim olarak alınır. Sistemde görülebilen sınırlı teknik bilgiler, yalnızca kötüye kullanımın, gereksiz bildirimlerin ve bilgi kirliliğinin azaltılması amacıyla güvenlik kaydı olarak değerlendirilir. Konum bilgisi ancak kullanıcının açık tarayıcı izniyle alınabilir; IMEI, cihaz seri no ve MAC adresi ise web tarayıcısı üzerinden alınamaz.</p>
           </div>
           <div class="security-compact-grid" aria-label="Teknik güvenlik kaydı">
@@ -190,6 +190,7 @@
 
           </div>
         </div>
+        <p class="form-flow-note">Form adım adım açılır. Zorunlu alan tamamlanmadan bir sonraki alan aktif olmaz. Ad soyadı, telefon ve e-posta isteğe bağlıdır.</p>
         <form id="reportForm">
           <label>İlçe *
             <select id="districtSelect" required data-step="0">
@@ -1344,7 +1345,8 @@
       document.getElementById('visitorBrowser').textContent = detectBrowser(userAgent);
       document.getElementById('visitorOs').textContent = detectOs(userAgent);
       document.getElementById('visitorLanguage').textContent = navigator.language || 'Bilinmiyor';
-      document.getElementById('visitorTimezone').textContent = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Bilinmiyor';
+      const detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      document.getElementById('visitorTimezone').textContent = detectedTimezone || 'Asia/Nicosia';
       document.getElementById('visitorScreen').textContent = window.screen ? window.screen.width + ' x ' + window.screen.height : 'Bilinmiyor';
       document.getElementById('visitorTime').textContent = new Date().toLocaleString('tr-TR');
     }
