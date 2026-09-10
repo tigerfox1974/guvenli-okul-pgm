@@ -172,6 +172,10 @@ body.modal-open { overflow: hidden; }
   background: #fee2e2;
   border: 1px solid #fca5a5;
 }
+.emergency-card .countdown {
+  margin-left: auto;
+  margin-right: auto;
+}
 @media (max-width: 780px) {
   .hero { grid-template-columns: 1fr; }
   .grid { grid-template-columns: 1fr 1fr; }
