@@ -209,3 +209,16 @@ Su adimlari uygulayin:
 1. İnternet kesilirse bildirim yine yerel kayda yazılır.
 2. Supabase'e gönderim otomatik kuyruklanır.
 3. Bağlantı geri geldiğinde veya sayfa yeniden açıldığında sistem kuyruktaki kayıtları tekrar göndermeyi dener.
+
+### Vercel Deploy Sonrasi Onemli Not (Cache)
+
+Eger local ortamda kayıt dusuyor ama Vercel ortaminda dusmuyorsa, nedeni eski JS dosyalarinin tarayici cache'inden calismasi olabilir.
+
+Kontrol adimlari:
+1. Siteyi su sekilde acin: https://guvenli-okul-pgm.vercel.app/?cb=1
+2. Formdan yeni test bildirimi gonderin.
+3. Supabase Tablo Editor'de anonymous_reports tablosunu yenileyin.
+
+Notlar:
+1. Bu projede JS modullerine surum parametresi eklendi (ornek: app.js?v=20260910-1).
+2. Vercel icin must-revalidate cache header ayari [vercel.json](vercel.json) dosyasinda tanimlandi.

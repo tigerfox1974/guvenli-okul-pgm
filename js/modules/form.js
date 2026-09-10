@@ -1,6 +1,6 @@
 import { schools } from '../data/schools.js';
 import { generateId, getDistrictOptions, normalizeDistrictName } from './utils.js';
-import { persistReportToSupabase, syncPendingSupabaseReports } from './supabase.js';
+import { persistReportToSupabase, syncPendingSupabaseReports } from './supabase.js?v=20260910-1';
 
 let selectedFiles = [];
 const PUBLIC_REPORTS_STORAGE_KEY = 'pgm-public-reports-demo-v1';

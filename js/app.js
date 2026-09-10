@@ -1,4 +1,4 @@
-import { initForm, showEmergencyGateOnReportEntry } from './modules/form.js';
+import { initForm, showEmergencyGateOnReportEntry } from './modules/form.js?v=20260910-1';
 
 const ADMIN_SESSION_KEY = 'pgm-demo-admin-session-v1';
 const OPERATOR_ROLES = new Set(['operator', 'supervisor']);
@@ -146,8 +146,8 @@ async function enableOperatorRuntime(options = { openAdminView: false }) {
 
   if (!operatorRuntime) {
     const [{ initUI }, { refreshMapAfterAdminVisible }] = await Promise.all([
-      import('./modules/ui.js'),
-      import('./modules/map.js')
+      import('./modules/ui.js?v=20260910-1'),
+      import('./modules/map.js?v=20260910-1')
     ]);
 
     operatorRuntime = {
