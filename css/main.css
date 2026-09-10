@@ -78,19 +78,6 @@ textarea { min-height: 118px; resize: vertical; }
   color: #b91c1c;
   animation: security-heading-blink 1.4s ease-in-out infinite;
 }
-.security-terms h3 {
-  margin-top: 18px;
-  color: #7f1d1d;
-}
-.security-terms h4 {
-  margin: 16px 0 6px;
-  color: #991b1b;
-  font-size: 16px;
-}
-.security-terms p {
-  margin-bottom: 12px;
-}
-.security-privacy { color: #b91c1c; font-weight: 500; }
 .security-privacy-emphasis { color: #991b1b; font-weight: 800; }
 @keyframes security-heading-blink {
   0%, 100% { opacity: 1; }
