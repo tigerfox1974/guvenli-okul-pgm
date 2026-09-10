@@ -110,6 +110,7 @@ input.field-invalid, select.field-invalid, textarea.field-invalid { border-color
 @media (prefers-reduced-motion: reduce) {
   .security-compact h2 { animation: none; }
   .report-usage-terms-modal .system-modal-card h2 { animation: none; }
+  .usage-terms-content .usage-terms-blink { animation: none; }
 }
 .security-compact-grid {
   display: grid;
@@ -207,6 +208,10 @@ body.modal-open { overflow: hidden; }
 
 .usage-terms-content p {
   margin-bottom: 12px;
+}
+
+.usage-terms-content .usage-terms-blink {
+  animation: security-heading-blink 1.4s ease-in-out infinite;
 }
 
 .usage-terms-check {
