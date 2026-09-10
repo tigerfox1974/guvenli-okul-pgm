@@ -155,11 +155,25 @@ Bu nedenle Vercel Project Settings > Environment Variables ekraninda su degerler
 3. SUPABASE_SCHEMA = public
 4. SUPABASE_REPORTS_TABLE = anonymous_reports
 5. REPORT_SECURITY_SALT = rastgele_uzun_bir_metin
+6. SUPABASE_SECURITY_EVENTS_TABLE = security_events (opsiyonel, varsayilan tablo adi)
 
 Guvenlik kurali:
 
 1. SUPABASE_SERVICE_ROLE_KEY degerini istemci koduna koymayin.
 2. Bu anahtar sadece Vercel sunucu ortam degiskeninde bulunmalidir.
+
+### Aşama 4.2: Paket C Guvenlik Olay Tablosu
+
+Paket C ile birlikte rate limit, duplicate ve invalid payload gibi guvenlik olaylari ayri bir tabloda saklanir.
+
+Mevcut Supabase projesinde bir kez su scripti calistirin:
+
+1. [docs/supabase-package-c-security-events.sql](docs/supabase-package-c-security-events.sql)
+
+Kontrol noktasi:
+
+1. Table Editor icinde public.security_events tablosu gorunmeli.
+2. Ilk rate limit veya duplicate testinden sonra tabloda olay kaydi olusmali.
 
 ### Aşama 5: Uygulamayı Doğru Şekilde Aç
 

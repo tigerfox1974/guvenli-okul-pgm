@@ -25,7 +25,7 @@ Durum ozeti:
 
 1. Paket A tamamlandi.
 2. Paket B uygulandi (sunucu endpoint + server-side kontrol).
-3. Paket C henuz baslamadi.
+3. Paket C uygulandi (guvenlik olay kaydi + haftalik metrik sorgulari).
 
 Paket A'da devreye alinan kontroller:
 
@@ -41,6 +41,13 @@ Paket B'de devreye alinan kontroller:
 3. Sunucu tarafinda IP ve fingerprint tabanli hiz limiti (10 dk penceresi)
 4. Sunucu tarafinda duplicate icerik kontrolu (15 dk penceresi)
 5. Service role anahtari sadece sunucu ortaminda kullanilacak sekilde ayrim
+
+Paket C'de devreye alinan kontroller:
+
+1. `security_events` tablosuna rate limit, duplicate ve invalid payload olay kaydi
+2. Submit hatalari icin `submit_error` olay tipi kaydi
+3. Son 7 gun icin guvenlik olay metrik sorgulari
+4. Son 7 gun accepted report metrik sorgusu
 
 ## 4. Faz 2 Is Paketleri
 
@@ -134,4 +141,4 @@ Faz 2 tamamlandi sayilmasi icin:
 
 ## 9. Bir Sonraki Aksiyon
 
-Paket B dagitim oncesi Vercel ortam degiskenleri tamamlanir, ardindan Paket C (izleme ve operasyon) adimina gecilir.
+Paket C dagitimi sonrasi `docs/supabase-package-c-security-events.sql` scripti Supabase'te calistirilir ve canli ortamda olay kaydi dogrulanir.

@@ -8,6 +8,7 @@ const MAX_TITLE_LENGTH = 120;
 const MAX_DESCRIPTION_LENGTH = 2000;
 const MAX_LINK_MARKER_COUNT = 3;
 const DEFAULT_TIMEOUT_MS = 10000;
+const DEFAULT_SECURITY_EVENTS_TABLE = 'security_events';
 
 const ipRateBuckets = new Map();
 const fingerprintRateBuckets = new Map();
@@ -31,44 +32,94 @@ module.exports = async (req, res) => {
     return;
   }
 
+  const requestIp = extractRequestIp(req);
+  const userAgent = normalizeText(req.headers['user-agent'] || '', 300) || 'unknown';
+  const routePath = normalizeText(req.url || '/api/report', 240) || '/api/report';
+  const nowMs = Date.now();
+  const ipHash = buildIpKey(requestIp, config.hashSalt);
+
   let payload;
   try {
     payload = parseJsonBody(req.body);
   } catch {
+    await tryLogSecurityEvent(config, {
+      eventType: 'invalid_payload',
+      reason: 'invalid_json_body',
+      route: routePath,
+      userAgent,
+      ipHash,
+      metadata: {
+        stage: 'parse_json'
+      }
+    });
     res.status(400).json({ error: 'invalid_json_body' });
     return;
   }
 
   const sanitized = sanitizeIncomingRow(payload && payload.row);
   if (!sanitized.ok) {
+    await tryLogSecurityEvent(config, {
+      eventType: 'invalid_payload',
+      reason: sanitized.reason,
+      route: routePath,
+      userAgent,
+      ipHash,
+      metadata: {
+        stage: 'sanitize_row'
+      }
+    });
     res.status(422).json({ error: 'invalid_report_payload', reason: sanitized.reason });
     return;
   }
 
-  const requestIp = extractRequestIp(req);
-  const userAgent = normalizeText(req.headers['user-agent'] || '', 300) || 'unknown';
-  const nowMs = Date.now();
-
   cleanupRateBuckets(ipRateBuckets, nowMs, RATE_LIMIT_WINDOW_MS);
   cleanupRateBuckets(fingerprintRateBuckets, nowMs, RATE_LIMIT_WINDOW_MS);
 
-  const ipDecision = consumeRateToken(ipRateBuckets, buildIpKey(requestIp, config.hashSalt), nowMs, RATE_LIMIT_WINDOW_MS, RATE_LIMIT_MAX_PER_IP);
+  const ipDecision = consumeRateToken(ipRateBuckets, ipHash, nowMs, RATE_LIMIT_WINDOW_MS, RATE_LIMIT_MAX_PER_IP);
   if (!ipDecision.allowed) {
+    await tryLogSecurityEvent(config, {
+      eventType: 'rate_limit_block',
+      reason: 'rate_limit_ip',
+      route: routePath,
+      userAgent,
+      ipHash,
+      reportId: sanitized.row.id,
+      metadata: {
+        retryAfterSeconds: ipDecision.retryAfterSeconds,
+        windowMs: RATE_LIMIT_WINDOW_MS,
+        maxPerIp: RATE_LIMIT_MAX_PER_IP
+      }
+    });
     res.setHeader('Retry-After', String(ipDecision.retryAfterSeconds));
     res.status(429).json({ error: 'rate_limit_ip', message: 'Kisa surede cok fazla gonderim yapildi. Lutfen daha sonra tekrar deneyin.' });
     return;
   }
 
   const fingerprintSource = buildFingerprintSource(userAgent, sanitized.row.client_snapshot);
+  const fingerprintHash = buildFingerprintKey(fingerprintSource, config.hashSalt);
   const fingerprintDecision = consumeRateToken(
     fingerprintRateBuckets,
-    buildFingerprintKey(fingerprintSource, config.hashSalt),
+    fingerprintHash,
     nowMs,
     RATE_LIMIT_WINDOW_MS,
     RATE_LIMIT_MAX_PER_FINGERPRINT
   );
 
   if (!fingerprintDecision.allowed) {
+    await tryLogSecurityEvent(config, {
+      eventType: 'rate_limit_block',
+      reason: 'rate_limit_fingerprint',
+      route: routePath,
+      userAgent,
+      ipHash,
+      fingerprintHash,
+      reportId: sanitized.row.id,
+      metadata: {
+        retryAfterSeconds: fingerprintDecision.retryAfterSeconds,
+        windowMs: RATE_LIMIT_WINDOW_MS,
+        maxPerFingerprint: RATE_LIMIT_MAX_PER_FINGERPRINT
+      }
+    });
     res.setHeader('Retry-After', String(fingerprintDecision.retryAfterSeconds));
     res.status(429).json({ error: 'rate_limit_fingerprint', message: 'Kisa surede tekrarlayan gonderim algilandi. Lutfen daha sonra tekrar deneyin.' });
     return;
@@ -77,6 +128,19 @@ module.exports = async (req, res) => {
   try {
     const duplicateExists = await hasRecentDuplicateSubmission(config, sanitized.row);
     if (duplicateExists) {
+      await tryLogSecurityEvent(config, {
+        eventType: 'duplicate_block',
+        reason: 'duplicate_submission',
+        route: routePath,
+        userAgent,
+        ipHash,
+        fingerprintHash,
+        reportId: sanitized.row.id,
+        metadata: {
+          schoolId: sanitized.row.school_id,
+          category: sanitized.row.category
+        }
+      });
       res.status(409).json({ error: 'duplicate_submission', message: 'Ayni icerikte bir bildirim kisa sure icinde gonderildi. Lutfen 15 dakika sonra tekrar deneyin.' });
       return;
     }
@@ -84,6 +148,19 @@ module.exports = async (req, res) => {
     await insertReport(config, sanitized.row);
     res.status(201).json({ status: 'accepted', reportId: sanitized.row.id });
   } catch (error) {
+    await tryLogSecurityEvent(config, {
+      eventType: 'submit_error',
+      reason: 'submit_failed',
+      route: routePath,
+      userAgent,
+      ipHash,
+      fingerprintHash,
+      reportId: sanitized.row.id,
+      metadata: {
+        status: error && Number.isFinite(error.status) ? error.status : null
+      }
+    });
+
     const status = error && Number.isFinite(error.status) ? error.status : 500;
     const message = error instanceof Error ? error.message : 'unexpected_error';
     res.status(status).json({ error: 'submit_failed', message });
@@ -100,6 +177,7 @@ function getServerConfig() {
   const serviceRoleKey = String(process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
   const schema = String(process.env.SUPABASE_SCHEMA || 'public').trim() || 'public';
   const table = String(process.env.SUPABASE_REPORTS_TABLE || 'anonymous_reports').trim() || 'anonymous_reports';
+  const securityEventsTable = String(process.env.SUPABASE_SECURITY_EVENTS_TABLE || DEFAULT_SECURITY_EVENTS_TABLE).trim() || DEFAULT_SECURITY_EVENTS_TABLE;
   const hashSalt = String(process.env.REPORT_SECURITY_SALT || process.env.VERCEL_URL || 'pgm-default-salt').trim();
   const timeoutMs = Number(process.env.REPORT_API_TIMEOUT_MS || DEFAULT_TIMEOUT_MS);
 
@@ -111,6 +189,7 @@ function getServerConfig() {
     serviceRoleKey,
     schema,
     table,
+    securityEventsTable,
     hashSalt,
     timeoutMs: Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : DEFAULT_TIMEOUT_MS
   };
@@ -326,7 +405,7 @@ function consumeRateToken(bucket, key, nowMs, windowMs, maxCount) {
 
 async function hasRecentDuplicateSubmission(config, row) {
   const sinceIso = new Date(Date.now() - DUPLICATE_WINDOW_MS).toISOString();
-  const endpoint = buildSupabaseEndpoint(config, row);
+  const endpoint = buildSupabaseEndpoint(config);
   const url = `${endpoint}?select=id&school_id=eq.${row.school_id}&title=eq.${encodeURIComponent(row.title)}&description=eq.${encodeURIComponent(row.description)}&created_at=gte.${encodeURIComponent(sinceIso)}&limit=1`;
 
   const response = await fetchWithTimeout(url, {
@@ -346,7 +425,7 @@ async function hasRecentDuplicateSubmission(config, row) {
 }
 
 async function insertReport(config, row) {
-  const endpoint = buildSupabaseEndpoint(config, row);
+  const endpoint = buildSupabaseEndpoint(config);
   const response = await fetchWithTimeout(endpoint, {
     method: 'POST',
     headers: buildSupabaseHeaders(config, {
@@ -367,8 +446,85 @@ async function insertReport(config, row) {
   throw buildRequestError(response.status, `insert_failed: ${details}`);
 }
 
-function buildSupabaseEndpoint(config) {
-  return `${config.baseUrl}/rest/v1/${encodeURIComponent(config.table)}`;
+async function logSecurityEvent(config, event) {
+  if (!config || !config.securityEventsTable) {
+    return;
+  }
+
+  const eventType = normalizeText(event && event.eventType, 64);
+  if (!eventType) {
+    return;
+  }
+
+  const row = {
+    event_type: eventType,
+    reason: normalizeNullableText(event && event.reason, 120),
+    route: normalizeText(event && event.route, 240) || '/api/report',
+    user_agent: normalizeNullableText(event && event.userAgent, 300),
+    ip_hash: normalizeNullableText(event && event.ipHash, 128),
+    fingerprint_hash: normalizeNullableText(event && event.fingerprintHash, 128),
+    report_id: normalizeNullableText(event && event.reportId, 80),
+    metadata: sanitizeEventMetadata(event && event.metadata),
+    created_at: new Date().toISOString()
+  };
+
+  const endpoint = buildSupabaseEndpoint(config, config.securityEventsTable);
+  const response = await fetchWithTimeout(endpoint, {
+    method: 'POST',
+    headers: buildSupabaseHeaders(config, {
+      Prefer: 'return=minimal'
+    }),
+    body: JSON.stringify([row])
+  }, config.timeoutMs);
+
+  if (response.ok) {
+    return;
+  }
+
+  const details = await safeReadResponseText(response);
+  console.warn('security event log failed', response.status, details ? details.slice(0, 240) : '');
+}
+
+async function tryLogSecurityEvent(config, event) {
+  try {
+    await logSecurityEvent(config, event);
+  } catch {
+    // Logging failures must never block report processing.
+  }
+}
+
+function sanitizeEventMetadata(metadata) {
+  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) {
+    return {};
+  }
+
+  const sanitized = {};
+  const entries = Object.entries(metadata).slice(0, 12);
+  for (const [key, value] of entries) {
+    const normalizedKey = normalizeText(key, 64);
+    if (!normalizedKey) {
+      continue;
+    }
+
+    if (value === null) {
+      sanitized[normalizedKey] = null;
+      continue;
+    }
+
+    if (typeof value === 'number' || typeof value === 'boolean') {
+      sanitized[normalizedKey] = value;
+      continue;
+    }
+
+    sanitized[normalizedKey] = normalizeText(value, 240);
+  }
+
+  return sanitized;
+}
+
+function buildSupabaseEndpoint(config, tableName = config.table) {
+  const normalizedTableName = String(tableName || '').trim() || config.table;
+  return `${config.baseUrl}/rest/v1/${encodeURIComponent(normalizedTableName)}`;
 }
 
 function buildSupabaseHeaders(config, extraHeaders = {}) {
