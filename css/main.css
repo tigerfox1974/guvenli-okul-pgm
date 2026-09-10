@@ -150,14 +150,27 @@ body.modal-open { overflow: hidden; }
 .emergency-card h2 {
   color: #7f1d1d;
   margin-bottom: 10px;
+  text-align: center;
 }
 .emergency-card p {
   color: #1f2937;
+  text-align: center;
 }
 .emergency-card .primary,
 .system-modal-card .primary {
   width: 100%;
   margin-top: 10px;
+}
+.emergency-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 10px;
+}
+.emergency-actions .primary,
+.emergency-actions .secondary {
+  flex: 1;
+  width: auto;
+  margin-top: 0;
 }
 .countdown {
   width: 56px;

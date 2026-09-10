@@ -379,8 +379,9 @@ export function showEmergencyGateOnReportEntry() {
   const gate = document.getElementById('emergencyGate');
   const countdown = document.getElementById('countdown');
   const continueButton = document.getElementById('continueReport');
+  const cancelButton = document.getElementById('cancelReport');
 
-  if (!gate || !countdown || !continueButton) return;
+  if (!gate || !countdown || !continueButton || !cancelButton) return;
 
   setReportInteractionLock(true);
   setModalState(gate, true);
@@ -417,6 +418,17 @@ export function showEmergencyGateOnReportEntry() {
 
     setModalState(gate, false);
     setReportInteractionLock(false);
+  };
+
+  cancelButton.onclick = () => {
+    if (emergencyGateTimerId) {
+      window.clearInterval(emergencyGateTimerId);
+      emergencyGateTimerId = null;
+    }
+
+    setModalState(gate, false);
+    setReportInteractionLock(false);
+    navigateToHomeView();
   };
 }
 
