@@ -1,6 +1,19 @@
 import { initForm, showEmergencyGateOnReportEntry } from './modules/form.js?v=20260910-3';
 
 const ADMIN_SESSION_KEY = 'pgm-demo-admin-session-v1';
+const VIEW_ROUTE_TOKENS = Object.freeze({
+  home: 'anasayfa',
+  report: 'ihbar',
+  admin: 'panel'
+});
+const ROUTE_VIEW_MAP = Object.freeze({
+  anasayfa: 'home',
+  home: 'home',
+  ihbar: 'report',
+  report: 'report',
+  panel: 'admin',
+  admin: 'admin'
+});
 const OPERATOR_ROLES = new Set(['operator', 'supervisor']);
 const DEMO_ACCOUNTS = Object.freeze([
   {
@@ -35,6 +48,22 @@ function initPublicNavigation() {
   publicNavigationController = new AbortController();
   const { signal } = publicNavigationController;
 
+  window.addEventListener('hashchange', () => {
+    const requestedView = getViewFromUrl();
+    if (!requestedView) return;
+
+    const activeView = getActiveViewId();
+    if (requestedView === activeView) return;
+
+    if (requestedView === 'admin' && !hasOperatorAccess(authSession)) {
+      showPublicView('admin', { syncUrl: false });
+      setAuthMessage('PGM paneli demo rol doğrulaması gerektirir. Lütfen operatör girişi yapın.', false);
+      return;
+    }
+
+    showPublicView(requestedView, { syncUrl: false });
+  }, { signal });
+
   const viewButtons = Array.from(document.querySelectorAll('[data-view]'));
   viewButtons.forEach(button => {
     button.addEventListener('click', event => {
@@ -44,22 +73,22 @@ function initPublicNavigation() {
       event.preventDefault();
 
       if (targetView === 'admin' && !hasOperatorAccess(authSession)) {
-        showPublicView('admin');
+        showPublicView('admin', { syncUrl: true });
         setAuthMessage('PGM paneli demo rol doğrulaması gerektirir. Lütfen operatör girişi yapın.', false);
         return;
       }
 
-      showPublicView(targetView);
+      showPublicView(targetView, { syncUrl: true });
     }, { signal });
   });
 
-  const firstView = document.querySelector('.view.active')?.id || 'home';
+  const firstView = getViewFromUrl() || document.querySelector('.view.active')?.id || 'home';
   if (firstView === 'admin' && !hasOperatorAccess(authSession)) {
-    showPublicView('home');
+    showPublicView('home', { syncUrl: true, replaceUrl: true });
     return;
   }
 
-  showPublicView(firstView);
+  showPublicView(firstView, { syncUrl: true, replaceUrl: true });
 }
 
 function initMobileNav() {
@@ -99,7 +128,8 @@ function initMobileNav() {
   });
 }
 
-function showPublicView(viewId) {
+function showPublicView(viewId, options = {}) {
+  const { syncUrl = true, replaceUrl = false } = options;
   const views = Array.from(document.querySelectorAll('main .view'));
   const navButtons = Array.from(document.querySelectorAll('header nav button[data-view]'));
 
@@ -111,9 +141,43 @@ function showPublicView(viewId) {
     button.classList.toggle('active', button.dataset.view === viewId);
   });
 
+  if (syncUrl) {
+    syncUrlWithView(viewId, replaceUrl);
+  }
+
   if (viewId === 'report') {
     showEmergencyGateOnReportEntry();
   }
+}
+
+function getActiveViewId() {
+  return document.querySelector('main .view.active')?.id || 'home';
+}
+
+function getViewFromUrl() {
+  const hashToken = String(window.location.hash || '').replace(/^#/, '').trim().toLowerCase();
+  const pageToken = new URLSearchParams(window.location.search).get('page');
+  const normalizedPageToken = String(pageToken || '').trim().toLowerCase();
+  const routeToken = hashToken || normalizedPageToken;
+
+  return ROUTE_VIEW_MAP[routeToken] || null;
+}
+
+function syncUrlWithView(viewId, replaceUrl) {
+  const targetToken = VIEW_ROUTE_TOKENS[viewId] || VIEW_ROUTE_TOKENS.home;
+  const targetHash = `#${targetToken}`;
+
+  if (window.location.hash.toLowerCase() === targetHash.toLowerCase()) {
+    return;
+  }
+
+  const url = `${window.location.pathname}${window.location.search}${targetHash}`;
+  if (replaceUrl) {
+    window.history.replaceState(null, '', url);
+    return;
+  }
+
+  window.location.hash = targetHash;
 }
 
 function initAdminGate() {
