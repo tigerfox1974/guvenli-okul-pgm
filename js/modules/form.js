@@ -10,10 +10,17 @@ const SUBMIT_NOTICE_SECONDS = 5;
 const USAGE_TERMS_SCROLL_SPEED_PX_PER_SECOND = 240;
 const USAGE_TERMS_WHEEL_STEP_PX = 48;
 const USAGE_TERMS_MAX_PENDING_SCROLL_PX = 160;
+const FORM_MIN_SUBMIT_DELAY_MS = 4000;
+const DUPLICATE_REPORT_WINDOW_MS = 15 * 60 * 1000;
+const MAX_TITLE_LENGTH = 120;
+const MAX_DESCRIPTION_LENGTH = 2000;
+const MAX_LINK_MARKER_COUNT = 3;
+const HONEYPOT_FIELD_ID = 'reportWebsite';
 let emergencyGateTimerId = null;
 let submitNoticeTimerId = null;
 let pendingSubmitCompletion = null;
 let onlineSyncInitialized = false;
+let reportInteractionUnlockedAtMs = Date.now();
 
 export function initForm() {
   const form = document.getElementById('reportForm');
@@ -166,8 +173,19 @@ function handleSubmit() {
   const emailInput = document.getElementById('emailInput');
   const form = document.getElementById('reportForm');
   const fileInput = document.getElementById('fileInput');
+  const honeypotInput = document.getElementById(HONEYPOT_FIELD_ID);
 
   if (!districtSelect || !schoolSelect || !categorySelect || !eventDateInput || !titleInput || !descriptionInput || !form) {
+    return;
+  }
+
+  if (isHoneypotTriggered(honeypotInput)) {
+    alert('Gönderim güvenlik kontrolüne takıldı. Lütfen formu yeniden deneyin.');
+    return;
+  }
+
+  if (!hasMinimumSubmitDelayElapsed()) {
+    alert('Lütfen formu dikkatlice inceleyip birkaç saniye sonra tekrar gönderin.');
     return;
   }
 
@@ -180,6 +198,12 @@ function handleSubmit() {
 
   if (!district || !schoolId || !category || !title || !description) {
     alert('Lütfen tüm zorunlu alanları doldurun.');
+    return;
+  }
+
+  const contentError = validateReportTextContent(title, description);
+  if (contentError) {
+    alert(contentError);
     return;
   }
 
@@ -217,6 +241,11 @@ function handleSubmit() {
     updatedAt: new Date().toISOString()
   };
 
+  if (hasRecentDuplicateReport(report, getReports())) {
+    alert('Aynı içerikte bir bildirim kısa süre içinde gönderildi. Lütfen 15 dakika sonra tekrar deneyin.');
+    return;
+  }
+
   saveReport(report);
   document.dispatchEvent(new CustomEvent('reports:updated', { detail: { report } }));
   void syncReportToCloud(report);
@@ -238,6 +267,76 @@ function saveReport(report) {
   const reports = getReports();
   reports.push(report);
   localStorage.setItem(PUBLIC_REPORTS_STORAGE_KEY, JSON.stringify(reports));
+}
+
+function isHoneypotTriggered(honeypotInput) {
+  if (!honeypotInput) return false;
+  return Boolean(String(honeypotInput.value || '').trim());
+}
+
+function hasMinimumSubmitDelayElapsed() {
+  const elapsedMs = Date.now() - reportInteractionUnlockedAtMs;
+  return Number.isFinite(elapsedMs) && elapsedMs >= FORM_MIN_SUBMIT_DELAY_MS;
+}
+
+function validateReportTextContent(title, description) {
+  if (title.length > MAX_TITLE_LENGTH) {
+    return `Kısa başlık en fazla ${MAX_TITLE_LENGTH} karakter olabilir.`;
+  }
+
+  if (description.length > MAX_DESCRIPTION_LENGTH) {
+    return `Açıklama en fazla ${MAX_DESCRIPTION_LENGTH} karakter olabilir.`;
+  }
+
+  const linkMarkerCount = countLinkMarkers(title) + countLinkMarkers(description);
+  if (linkMarkerCount > MAX_LINK_MARKER_COUNT) {
+    return 'Açıklama içinde çok fazla bağlantı bulundu. Lütfen metni sadeleştirin.';
+  }
+
+  return '';
+}
+
+function countLinkMarkers(text) {
+  const content = typeof text === 'string' ? text : '';
+  const matches = content.match(/https?:\/\/|www\./gi);
+  return Array.isArray(matches) ? matches.length : 0;
+}
+
+function hasRecentDuplicateReport(report, existingReports) {
+  if (!Array.isArray(existingReports) || existingReports.length === 0) {
+    return false;
+  }
+
+  const nowMs = Date.now();
+  const targetSignature = buildDuplicateSignature(report);
+
+  return existingReports.some(existingReport => {
+    const existingTimestamp = parseReportTimestamp(existingReport);
+    if (!Number.isFinite(existingTimestamp)) return false;
+    if (nowMs - existingTimestamp > DUPLICATE_REPORT_WINDOW_MS) return false;
+
+    return buildDuplicateSignature(existingReport) === targetSignature;
+  });
+}
+
+function buildDuplicateSignature(report) {
+  const schoolId = Number(report?.schoolId || 0);
+  const title = normalizeSignatureText(report?.title || '');
+  const description = normalizeSignatureText(report?.description || '');
+  return `${schoolId}|${title}|${description}`;
+}
+
+function normalizeSignatureText(value) {
+  return String(value || '')
+    .trim()
+    .toLocaleLowerCase('tr-TR')
+    .replace(/\s+/g, ' ');
+}
+
+function parseReportTimestamp(report) {
+  const rawValue = report?.createdAt || report?.updatedAt || '';
+  const parsedTime = Date.parse(String(rawValue));
+  return Number.isFinite(parsedTime) ? parsedTime : NaN;
 }
 
 async function syncReportToCloud(report) {
@@ -843,6 +942,7 @@ function setReportInteractionLock(locked) {
   }
 
   reportView.removeAttribute('inert');
+  reportInteractionUnlockedAtMs = Date.now();
   syncFormState();
 }
 

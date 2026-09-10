@@ -80,6 +80,10 @@
         </div>
         <p class="form-flow-note">Form adım adım açılır. Zorunlu alan tamamlanmadan bir sonraki alan aktif olmaz. Ad soyadı, telefon ve e-posta isteğe bağlıdır.</p>
         <form id="reportForm">
+          <div class="honeypot-field" aria-hidden="true">
+            <label for="reportWebsite">Web sitesi</label>
+            <input id="reportWebsite" name="website" type="text" tabindex="-1" autocomplete="off">
+          </div>
           <label>İlçe *
             <select id="districtSelect" required data-step="0" data-source="canonical-districts">
               <option value="">İlçe seçiniz</option>
@@ -366,7 +370,7 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
-  <script type="module" src="js/app.js?v=20260910-5"></script>
+  <script type="module" src="js/app.js?v=20260910-6"></script>
 </body>
 </html>
 

@@ -1,4 +1,4 @@
-import { initForm, showEmergencyGateOnReportEntry } from './modules/form.js?v=20260910-3';
+import { initForm, showEmergencyGateOnReportEntry } from './modules/form.js?v=20260910-4';
 
 const ADMIN_SESSION_KEY = 'pgm-demo-admin-session-v1';
 const VIEW_ROUTE_TOKENS = Object.freeze({
