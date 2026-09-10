@@ -72,9 +72,21 @@ textarea { min-height: 118px; resize: vertical; }
 .count-marker.high { background: #b91c1c; }
 .security-card { margin-bottom: 18px; }
 .security-compact { display: grid; gap: 12px; padding: 14px; border: 1px solid #bfdbfe; background: #eff6ff; border-radius: 8px; }
-.security-compact h2 { margin-bottom: 6px; }
+.security-compact h2 {
+  margin-bottom: 6px;
+  text-align: center;
+  color: #b91c1c;
+  animation: security-heading-blink 1.4s ease-in-out infinite;
+}
 .security-privacy { color: #b91c1c; font-weight: 500; }
 .security-privacy-emphasis { color: #991b1b; font-weight: 800; }
+@keyframes security-heading-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .security-compact h2 { animation: none; }
+}
 .security-compact-grid {
   display: grid;
   gap: 10px;
