@@ -7,7 +7,7 @@ const PUBLIC_REPORTS_STORAGE_KEY = 'pgm-public-reports-demo-v1';
 const LEGACY_REPORTS_STORAGE_KEY = 'reports';
 const EMERGENCY_GATE_SECONDS = 5;
 const SUBMIT_NOTICE_SECONDS = 5;
-const USAGE_TERMS_SCROLL_SPEED_PX_PER_SECOND = 340;
+const USAGE_TERMS_SCROLL_SPEED_PX_PER_SECOND = 240;
 const USAGE_TERMS_WHEEL_STEP_PX = 64;
 const USAGE_TERMS_MAX_PENDING_SCROLL_PX = 160;
 let emergencyGateTimerId = null;
@@ -664,6 +664,7 @@ let usageTermsScrollHandler = null;
 let usageTermsScrollAnimationId = null;
 let usageTermsPendingScroll = 0;
 let usageTermsLastAnimationTime = 0;
+let usageTermsStallFrameCount = 0;
 
 function initUsageTermsWheelScroll(scrollContent) {
   scrollContent.addEventListener('wheel', event => {
@@ -686,28 +687,62 @@ function initUsageTermsWheelScroll(scrollContent) {
 
     if (usageTermsScrollAnimationId !== null) return;
 
-    usageTermsLastAnimationTime = performance.now();
+    usageTermsLastAnimationTime = 0;
+    usageTermsStallFrameCount = 0;
     usageTermsScrollAnimationId = window.requestAnimationFrame(animateScroll);
   }, { passive: false });
 
   function animateScroll(timestamp) {
-    const elapsedMs = Math.min(timestamp - usageTermsLastAnimationTime, 50);
+    if (usageTermsLastAnimationTime === 0) {
+      usageTermsLastAnimationTime = timestamp;
+      usageTermsScrollAnimationId = window.requestAnimationFrame(animateScroll);
+      return;
+    }
+
+    const elapsedMs = Math.min(Math.max(timestamp - usageTermsLastAnimationTime, 0), 50);
+    usageTermsLastAnimationTime = timestamp;
+
+    if (elapsedMs <= 0) {
+      usageTermsScrollAnimationId = window.requestAnimationFrame(animateScroll);
+      return;
+    }
+
     const direction = Math.sign(usageTermsPendingScroll);
-    const distance = direction * Math.min(
+    if (direction === 0) {
+      resetUsageTermsWheelScroll();
+      return;
+    }
+
+    let distance = direction * Math.min(
       Math.abs(usageTermsPendingScroll),
       USAGE_TERMS_SCROLL_SPEED_PX_PER_SECOND * (elapsedMs / 1000)
     );
+
+    // Avoid zero-progress frames on high refresh-rate displays.
+    if (distance !== 0 && Math.abs(distance) < 1) {
+      distance = direction;
+    }
+
     const previousScrollTop = scrollContent.scrollTop;
 
     scrollContent.scrollTop += distance;
     const actualDistance = scrollContent.scrollTop - previousScrollTop;
 
     usageTermsPendingScroll -= actualDistance;
-    usageTermsLastAnimationTime = timestamp;
 
-    const reachedBoundary = Math.abs(actualDistance) < 0.01;
+    if (Math.abs(actualDistance) < 0.01) {
+      usageTermsStallFrameCount += 1;
+    } else {
+      usageTermsStallFrameCount = 0;
+    }
+
+    const maxScrollTop = Math.max(scrollContent.scrollHeight - scrollContent.clientHeight, 0);
+    const blockedAtBoundary = direction > 0
+      ? scrollContent.scrollTop >= maxScrollTop - 0.5
+      : scrollContent.scrollTop <= 0.5;
+
     const completed = Math.abs(usageTermsPendingScroll) < 0.5;
-    if (reachedBoundary || completed) {
+    if (completed || blockedAtBoundary || usageTermsStallFrameCount > 3) {
       resetUsageTermsWheelScroll();
       return;
     }
@@ -724,6 +759,7 @@ function resetUsageTermsWheelScroll() {
   usageTermsScrollAnimationId = null;
   usageTermsPendingScroll = 0;
   usageTermsLastAnimationTime = 0;
+  usageTermsStallFrameCount = 0;
 }
 
 function showReportUsageTermsModal() {
