@@ -174,6 +174,7 @@ Kontrol noktasi:
 
 1. Table Editor icinde public.security_events tablosu gorunmeli.
 2. Ilk rate limit veya duplicate testinden sonra tabloda olay kaydi olusmali.
+3. Security Advisor tarafinda public.security_events icin "RLS Enabled No Policy" infosu goruluyorsa, ayni scripti tekrar calistirin; script explicit deny policy olusturur.
 
 ### Aşama 5: Uygulamayı Doğru Şekilde Aç
 

@@ -21,6 +21,27 @@ create index if not exists idx_security_events_reason on public.security_events 
 alter table public.security_events enable row level security;
 revoke all on table public.security_events from public, anon, authenticated;
 
+do $$
+declare
+  policy_record record;
+begin
+  for policy_record in
+    select policyname
+    from pg_policies
+    where schemaname = 'public' and tablename = 'security_events'
+  loop
+    execute format('drop policy if exists %I on public.security_events;', policy_record.policyname);
+  end loop;
+end
+$$;
+
+create policy "security_events_no_client_access"
+  on public.security_events
+  for all
+  to anon, authenticated
+  using (false)
+  with check (false);
+
 -- Optional hardening: keep only expected event types.
 do $$
 begin
