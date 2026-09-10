@@ -172,6 +172,11 @@ body.modal-open { overflow: hidden; }
   padding-right: 4px;
 }
 
+.usage-terms-content:focus {
+  outline: 2px solid #b91c1c;
+  outline-offset: 2px;
+}
+
 .usage-terms-content h3,
 .usage-terms-content h4 {
   color: #b91c1c;
@@ -193,6 +198,14 @@ body.modal-open { overflow: hidden; }
 .usage-terms-check input {
   width: auto;
   flex: 0 0 auto;
+}
+
+.usage-terms-check input:disabled {
+  cursor: not-allowed;
+}
+
+.usage-terms-check input:disabled + span {
+  opacity: 0.55;
 }
 
 .usage-terms-actions {
