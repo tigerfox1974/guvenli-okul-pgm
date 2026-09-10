@@ -169,6 +169,55 @@ body.modal-open { overflow: hidden; }
 .system-modal-card.compact {
   width: min(520px, 100%);
 }
+
+.report-usage-terms-modal .system-modal-card {
+  width: min(760px, 100%);
+  display: grid;
+  gap: 12px;
+}
+
+.usage-terms-content {
+  max-height: min(52vh, 360px);
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.usage-terms-content h3,
+.usage-terms-content h4 {
+  color: #b91c1c;
+  margin-bottom: 6px;
+}
+
+.usage-terms-content p {
+  margin-bottom: 12px;
+}
+
+.usage-terms-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin: 2px 0 0;
+  font-weight: 700;
+}
+
+.usage-terms-check input {
+  width: auto;
+  flex: 0 0 auto;
+}
+
+.usage-terms-actions {
+  margin-bottom: 0;
+}
+
+.usage-terms-actions .primary {
+  width: 100%;
+}
+
+.report-usage-terms-modal .primary:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
 .system-modal-card h2 {
   margin-bottom: 10px;
   color: #0f172a;

@@ -35,6 +35,7 @@ export function initForm() {
   initLocationRequest();
   initSubmitNoticeModal();
   initFileUploadNoticeModal();
+  initReportUsageTermsModal();
   bootSupabaseSync();
 
   districtSelect.addEventListener('change', () => {
@@ -417,7 +418,7 @@ export function showEmergencyGateOnReportEntry() {
     if (continueButton.disabled) return;
 
     setModalState(gate, false);
-    setReportInteractionLock(false);
+    showReportUsageTermsModal();
   };
 
   cancelButton.onclick = () => {
@@ -430,6 +431,60 @@ export function showEmergencyGateOnReportEntry() {
     setReportInteractionLock(false);
     navigateToHomeView();
   };
+}
+
+function initReportUsageTermsModal() {
+  const checkbox = document.getElementById('usageTermsAcceptCheckbox');
+  const acceptButton = document.getElementById('usageTermsAcceptButton');
+
+  if (!checkbox || !acceptButton) return;
+
+  checkbox.addEventListener('change', () => {
+    acceptButton.disabled = !checkbox.checked;
+  });
+
+  acceptButton.addEventListener('click', () => {
+    if (acceptButton.disabled) return;
+
+    const usageTermsModal = document.getElementById('reportUsageTermsModal');
+    if (!usageTermsModal) {
+      setReportInteractionLock(false);
+      return;
+    }
+
+    setModalState(usageTermsModal, false);
+    setReportInteractionLock(false);
+    focusFirstReportField();
+  });
+}
+
+function showReportUsageTermsModal() {
+  const usageTermsModal = document.getElementById('reportUsageTermsModal');
+  const checkbox = document.getElementById('usageTermsAcceptCheckbox');
+  const acceptButton = document.getElementById('usageTermsAcceptButton');
+
+  if (!usageTermsModal || !checkbox || !acceptButton) {
+    setReportInteractionLock(false);
+    focusFirstReportField();
+    return;
+  }
+
+  checkbox.checked = false;
+  acceptButton.disabled = true;
+  setModalState(usageTermsModal, true);
+
+  window.requestAnimationFrame(() => {
+    checkbox.focus();
+  });
+}
+
+function focusFirstReportField() {
+  const firstField = document.getElementById('districtSelect');
+  if (!firstField) return;
+
+  window.requestAnimationFrame(() => {
+    firstField.focus();
+  });
 }
 
 function setReportInteractionLock(locked) {
@@ -679,7 +734,7 @@ function setModalState(modalElement, isVisible) {
 }
 
 function syncBodyModalState() {
-  const modalIds = ['emergencyGate', 'reportSubmitNoticeModal', 'fileUploadNoticeModal'];
+  const modalIds = ['emergencyGate', 'reportSubmitNoticeModal', 'fileUploadNoticeModal', 'reportUsageTermsModal'];
   const hasVisibleModal = modalIds.some(id => {
     const modal = document.getElementById(id);
     return Boolean(modal && !modal.hidden && modal.getAttribute('aria-hidden') === 'false');
