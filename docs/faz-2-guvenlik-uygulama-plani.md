@@ -24,7 +24,7 @@ Tamamlananlar:
 Durum ozeti:
 
 1. Paket A tamamlandi.
-2. Paket B henuz baslamadi.
+2. Paket B uygulandi (sunucu endpoint + server-side kontrol).
 3. Paket C henuz baslamadi.
 
 Paket A'da devreye alinan kontroller:
@@ -33,6 +33,14 @@ Paket A'da devreye alinan kontroller:
 2. Minimum doldurma suresi kontrolu
 3. 15 dakikalik tekrar icerik (dedupe) kontrolu
 4. Metin uzunlugu ve link yogunlugu kontrolu
+
+Paket B'de devreye alinan kontroller:
+
+1. Tarayicidan dogrudan tablo yazimi yerine `/api/report` sunucu endpoint modeli
+2. Sunucu tarafinda payload dogrulamasi
+3. Sunucu tarafinda IP ve fingerprint tabanli hiz limiti (10 dk penceresi)
+4. Sunucu tarafinda duplicate icerik kontrolu (15 dk penceresi)
+5. Service role anahtari sadece sunucu ortaminda kullanilacak sekilde ayrim
 
 ## 4. Faz 2 Is Paketleri
 
@@ -126,4 +134,4 @@ Faz 2 tamamlandi sayilmasi icin:
 
 ## 9. Bir Sonraki Aksiyon
 
-Bu dokuman onaylandiktan sonra Paket A ile uygulamaya baslanir.
+Paket B dagitim oncesi Vercel ortam degiskenleri tamamlanir, ardindan Paket C (izleme ve operasyon) adimina gecilir.

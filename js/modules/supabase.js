@@ -2,9 +2,15 @@ import { SUPABASE_CONFIG } from '../config/supabase.config.js';
 
 const SUPABASE_PENDING_STORAGE_KEY = 'pgm-supabase-pending-reports-v1';
 const DEFAULT_TIMEOUT_MS = 10000;
+const DEFAULT_SERVER_SUBMIT_ENDPOINT = '/api/report';
+const LOCALHOST_NAMES = new Set(['localhost', '127.0.0.1', '[::1]']);
 
 export function isSupabaseConfigured() {
-  return Boolean(getConfiguredBaseUrl() && getConfiguredAnonKey());
+  if (isLocalDevelopmentHost() && !hasDirectSupabaseFallbackConfig()) {
+    return false;
+  }
+
+  return Boolean(getServerSubmitEndpoint() || hasDirectSupabaseFallbackConfig());
 }
 
 export async function persistReportToSupabase(report) {
@@ -18,7 +24,7 @@ export async function persistReportToSupabase(report) {
   }
 
   try {
-    await insertRow(row);
+    await submitRow(row);
     return { status: 'synced', reportId: row.id };
   } catch (error) {
     queuePendingRow(row);
@@ -45,7 +51,7 @@ export async function syncPendingSupabaseReports() {
 
   for (const row of pendingRows) {
     try {
-      await insertRow(row);
+      await submitRow(row);
     } catch (error) {
       if (isDuplicateInsertError(error)) {
         // If row already exists remotely, treat it as synced and drop from queue.
@@ -188,6 +194,49 @@ async function insertRow(row) {
     return;
   }
 
+  try {
+    await insertRowViaServer(row);
+    return;
+  } catch (error) {
+    if (!shouldUseDirectFallback(error)) {
+      throw error;
+    }
+  }
+
+  await insertRowDirect(row);
+}
+
+async function submitRow(row) {
+  await insertRow(row);
+}
+
+async function insertRowViaServer(row) {
+  const endpoint = getServerSubmitEndpoint();
+  if (!endpoint) {
+    throw new RequestError(0, 'server-endpoint-not-configured');
+  }
+
+  const response = await fetchWithTimeout(endpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ row })
+  }, getRequestTimeoutMs());
+
+  if (response.ok) {
+    return;
+  }
+
+  const details = await safeReadResponseText(response);
+  throw new RequestError(response.status, details);
+}
+
+async function insertRowDirect(row) {
+  if (!hasDirectSupabaseFallbackConfig()) {
+    throw new RequestError(0, 'direct-fallback-not-configured');
+  }
+
   const endpoint = buildInsertEndpoint();
   const schema = getConfiguredSchema();
   const headers = {
@@ -208,20 +257,32 @@ async function insertRow(row) {
     return;
   }
 
-  let details = '';
-  try {
-    details = await response.text();
-  } catch {
-    details = '';
+  const details = await safeReadResponseText(response);
+  throw new RequestError(response.status, details);
+}
+
+function shouldUseDirectFallback(error) {
+  if (!(error instanceof RequestError)) {
+    return false;
   }
 
-  throw new SupabaseRequestError(response.status, details);
+  const isEndpointError = error.status === 404 || error.status === 405;
+  if (!isEndpointError) {
+    return false;
+  }
+
+  return isLocalDevelopmentHost() && hasDirectSupabaseFallbackConfig();
 }
 
 function buildInsertEndpoint() {
   const baseUrl = getConfiguredBaseUrl();
   const table = encodeURIComponent(String(SUPABASE_CONFIG.reportsTable || 'anonymous_reports'));
   return `${baseUrl}/rest/v1/${table}`;
+}
+
+function getServerSubmitEndpoint() {
+  const configured = String(SUPABASE_CONFIG.serverSubmitEndpoint || DEFAULT_SERVER_SUBMIT_ENDPOINT).trim();
+  return configured || DEFAULT_SERVER_SUBMIT_ENDPOINT;
 }
 
 function getConfiguredBaseUrl() {
@@ -234,6 +295,18 @@ function getConfiguredBaseUrl() {
 
 function getConfiguredAnonKey() {
   return String(SUPABASE_CONFIG.anonKey || '').trim();
+}
+
+function hasDirectSupabaseFallbackConfig() {
+  return Boolean(getConfiguredBaseUrl() && getConfiguredAnonKey());
+}
+
+function isLocalDevelopmentHost() {
+  if (typeof window === 'undefined' || !window.location) {
+    return false;
+  }
+
+  return LOCALHOST_NAMES.has(window.location.hostname);
 }
 
 function getConfiguredSchema() {
@@ -268,6 +341,10 @@ async function fetchWithTimeout(url, options, timeoutMs) {
 }
 
 function normalizeErrorMessage(error) {
+  if (error instanceof RequestError && error.message) {
+    return error.message;
+  }
+
   if (error instanceof Error && error.message) {
     return error.message;
   }
@@ -276,7 +353,7 @@ function normalizeErrorMessage(error) {
 }
 
 function isDuplicateInsertError(error) {
-  if (!(error instanceof SupabaseRequestError)) {
+  if (!(error instanceof RequestError)) {
     return false;
   }
 
@@ -287,10 +364,18 @@ function isDuplicateInsertError(error) {
   return /23505|duplicate key value|unique constraint/i.test(error.details || '');
 }
 
-class SupabaseRequestError extends Error {
+async function safeReadResponseText(response) {
+  try {
+    return await response.text();
+  } catch {
+    return '';
+  }
+}
+
+class RequestError extends Error {
   constructor(status, details) {
-    super(`Supabase request failed (${status}): ${details}`);
-    this.name = 'SupabaseRequestError';
+    super(`Request failed (${status}): ${details}`);
+    this.name = 'RequestError';
     this.status = status;
     this.details = details;
   }

@@ -1,0 +1,411 @@
+const crypto = require('node:crypto');
+
+const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
+const RATE_LIMIT_MAX_PER_IP = 5;
+const RATE_LIMIT_MAX_PER_FINGERPRINT = 3;
+const DUPLICATE_WINDOW_MS = 15 * 60 * 1000;
+const MAX_TITLE_LENGTH = 120;
+const MAX_DESCRIPTION_LENGTH = 2000;
+const MAX_LINK_MARKER_COUNT = 3;
+const DEFAULT_TIMEOUT_MS = 10000;
+
+const ipRateBuckets = new Map();
+const fingerprintRateBuckets = new Map();
+
+module.exports = async (req, res) => {
+  setCommonHeaders(res);
+
+  if (req.method === 'OPTIONS') {
+    res.status(204).end();
+    return;
+  }
+
+  if (req.method !== 'POST') {
+    res.status(405).json({ error: 'method_not_allowed' });
+    return;
+  }
+
+  const config = getServerConfig();
+  if (!config.isValid) {
+    res.status(500).json({ error: 'server_not_configured' });
+    return;
+  }
+
+  let payload;
+  try {
+    payload = parseJsonBody(req.body);
+  } catch {
+    res.status(400).json({ error: 'invalid_json_body' });
+    return;
+  }
+
+  const sanitized = sanitizeIncomingRow(payload && payload.row);
+  if (!sanitized.ok) {
+    res.status(422).json({ error: 'invalid_report_payload', reason: sanitized.reason });
+    return;
+  }
+
+  const requestIp = extractRequestIp(req);
+  const userAgent = normalizeText(req.headers['user-agent'] || '', 300) || 'unknown';
+  const nowMs = Date.now();
+
+  cleanupRateBuckets(ipRateBuckets, nowMs, RATE_LIMIT_WINDOW_MS);
+  cleanupRateBuckets(fingerprintRateBuckets, nowMs, RATE_LIMIT_WINDOW_MS);
+
+  const ipDecision = consumeRateToken(ipRateBuckets, buildIpKey(requestIp, config.hashSalt), nowMs, RATE_LIMIT_WINDOW_MS, RATE_LIMIT_MAX_PER_IP);
+  if (!ipDecision.allowed) {
+    res.setHeader('Retry-After', String(ipDecision.retryAfterSeconds));
+    res.status(429).json({ error: 'rate_limit_ip', message: 'Kisa surede cok fazla gonderim yapildi. Lutfen daha sonra tekrar deneyin.' });
+    return;
+  }
+
+  const fingerprintSource = buildFingerprintSource(userAgent, sanitized.row.client_snapshot);
+  const fingerprintDecision = consumeRateToken(
+    fingerprintRateBuckets,
+    buildFingerprintKey(fingerprintSource, config.hashSalt),
+    nowMs,
+    RATE_LIMIT_WINDOW_MS,
+    RATE_LIMIT_MAX_PER_FINGERPRINT
+  );
+
+  if (!fingerprintDecision.allowed) {
+    res.setHeader('Retry-After', String(fingerprintDecision.retryAfterSeconds));
+    res.status(429).json({ error: 'rate_limit_fingerprint', message: 'Kisa surede tekrarlayan gonderim algilandi. Lutfen daha sonra tekrar deneyin.' });
+    return;
+  }
+
+  try {
+    const duplicateExists = await hasRecentDuplicateSubmission(config, sanitized.row);
+    if (duplicateExists) {
+      res.status(409).json({ error: 'duplicate_submission', message: 'Ayni icerikte bir bildirim kisa sure icinde gonderildi. Lutfen 15 dakika sonra tekrar deneyin.' });
+      return;
+    }
+
+    await insertReport(config, sanitized.row);
+    res.status(201).json({ status: 'accepted', reportId: sanitized.row.id });
+  } catch (error) {
+    const status = error && Number.isFinite(error.status) ? error.status : 500;
+    const message = error instanceof Error ? error.message : 'unexpected_error';
+    res.status(status).json({ error: 'submit_failed', message });
+  }
+};
+
+function setCommonHeaders(res) {
+  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+}
+
+function getServerConfig() {
+  const rawUrl = String(process.env.SUPABASE_URL || '').trim();
+  const serviceRoleKey = String(process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
+  const schema = String(process.env.SUPABASE_SCHEMA || 'public').trim() || 'public';
+  const table = String(process.env.SUPABASE_REPORTS_TABLE || 'anonymous_reports').trim() || 'anonymous_reports';
+  const hashSalt = String(process.env.REPORT_SECURITY_SALT || process.env.VERCEL_URL || 'pgm-default-salt').trim();
+  const timeoutMs = Number(process.env.REPORT_API_TIMEOUT_MS || DEFAULT_TIMEOUT_MS);
+
+  const baseUrl = normalizeSupabaseBaseUrl(rawUrl);
+
+  return {
+    isValid: Boolean(baseUrl && serviceRoleKey),
+    baseUrl,
+    serviceRoleKey,
+    schema,
+    table,
+    hashSalt,
+    timeoutMs: Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : DEFAULT_TIMEOUT_MS
+  };
+}
+
+function normalizeSupabaseBaseUrl(rawUrl) {
+  if (!rawUrl) return '';
+  return rawUrl.replace(/\/+$/, '').replace(/\/rest\/v1$/i, '');
+}
+
+function parseJsonBody(body) {
+  if (!body) return {};
+  if (typeof body === 'object') return body;
+  if (Buffer.isBuffer(body)) {
+    return JSON.parse(body.toString('utf8'));
+  }
+
+  return JSON.parse(String(body));
+}
+
+function sanitizeIncomingRow(rawRow) {
+  if (!rawRow || typeof rawRow !== 'object') {
+    return { ok: false, reason: 'missing_row' };
+  }
+
+  const id = normalizeText(rawRow.id, 80);
+  const district = normalizeText(rawRow.district, 120);
+  const region = normalizeText(rawRow.region, 120);
+  const schoolId = Number(rawRow.school_id || 0);
+  const schoolName = normalizeText(rawRow.school_name, 200);
+  const category = normalizeText(rawRow.category, 120);
+  const title = normalizeText(rawRow.title, MAX_TITLE_LENGTH);
+  const description = normalizeText(rawRow.description, MAX_DESCRIPTION_LENGTH);
+
+  if (!id || !district || !region || !Number.isFinite(schoolId) || schoolId <= 0 || !schoolName || !category || !title || !description) {
+    return { ok: false, reason: 'required_fields_missing' };
+  }
+
+  const linkMarkerCount = countLinkMarkers(title) + countLinkMarkers(description);
+  if (linkMarkerCount > MAX_LINK_MARKER_COUNT) {
+    return { ok: false, reason: 'too_many_links' };
+  }
+
+  const createdAt = normalizeDateValue(rawRow.created_at) || new Date().toISOString();
+  const updatedAt = normalizeDateValue(rawRow.updated_at) || createdAt;
+
+  const row = {
+    id,
+    district,
+    region,
+    school_id: schoolId,
+    school_name: schoolName,
+    category,
+    title,
+    description,
+    event_date: normalizeDateValue(rawRow.event_date),
+    attachments: sanitizeAttachments(rawRow.attachments),
+    contact_name: normalizeNullableText(rawRow.contact_name, 160),
+    contact_phone: normalizeNullableText(rawRow.contact_phone, 40),
+    contact_email: normalizeNullableText(rawRow.contact_email, 254),
+    status: 'Yeni',
+    source: 'web-anon-report',
+    client_snapshot: sanitizeSnapshot(rawRow.client_snapshot),
+    created_at: createdAt,
+    updated_at: updatedAt
+  };
+
+  return { ok: true, row };
+}
+
+function normalizeText(value, maxLength) {
+  const text = String(value || '').trim();
+  if (!text) return '';
+  return text.slice(0, maxLength);
+}
+
+function normalizeNullableText(value, maxLength) {
+  const text = normalizeText(value, maxLength);
+  return text || null;
+}
+
+function normalizeDateValue(value) {
+  if (!value) return null;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  return parsed.toISOString();
+}
+
+function countLinkMarkers(text) {
+  const matches = String(text || '').match(/https?:\/\/|www\./gi);
+  return Array.isArray(matches) ? matches.length : 0;
+}
+
+function sanitizeAttachments(value) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map(item => normalizeText(item, 200))
+    .filter(Boolean)
+    .slice(0, 10);
+}
+
+function sanitizeSnapshot(snapshot) {
+  if (!snapshot || typeof snapshot !== 'object') {
+    return null;
+  }
+
+  const location = snapshot.location && typeof snapshot.location === 'object'
+    ? {
+        latitude: Number(snapshot.location.latitude),
+        longitude: Number(snapshot.location.longitude),
+        accuracyMeters: Number(snapshot.location.accuracyMeters)
+      }
+    : null;
+
+  return {
+    device: normalizeNullableText(snapshot.device, 80),
+    browser: normalizeNullableText(snapshot.browser, 120),
+    os: normalizeNullableText(snapshot.os, 80),
+    language: normalizeNullableText(snapshot.language, 32),
+    timezone: normalizeNullableText(snapshot.timezone, 64),
+    screen: normalizeNullableText(snapshot.screen, 40),
+    capturedAt: normalizeDateValue(snapshot.capturedAt),
+    location: location && Number.isFinite(location.latitude) && Number.isFinite(location.longitude)
+      ? {
+          latitude: location.latitude,
+          longitude: location.longitude,
+          accuracyMeters: Number.isFinite(location.accuracyMeters) ? location.accuracyMeters : null
+        }
+      : null
+  };
+}
+
+function extractRequestIp(req) {
+  const forwardedHeader = req.headers['x-forwarded-for'];
+  if (typeof forwardedHeader === 'string' && forwardedHeader.trim()) {
+    const firstIp = forwardedHeader.split(',')[0].trim();
+    if (firstIp) return firstIp;
+  }
+
+  const realIp = req.headers['x-real-ip'];
+  if (typeof realIp === 'string' && realIp.trim()) {
+    return realIp.trim();
+  }
+
+  return 'unknown';
+}
+
+function buildIpKey(ip, salt) {
+  return createSha256(`${salt}|ip|${ip}`);
+}
+
+function buildFingerprintKey(source, salt) {
+  return createSha256(`${salt}|fp|${source}`);
+}
+
+function buildFingerprintSource(userAgent, snapshot) {
+  const parts = [
+    normalizeText(userAgent, 300),
+    normalizeNullableText(snapshot && snapshot.device, 80),
+    normalizeNullableText(snapshot && snapshot.browser, 120),
+    normalizeNullableText(snapshot && snapshot.os, 80),
+    normalizeNullableText(snapshot && snapshot.language, 32),
+    normalizeNullableText(snapshot && snapshot.timezone, 64),
+    normalizeNullableText(snapshot && snapshot.screen, 40)
+  ];
+
+  return parts.map(part => part || '-').join('|');
+}
+
+function createSha256(value) {
+  return crypto.createHash('sha256').update(String(value || '')).digest('hex');
+}
+
+function cleanupRateBuckets(bucket, nowMs, windowMs) {
+  for (const [key, timestamps] of bucket.entries()) {
+    const valid = timestamps.filter(timestamp => nowMs - timestamp <= windowMs);
+    if (valid.length === 0) {
+      bucket.delete(key);
+      continue;
+    }
+
+    bucket.set(key, valid);
+  }
+}
+
+function consumeRateToken(bucket, key, nowMs, windowMs, maxCount) {
+  const previous = bucket.get(key) || [];
+  const valid = previous.filter(timestamp => nowMs - timestamp <= windowMs);
+
+  if (valid.length >= maxCount) {
+    const oldestInWindow = valid[0];
+    const retryAfterMs = Math.max(windowMs - (nowMs - oldestInWindow), 1000);
+    return {
+      allowed: false,
+      retryAfterSeconds: Math.ceil(retryAfterMs / 1000)
+    };
+  }
+
+  valid.push(nowMs);
+  bucket.set(key, valid);
+
+  return {
+    allowed: true,
+    retryAfterSeconds: 0
+  };
+}
+
+async function hasRecentDuplicateSubmission(config, row) {
+  const sinceIso = new Date(Date.now() - DUPLICATE_WINDOW_MS).toISOString();
+  const endpoint = buildSupabaseEndpoint(config, row);
+  const url = `${endpoint}?select=id&school_id=eq.${row.school_id}&title=eq.${encodeURIComponent(row.title)}&description=eq.${encodeURIComponent(row.description)}&created_at=gte.${encodeURIComponent(sinceIso)}&limit=1`;
+
+  const response = await fetchWithTimeout(url, {
+    method: 'GET',
+    headers: buildSupabaseHeaders(config, {
+      Prefer: 'count=exact'
+    })
+  }, config.timeoutMs);
+
+  if (!response.ok) {
+    const details = await safeReadResponseText(response);
+    throw buildRequestError(response.status, `duplicate_check_failed: ${details}`);
+  }
+
+  const data = await response.json();
+  return Array.isArray(data) && data.length > 0;
+}
+
+async function insertReport(config, row) {
+  const endpoint = buildSupabaseEndpoint(config, row);
+  const response = await fetchWithTimeout(endpoint, {
+    method: 'POST',
+    headers: buildSupabaseHeaders(config, {
+      Prefer: 'return=minimal'
+    }),
+    body: JSON.stringify([row])
+  }, config.timeoutMs);
+
+  if (response.ok) {
+    return;
+  }
+
+  const details = await safeReadResponseText(response);
+  if (response.status === 409 && /23505|duplicate key value|unique constraint/i.test(details)) {
+    return;
+  }
+
+  throw buildRequestError(response.status, `insert_failed: ${details}`);
+}
+
+function buildSupabaseEndpoint(config) {
+  return `${config.baseUrl}/rest/v1/${encodeURIComponent(config.table)}`;
+}
+
+function buildSupabaseHeaders(config, extraHeaders = {}) {
+  return {
+    'Content-Type': 'application/json',
+    apikey: config.serviceRoleKey,
+    Authorization: `Bearer ${config.serviceRoleKey}`,
+    'Accept-Profile': config.schema,
+    'Content-Profile': config.schema,
+    ...extraHeaders
+  };
+}
+
+async function fetchWithTimeout(url, options, timeoutMs) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+async function safeReadResponseText(response) {
+  try {
+    return await response.text();
+  } catch {
+    return '';
+  }
+}
+
+function buildRequestError(status, message) {
+  const error = new Error(message);
+  error.status = status;
+  return error;
+}

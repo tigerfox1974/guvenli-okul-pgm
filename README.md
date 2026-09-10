@@ -144,6 +144,23 @@ Kontrol noktası:
 1. url https ile başlamalı.
 2. anonKey boş olmamalı.
 
+### Aşama 4.1: Paket B Sunucu Ayarı (Vercel)
+
+Faz 2 Paket B ile birlikte bildirimler tarayıcıdan dogrudan tabloya degil, Vercel uzerindeki `/api/report` endpoint'ine gider.
+
+Bu nedenle Vercel Project Settings > Environment Variables ekraninda su degerler tanimli olmalidir:
+
+1. SUPABASE_URL = https://SIZIN-PROJE-REF.supabase.co
+2. SUPABASE_SERVICE_ROLE_KEY = SIZIN_SERVICE_ROLE_ANAHTARINIZ
+3. SUPABASE_SCHEMA = public
+4. SUPABASE_REPORTS_TABLE = anonymous_reports
+5. REPORT_SECURITY_SALT = rastgele_uzun_bir_metin
+
+Guvenlik kurali:
+
+1. SUPABASE_SERVICE_ROLE_KEY degerini istemci koduna koymayin.
+2. Bu anahtar sadece Vercel sunucu ortam degiskeninde bulunmalidir.
+
 ### Aşama 5: Uygulamayı Doğru Şekilde Aç
 
 Supabase testinde file ile açmak yerine yerel sunucu kullanın.
