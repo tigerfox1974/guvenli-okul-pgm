@@ -100,6 +100,8 @@ textarea { min-height: 118px; resize: vertical; }
   word-break: break-word;
 }
 .security-compact-actions { display: flex; justify-content: flex-start; }
+.security-compact-grid,
+.security-compact-actions { display: none; }
 body.modal-open { overflow: hidden; }
 .report-locked .panel { filter: saturate(0.88); }
 .emergency-gate[hidden] { display: none; }
