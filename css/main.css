@@ -189,6 +189,14 @@ body.modal-open { overflow: hidden; }
   margin-left: auto;
   margin-right: auto;
 }
+#reportSubmitNoticeModal .countdown {
+  margin-left: auto;
+  margin-right: auto;
+}
+#reportSubmitNoticeModal .system-modal-card h2,
+#reportSubmitNoticeModal .system-modal-card p {
+  text-align: center;
+}
 @media (max-width: 780px) {
   .hero { grid-template-columns: 1fr; }
   .grid { grid-template-columns: 1fr 1fr; }
