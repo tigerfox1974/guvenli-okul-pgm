@@ -47,6 +47,8 @@ input:disabled, select:disabled, textarea:disabled { background: #f3f4f6; color:
 textarea { min-height: 118px; resize: vertical; }
 .full { grid-column: 1 / -1; }
 .hint { color: var(--muted); font-size: 13px; font-weight: 400; }
+.field-error { color: var(--red); font-size: 13px; font-weight: 600; }
+input.field-invalid, select.field-invalid, textarea.field-invalid { border-color: var(--red); background: #fef2f2; }
 .optional-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
 .admin-layout { display: grid; grid-template-columns: 320px 1fr; gap: 18px; align-items: start; }
 .map { width: 100%; min-height: 360px; height: clamp(360px, 52vh, 620px); border-radius: 8px; overflow: hidden; }

@@ -110,10 +110,12 @@
                 <input id="nameInput" type="text" data-optional disabled placeholder="İsteğe bağlı">
               </label>
               <label>Telefon Numarası
-                <input id="phoneInput" type="tel" data-optional disabled placeholder="İsteğe bağlı">
+                <input id="phoneInput" type="tel" data-optional disabled placeholder="İsteğe bağlı" inputmode="numeric" maxlength="17" autocomplete="tel">
+                <span id="phoneError" class="field-error" role="alert" hidden></span>
               </label>
               <label>E-posta
-                <input id="emailInput" type="email" data-optional disabled placeholder="İsteğe bağlı">
+                <input id="emailInput" type="email" data-optional disabled placeholder="İsteğe bağlı" inputmode="email" maxlength="254" autocomplete="email">
+                <span id="emailError" class="field-error" role="alert" hidden></span>
               </label>
             </div>
           </div>

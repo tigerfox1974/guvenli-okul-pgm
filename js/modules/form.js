@@ -36,6 +36,7 @@ export function initForm() {
   initSubmitNoticeModal();
   initFileUploadNoticeModal();
   initReportUsageTermsModal();
+  initContactValidation();
   bootSupabaseSync();
 
   districtSelect.addEventListener('change', () => {
@@ -82,6 +83,7 @@ export function initForm() {
     window.setTimeout(() => {
       updateSchoolList('');
       syncFormState();
+      clearContactValidationErrors();
     }, 0);
   });
 
@@ -175,6 +177,11 @@ function handleSubmit() {
 
   if (!district || !schoolId || !category || !title || !description) {
     alert('Lütfen tüm zorunlu alanları doldurun.');
+    return;
+  }
+
+  if (!validateContactFields()) {
+    alert('Lütfen iletişim bilgilerini kontrol edin.');
     return;
   }
 
