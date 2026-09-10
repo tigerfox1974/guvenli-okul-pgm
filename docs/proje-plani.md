@@ -183,6 +183,51 @@ Normal web sayfası IMEI, cihaz seri numarası ve MAC adresi alamaz. Bu bilgiler
 - Teknik güvenlik kayıtlarına rol bazlı erişim
 - Acil olayların web formuna değil telefon hatlarına yönlendirilmesi
 
+### 9.1 Planlanan Güvenlik Geliştirmeleri (Backlog)
+
+Bu bölüm, anonim bildirim akışını bozmadan spam ve kötüye kullanım riskini azaltmak için sonraki sürümlerde uygulanacak adımları kaydeder.
+
+Mevcut durum:
+
+- Public bildirim akışı login zorunlu değildir.
+- anonymous_reports tablosunda insert-only RLS policy vardır.
+- PGM panel kimlik doğrulaması ileride gerçek auth + rol yönetimi ile güçlendirilecektir.
+
+Hedef 1: Rol yüzeyini daraltma
+
+- RLS insert policy rolü, kullanım senaryosuna göre yalnızca anon olacak şekilde daraltılabilir.
+- authenticated rolü, yalnızca gerçekten ihtiyaç varsa geri açılmalıdır.
+
+Hedef 2: Sunucu tarafı anti-spam katmanı
+
+- Tarayıcıdan tabloya doğrudan yazım yerine Edge Function veya backend endpoint üzerinden yazım modeli uygulanır.
+- Sunucu tarafında doğrulama yapılmadan veritabanına insert atılmaz.
+- Kritik doğrulamalar: zorunlu alan bütünlüğü, metin uzunluğu, link sayısı, dosya türü ve dosya boyutu.
+
+Hedef 3: Rate limit ve tekrar kontrolü
+
+- IP başına hız limiti: 10 dakikada en fazla 5 gönderim.
+- Cihaz izi (fingerprint) başına hız limiti: 10 dakikada en fazla 3 gönderim.
+- İçerik benzerliği kontrolü: aynı okul + başlık + açıklama kombinasyonu 15 dakika içinde tekrar gönderilemez.
+- Limit aşımında istemciye 429 yanıtı döndürülür ve kullanıcıya kısa bilgilendirme mesajı gösterilir.
+
+Hedef 4: Bot azaltma
+
+- Honeypot alanı ve minimum form doldurma süresi kontrolü eklenir.
+- Gerekirse captcha aşaması koşullu olarak açılır (ör. art arda başarısız deneme sonrası).
+
+Hedef 5: İzleme ve operasyon
+
+- Güvenlik olayları için ayrı log alanı tutulur (rate limit, duplicate, invalid payload).
+- Haftalık kontrol metriği: engellenen istek sayısı, false positive oranı, başarılı bildirim oranı.
+
+Uygulama sırası (önerilen):
+
+1. Hızlı kazanç: honeypot + minimum süre + duplicate kontrolü
+2. Edge Function veya backend endpoint ile zorunlu sunucu katmanı
+3. IP ve fingerprint rate limit politikalarının aktif edilmesi
+4. Captcha ve operasyon metriklerinin devreye alınması
+
 ## 10. İlk Teknik Yaklaşım
 
 İlk demo statik HTML olarak hazırlanmıştır. Sonraki üretim sürümünde önerilen yapı:

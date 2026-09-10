@@ -1,4 +1,4 @@
-import { initForm, showEmergencyGateOnReportEntry } from './modules/form.js?v=20260910-1';
+import { initForm, showEmergencyGateOnReportEntry } from './modules/form.js?v=20260910-2';
 
 const ADMIN_SESSION_KEY = 'pgm-demo-admin-session-v1';
 const OPERATOR_ROLES = new Set(['operator', 'supervisor']);

@@ -7,6 +7,9 @@ const PUBLIC_REPORTS_STORAGE_KEY = 'pgm-public-reports-demo-v1';
 const LEGACY_REPORTS_STORAGE_KEY = 'reports';
 const EMERGENCY_GATE_SECONDS = 5;
 const SUBMIT_NOTICE_SECONDS = 5;
+const USAGE_TERMS_SCROLL_SPEED_PX_PER_SECOND = 240;
+const USAGE_TERMS_WHEEL_STEP_PX = 64;
+const USAGE_TERMS_MAX_PENDING_SCROLL_PX = 160;
 let emergencyGateTimerId = null;
 let submitNoticeTimerId = null;
 let pendingSubmitCompletion = null;
@@ -624,10 +627,16 @@ export function showEmergencyGateOnReportEntry() {
 }
 
 function initReportUsageTermsModal() {
+  const usageTermsModal = document.getElementById('reportUsageTermsModal');
   const checkbox = document.getElementById('usageTermsAcceptCheckbox');
   const acceptButton = document.getElementById('usageTermsAcceptButton');
+  const scrollContent = usageTermsModal
+    ? usageTermsModal.querySelector('.usage-terms-content')
+    : null;
 
-  if (!checkbox || !acceptButton) return;
+  if (!checkbox || !acceptButton || !scrollContent) return;
+
+  initUsageTermsWheelScroll(scrollContent);
 
   checkbox.addEventListener('change', () => {
     if (checkbox.disabled) return;
@@ -644,6 +653,7 @@ function initReportUsageTermsModal() {
       return;
     }
 
+    resetUsageTermsWheelScroll();
     setModalState(usageTermsModal, false);
     setReportInteractionLock(false);
     focusFirstReportField();
@@ -651,6 +661,70 @@ function initReportUsageTermsModal() {
 }
 
 let usageTermsScrollHandler = null;
+let usageTermsScrollAnimationId = null;
+let usageTermsPendingScroll = 0;
+let usageTermsLastAnimationTime = 0;
+
+function initUsageTermsWheelScroll(scrollContent) {
+  scrollContent.addEventListener('wheel', event => {
+    if (event.ctrlKey || event.deltaY === 0) return;
+
+    event.preventDefault();
+
+    const direction = Math.sign(event.deltaY);
+    if (usageTermsPendingScroll !== 0 && Math.sign(usageTermsPendingScroll) !== direction) {
+      usageTermsPendingScroll = 0;
+    }
+
+    usageTermsPendingScroll = Math.max(
+      -USAGE_TERMS_MAX_PENDING_SCROLL_PX,
+      Math.min(
+        USAGE_TERMS_MAX_PENDING_SCROLL_PX,
+        usageTermsPendingScroll + (direction * USAGE_TERMS_WHEEL_STEP_PX)
+      )
+    );
+
+    if (usageTermsScrollAnimationId !== null) return;
+
+    usageTermsLastAnimationTime = performance.now();
+    usageTermsScrollAnimationId = window.requestAnimationFrame(animateScroll);
+  }, { passive: false });
+
+  function animateScroll(timestamp) {
+    const elapsedMs = Math.min(timestamp - usageTermsLastAnimationTime, 50);
+    const direction = Math.sign(usageTermsPendingScroll);
+    const distance = direction * Math.min(
+      Math.abs(usageTermsPendingScroll),
+      USAGE_TERMS_SCROLL_SPEED_PX_PER_SECOND * (elapsedMs / 1000)
+    );
+    const previousScrollTop = scrollContent.scrollTop;
+
+    scrollContent.scrollTop += distance;
+    const actualDistance = scrollContent.scrollTop - previousScrollTop;
+
+    usageTermsPendingScroll -= actualDistance;
+    usageTermsLastAnimationTime = timestamp;
+
+    const reachedBoundary = Math.abs(actualDistance) < 0.01;
+    const completed = Math.abs(usageTermsPendingScroll) < 0.5;
+    if (reachedBoundary || completed) {
+      resetUsageTermsWheelScroll();
+      return;
+    }
+
+    usageTermsScrollAnimationId = window.requestAnimationFrame(animateScroll);
+  }
+}
+
+function resetUsageTermsWheelScroll() {
+  if (usageTermsScrollAnimationId !== null) {
+    window.cancelAnimationFrame(usageTermsScrollAnimationId);
+  }
+
+  usageTermsScrollAnimationId = null;
+  usageTermsPendingScroll = 0;
+  usageTermsLastAnimationTime = 0;
+}
 
 function showReportUsageTermsModal() {
   const usageTermsModal = document.getElementById('reportUsageTermsModal');
@@ -669,6 +743,7 @@ function showReportUsageTermsModal() {
   checkbox.checked = false;
   checkbox.disabled = true;
   acceptButton.disabled = true;
+  resetUsageTermsWheelScroll();
 
   if (usageTermsScrollHandler) {
     scrollContent.removeEventListener('scroll', usageTermsScrollHandler);
