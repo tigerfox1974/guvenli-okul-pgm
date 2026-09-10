@@ -601,7 +601,7 @@ function showSubmitNoticeModal(onComplete) {
   let seconds = SUBMIT_NOTICE_SECONDS;
   countdown.textContent = String(seconds);
   continueButton.disabled = true;
-  continueButton.textContent = `${seconds} saniye sonra ana ekrana dön`;
+  continueButton.textContent = `${seconds} saniye sonra tanıtım ekranına git`;
   setModalState(modal, true);
 
   if (submitNoticeTimerId) {
@@ -619,12 +619,12 @@ function showSubmitNoticeModal(onComplete) {
       }
       countdown.textContent = '0';
       continueButton.disabled = false;
-      continueButton.textContent = 'Tamam ve Ana Ekrana Dön';
+      continueButton.textContent = 'Tanıtım Ekranına Git';
       return;
     }
 
     countdown.textContent = String(seconds);
-    continueButton.textContent = `${seconds} saniye sonra ana ekrana dön`;
+    continueButton.textContent = `${seconds} saniye sonra tanıtım ekranına git`;
   }, 1000);
 }
 
