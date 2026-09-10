@@ -380,7 +380,171 @@ function setOptionalFieldsEnabled(enabled) {
       fileInput.value = '';
     }
     selectedFiles = [];
+    clearContactValidationErrors();
   }
+}
+
+function initContactValidation() {
+  const phoneInput = document.getElementById('phoneInput');
+  const emailInput = document.getElementById('emailInput');
+
+  if (phoneInput) {
+    phoneInput.addEventListener('blur', () => {
+      if (!phoneInput.disabled) {
+        applyFieldValidation('phone', phoneInput.value);
+      }
+    });
+    phoneInput.addEventListener('input', () => {
+      clearFieldValidation('phone');
+    });
+  }
+
+  if (emailInput) {
+    emailInput.addEventListener('blur', () => {
+      if (!emailInput.disabled) {
+        applyFieldValidation('email', emailInput.value);
+      }
+    });
+    emailInput.addEventListener('input', () => {
+      clearFieldValidation('email');
+    });
+  }
+}
+
+function normalizePhone(value) {
+  if (typeof value !== 'string') return '';
+  return value.replace(/[\s()\-.]/g, '').trim();
+}
+
+function validatePhone(value) {
+  const raw = typeof value === 'string' ? value.trim() : '';
+  if (!raw) return '';
+
+  const normalized = normalizePhone(raw);
+
+  if (!/^\+?\d+$/.test(normalized)) {
+    return 'Telefon numarası yalnızca rakam ve + ( ) - boşluk içerebilir.';
+  }
+
+  const digits = normalized.replace(/^\+/, '');
+
+  let local = digits;
+  if (local.startsWith('90') && local.length === 12) {
+    local = local.slice(2);
+  } else if (local.startsWith('0') && local.length === 11) {
+    local = local.slice(1);
+  }
+
+  if (local.length !== 10 || !local.startsWith('5')) {
+    return 'Geçerli bir telefon numarası giriniz (örn: 05XX XXX XX XX).';
+  }
+
+  return '';
+}
+
+function validateEmail(value) {
+  const raw = typeof value === 'string' ? value.trim() : '';
+  if (!raw) return '';
+
+  if (raw.length > 254) {
+    return 'E-posta adresi 254 karakterden uzun olamaz.';
+  }
+
+  const [localPart] = raw.split('@');
+  if (localPart && localPart.length > 64) {
+    return 'E-posta adresinin @ öncesi kısmı 64 karakteri aşamaz.';
+  }
+
+  const pattern = /^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/;
+  if (!pattern.test(raw)) {
+    return 'Geçerli bir e-posta adresi giriniz (örn: ad@ornek.com).';
+  }
+
+  return '';
+}
+
+function applyFieldValidation(field, value) {
+  if (field === 'phone') {
+    const error = validatePhone(value);
+    setFieldError('phoneInput', 'phoneError', error);
+    return !error;
+  }
+
+  if (field === 'email') {
+    const error = validateEmail(value);
+    setFieldError('emailInput', 'emailError', error);
+    return !error;
+  }
+
+  return true;
+}
+
+function setFieldError(inputId, errorId, message) {
+  const field = inputId === 'phoneInput' ? 'phone' : 'email';
+  const input = document.getElementById(inputId);
+  const error = document.getElementById(errorId);
+
+  if (!input) return;
+
+  if (!message) {
+    clearFieldValidation(field);
+    return;
+  }
+
+  input.classList.add('field-invalid');
+  input.setAttribute('aria-invalid', 'true');
+  if (typeof input.setCustomValidity === 'function') {
+    input.setCustomValidity(message);
+  }
+  if (error) {
+    error.textContent = message;
+    error.hidden = false;
+  }
+}
+
+function clearFieldValidation(field) {
+  const inputId = field === 'phone' ? 'phoneInput' : 'emailInput';
+  const errorId = field === 'phone' ? 'phoneError' : 'emailError';
+  const input = document.getElementById(inputId);
+  const error = document.getElementById(errorId);
+
+  if (input) {
+    input.classList.remove('field-invalid');
+    input.removeAttribute('aria-invalid');
+    if (typeof input.setCustomValidity === 'function') {
+      input.setCustomValidity('');
+    }
+  }
+
+  if (error) {
+    error.textContent = '';
+    error.hidden = true;
+  }
+}
+
+function clearContactValidationErrors() {
+  clearFieldValidation('phone');
+  clearFieldValidation('email');
+}
+
+function validateContactFields() {
+  const phoneInput = document.getElementById('phoneInput');
+  const emailInput = document.getElementById('emailInput');
+
+  const phoneValid = phoneInput && !phoneInput.disabled
+    ? applyFieldValidation('phone', phoneInput.value)
+    : true;
+  const emailValid = emailInput && !emailInput.disabled
+    ? applyFieldValidation('email', emailInput.value)
+    : true;
+
+  if (!phoneValid && phoneInput) {
+    phoneInput.focus();
+  } else if (!emailValid && emailInput) {
+    emailInput.focus();
+  }
+
+  return phoneValid && emailValid;
 }
 
 export function showEmergencyGateOnReportEntry() {
