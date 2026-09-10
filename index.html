@@ -10,7 +10,12 @@
 <body>
   <header>
     <div class="brand"><div class="mark">PGM</div><div>Güvenli Okul<br><span style="font-weight:400">Anonim okul güvenliği bildirim sistemi</span></div></div>
-    <nav aria-label="Ana menü">
+    <button id="navToggle" class="nav-toggle" type="button" aria-label="Menüyü aç/kapat" aria-expanded="false" aria-controls="primaryNav">
+      <span class="nav-toggle-bar"></span>
+      <span class="nav-toggle-bar"></span>
+      <span class="nav-toggle-bar"></span>
+    </button>
+    <nav id="primaryNav" aria-label="Ana menü">
       <button class="active" data-view="home">Tanıtım</button>
       <button data-view="report">Online Güvenli İhbar</button>
       <button data-view="admin" data-requires-role="operator">PGM Paneli (Demo)</button>
@@ -352,7 +357,7 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
-  <script type="module" src="js/app.js?v=20260910-1"></script>
+  <script type="module" src="js/app.js?v=20260910-2"></script>
 </body>
 </html>
 

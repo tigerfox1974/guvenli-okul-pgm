@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', function() {
   initForm();
   initAdminGate();
   initPublicNavigation();
+  initMobileNav();
   applyAuthStateOnLoad();
 
   console.log('Güvenli Okul PGM başlatıldı.');
@@ -59,6 +60,43 @@ function initPublicNavigation() {
   }
 
   showPublicView(firstView);
+}
+
+function initMobileNav() {
+  const toggle = document.getElementById('navToggle');
+  const nav = document.getElementById('primaryNav');
+
+  if (!toggle || !nav) return;
+
+  const setOpen = isOpen => {
+    nav.classList.toggle('nav-open', isOpen);
+    toggle.classList.toggle('is-open', isOpen);
+    toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  };
+
+  toggle.addEventListener('click', event => {
+    event.stopPropagation();
+    setOpen(!nav.classList.contains('nav-open'));
+  });
+
+  nav.addEventListener('click', event => {
+    if (event.target.closest('button[data-view]')) {
+      setOpen(false);
+    }
+  });
+
+  document.addEventListener('click', event => {
+    if (!nav.classList.contains('nav-open')) return;
+    if (event.target.closest('header')) return;
+
+    setOpen(false);
+  });
+
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') {
+      setOpen(false);
+    }
+  });
 }
 
 function showPublicView(viewId) {
