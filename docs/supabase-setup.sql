@@ -31,7 +31,7 @@ create index if not exists idx_anonymous_reports_category on public.anonymous_re
 alter table public.anonymous_reports enable row level security;
 
 grant usage on schema public to anon, authenticated;
-grant insert, update on table public.anonymous_reports to anon, authenticated;
+grant insert on table public.anonymous_reports to anon, authenticated;
 
 do $$
 declare
@@ -47,18 +47,14 @@ begin
 end
 $$;
 
-create policy "public_insert_anonymous_reports_public"
+create policy "anon_insert_anonymous_reports"
   on public.anonymous_reports
   for insert
-  to public
-  with check (true);
-
-create policy "public_update_anonymous_reports_public"
-  on public.anonymous_reports
-  for update
-  to public
-  using (true)
-  with check (true);
+  to anon, authenticated
+  with check (
+    source = 'web-anon-report'
+    and status = 'Yeni'
+  );
 
 -- Optional: If later you want authenticated dashboard reads from Supabase,
 -- define read policies for authenticated roles here.
