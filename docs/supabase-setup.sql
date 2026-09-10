@@ -47,29 +47,16 @@ begin
 end
 $$;
 
-create policy "public_insert_anonymous_reports_anon"
+create policy "public_insert_anonymous_reports_public"
   on public.anonymous_reports
   for insert
-  to anon
+  to public
   with check (true);
 
-create policy "public_insert_anonymous_reports_authenticated"
-  on public.anonymous_reports
-  for insert
-  to authenticated
-  with check (true);
-
-create policy "public_update_anonymous_reports_anon"
+create policy "public_update_anonymous_reports_public"
   on public.anonymous_reports
   for update
-  to anon
-  using (true)
-  with check (true);
-
-create policy "public_update_anonymous_reports_authenticated"
-  on public.anonymous_reports
-  for update
-  to authenticated
+  to public
   using (true)
   with check (true);
 

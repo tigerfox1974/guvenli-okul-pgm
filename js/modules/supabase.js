@@ -18,7 +18,7 @@ export async function persistReportToSupabase(report) {
   }
 
   try {
-    await upsertRows([row]);
+    await insertRow(row);
     return { status: 'synced', reportId: row.id };
   } catch (error) {
     queuePendingRow(row);
@@ -40,17 +40,34 @@ export async function syncPendingSupabaseReports() {
     return { status: 'idle', pendingCount: 0 };
   }
 
-  try {
-    await upsertRows(pendingRows);
-    setPendingRows([]);
-    return { status: 'synced', pendingCount: 0 };
-  } catch (error) {
-    return {
-      status: 'queued',
-      pendingCount: pendingRows.length,
-      reason: normalizeErrorMessage(error)
-    };
+  const stillPending = [];
+  let lastErrorMessage = '';
+
+  for (const row of pendingRows) {
+    try {
+      await insertRow(row);
+    } catch (error) {
+      if (isDuplicateInsertError(error)) {
+        // If row already exists remotely, treat it as synced and drop from queue.
+        continue;
+      }
+
+      stillPending.push(row);
+      lastErrorMessage = normalizeErrorMessage(error);
+    }
   }
+
+  setPendingRows(stillPending);
+
+  if (stillPending.length === 0) {
+    return { status: 'synced', pendingCount: 0 };
+  }
+
+  return {
+    status: 'queued',
+    pendingCount: stillPending.length,
+    reason: lastErrorMessage || 'sync-failed'
+  };
 }
 
 function mapReportToSupabaseRow(report) {
@@ -166,17 +183,17 @@ function setPendingRows(rows) {
   }
 }
 
-async function upsertRows(rows) {
-  if (!Array.isArray(rows) || rows.length === 0) {
+async function insertRow(row) {
+  if (!row || typeof row !== 'object') {
     return;
   }
 
-  const endpoint = buildUpsertEndpoint();
+  const endpoint = buildInsertEndpoint();
   const schema = getConfiguredSchema();
   const headers = {
     'Content-Type': 'application/json',
     apikey: getConfiguredAnonKey(),
-    Prefer: 'resolution=merge-duplicates,return=minimal',
+    Prefer: 'return=minimal',
     'Accept-Profile': schema,
     'Content-Profile': schema
   };
@@ -184,7 +201,7 @@ async function upsertRows(rows) {
   const response = await fetchWithTimeout(endpoint, {
     method: 'POST',
     headers,
-    body: JSON.stringify(rows)
+    body: JSON.stringify([row])
   }, getRequestTimeoutMs());
 
   if (response.ok) {
@@ -198,13 +215,13 @@ async function upsertRows(rows) {
     details = '';
   }
 
-  throw new Error(`Supabase request failed (${response.status}): ${details}`);
+  throw new SupabaseRequestError(response.status, details);
 }
 
-function buildUpsertEndpoint() {
+function buildInsertEndpoint() {
   const baseUrl = getConfiguredBaseUrl();
   const table = encodeURIComponent(String(SUPABASE_CONFIG.reportsTable || 'anonymous_reports'));
-  return `${baseUrl}/rest/v1/${table}?on_conflict=id`;
+  return `${baseUrl}/rest/v1/${table}`;
 }
 
 function getConfiguredBaseUrl() {
@@ -256,4 +273,25 @@ function normalizeErrorMessage(error) {
   }
 
   return 'unknown-error';
+}
+
+function isDuplicateInsertError(error) {
+  if (!(error instanceof SupabaseRequestError)) {
+    return false;
+  }
+
+  if (error.status !== 409) {
+    return false;
+  }
+
+  return /23505|duplicate key value|unique constraint/i.test(error.details || '');
+}
+
+class SupabaseRequestError extends Error {
+  constructor(status, details) {
+    super(`Supabase request failed (${status}): ${details}`);
+    this.name = 'SupabaseRequestError';
+    this.status = status;
+    this.details = details;
+  }
 }

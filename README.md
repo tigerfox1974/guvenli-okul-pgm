@@ -198,10 +198,11 @@ Eger su hatayi gorurseniz:
 
 Su adimlari uygulayin:
 1. Supabase SQL Editor acin.
-2. [docs/supabase-setup.sql](docs/supabase-setup.sql) dosyasinin guncel halini tekrar calistirin.
+2. [docs/supabase-rls-fix.sql](docs/supabase-rls-fix.sql) dosyasinin guncel halini tekrar calistirin.
 3. Table Editor ekraninda anonymous_reports tablosunu acin.
-4. Tablo icinde RLS acik kalacak; insert policy hem anon hem authenticated role icin olusacak.
+4. Tablo icinde RLS acik kalacak; insert ve update policy role-bagimsiz public politika olarak olusacak.
 5. Uygulamada yeni bir test bildirimi daha gonderin.
+6. Hala devam ederse uygulamadaki URL ile Supabase Data API URL alaninin birebir ayni oldugunu dogrulayin.
 
 ### Aşama 9: Bağlantı Kesilirse Ne Olur?
 
