@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="Güvenli Okul | PGM">
+  <rect width="1200" height="630" fill="#14213d"/>
+  <rect x="60" y="60" width="1080" height="510" rx="28" fill="#0f1a30" stroke="#1d4ed8" stroke-width="2"/>
+  <rect x="120" y="150" width="88" height="88" rx="18" fill="#ffffff"/>
+  <text x="164" y="196" text-anchor="middle" dominant-baseline="middle" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="800" fill="#14213d">PGM</text>
+  <text x="240" y="184" font-family="Arial, Helvetica, sans-serif" font-size="46" font-weight="800" fill="#ffffff">Güvenli Okul</text>
+  <text x="242" y="222" font-family="Arial, Helvetica, sans-serif" font-size="24" fill="#93c5fd">Anonim okul güvenliği bildirim sistemi</text>
+  <text x="120" y="330" font-family="Arial, Helvetica, sans-serif" font-size="26" fill="#cbd5e1">KKTC genelindeki okullarda güvenlik risklerinin</text>
+  <text x="120" y="368" font-family="Arial, Helvetica, sans-serif" font-size="26" fill="#cbd5e1">anonim olarak PGM'ye iletilmesi.</text>
+  <path d="M120 470h960" stroke="#1d4ed8" stroke-width="2"/>
+  <text x="120" y="520" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700" fill="#ffffff">155 Polis İmdat · 112 Acil Çağrı Merkezi</text>
+</svg>

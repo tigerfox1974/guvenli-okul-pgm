@@ -1,0 +1,14 @@
+# Bağımlılıklar
+node_modules/
+
+# Kullanıcı yüklemeleri (geçici önizleme; kalıcı depolama Supabase Storage'da tutulur)
+assets/uploads/
+
+# İşletim sistemi / editör dosyaları
+.DS_Store
+Thumbs.db
+.vscode/
+
+# Ortam değişkenleri / yerel sırlar
+.env
+.env.local

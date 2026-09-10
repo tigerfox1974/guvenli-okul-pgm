@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 320" width="480" height="320" role="img" aria-label="Güvenli okul illüstrasyonu">
+  <rect width="480" height="320" rx="16" fill="#eef2ff"/>
+  <circle cx="410" cy="70" r="34" fill="#fde68a"/>
+  <path d="M0 250h480v70H0z" fill="#dbeafe"/>
+  <rect x="150" y="150" width="180" height="120" rx="6" fill="#ffffff" stroke="#c7d2fe" stroke-width="3"/>
+  <path d="M140 150l100-60 100 60z" fill="#1d4ed8"/>
+  <rect x="222" y="205" width="36" height="65" rx="4" fill="#14213d"/>
+  <rect x="176" y="180" width="26" height="26" rx="4" fill="#93c5fd"/>
+  <rect x="278" y="180" width="26" height="26" rx="4" fill="#93c5fd"/>
+  <path d="M360 120l34 12v26c0 24-15 38-34 46-19-8-34-22-34-46v-26l34-12z" fill="#ffffff" stroke="#b91c1c" stroke-width="4"/>
+  <path d="M360 138l20 7v16c0 14-9 23-20 28-11-5-20-14-20-28v-16l20-7z" fill="#b91c1c"/>
+</svg>
