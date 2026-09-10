@@ -450,13 +450,32 @@ function validateEmail(value) {
     return 'E-posta adresi 254 karakterden uzun olamaz.';
   }
 
-  const [localPart] = raw.split('@');
-  if (localPart && localPart.length > 64) {
+  const atCount = (raw.match(/@/g) || []).length;
+  if (atCount !== 1) {
+    return 'Geçerli bir e-posta adresi giriniz (örn: ad@ornek.com).';
+  }
+
+  const [localPart, domainPart] = raw.split('@');
+
+  if (!localPart || localPart.length > 64) {
     return 'E-posta adresinin @ öncesi kısmı 64 karakteri aşamaz.';
   }
 
-  const pattern = /^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/;
-  if (!pattern.test(raw)) {
+  if (localPart.startsWith('.') || localPart.endsWith('.') || localPart.includes('..')) {
+    return 'Geçerli bir e-posta adresi giriniz (örn: ad@ornek.com).';
+  }
+
+  if (!domainPart || domainPart.startsWith('.') || domainPart.endsWith('.') || domainPart.includes('..')) {
+    return 'Geçerli bir e-posta adresi giriniz (örn: ad@ornek.com).';
+  }
+
+  const localPattern = /^[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+(\.[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+)*$/;
+  if (!localPattern.test(localPart)) {
+    return 'Geçerli bir e-posta adresi giriniz (örn: ad@ornek.com).';
+  }
+
+  const domainPattern = /^(?=.{1,253}$)([A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,}$/;
+  if (!domainPattern.test(domainPart)) {
     return 'Geçerli bir e-posta adresi giriniz (örn: ad@ornek.com).';
   }
 
