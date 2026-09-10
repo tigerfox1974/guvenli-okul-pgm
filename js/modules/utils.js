@@ -48,7 +48,7 @@ const DISTRICT_DICTIONARY = Object.freeze([
     aliases: ['Lefkosa']
   },
   {
-    value: 'Mağusa',
+    value: 'Gazimağusa',
     label: 'Gazimağusa',
     aliases: ['Gazimağusa', 'Gazimagusa', 'Magusa']
   },
