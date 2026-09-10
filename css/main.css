@@ -36,6 +36,8 @@ main { max-width: 1220px; margin: 0 auto; padding: 24px; }
 .hero { display: grid; grid-template-columns: 1fr; gap: 24px; align-items: stretch; margin-bottom: 24px; }
 .panel, .stat, .table-wrap { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
 .panel { padding: 22px; }
+#home .hero .panel h1 { text-align: center; }
+#home .hero .panel p { text-align: justify; }
 h1, h2, h3 { margin: 0 0 12px; line-height: 1.15; }
 h1 { font-size: 36px; }
 h2 { font-size: 24px; }
