@@ -13,7 +13,7 @@
   <meta property="og:image" content="assets/images/og/og-image.svg">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="css/main.css?v=20260911-2">
+  <link rel="stylesheet" href="css/main.css?v=20260911-3">
 </head>
 <body>
   <header>
@@ -33,15 +33,171 @@
 
   <main>
     <section id="home" class="view active">
-      <div class="hero">
-        <div class="panel">
-          <h1>Güvenli Okul Bilgi ve Bildirim Platformu</h1>
-          <p>Güvenli Okul Bilgi ve Bildirim Platformu; KKTC Polis Genel Müdürlüğü koordinasyonunda, öğrenciler, veliler, öğretmenler, okul personeli ve okul çevresindeki vatandaşların okul güvenliğine ilişkin risk ve ihtiyaçları güvenli ve anonim bir bilgi paylaşım ve bildirim kanalı üzerinden iletebilmesi amacıyla geliştirilmiştir. Bu form üzerinden yapılan bildirimler tek başına resmî şikâyet, suç duyurusu veya tanık ifadesi niteliğinde değildir; resmî şikâyette bulunmak veya doğrudan adli işlem başlatılmasını talep etmek isteyenlerin en yakın polis merkezine müracaat etmesi gerekir. Bununla birlikte bildirimin içeriğinde suç şüphesi, ciddi tehlike veya korunması gereken bir kişiye ilişkin bilgi bulunması hâlinde konu, Polis Genel Müdürlüğünün görev ve yetkileri çerçevesinde değerlendirilir ve gerekli işlemler başlatılabilir.</p>
-          <p>Amaç yalnızca bildirim almak değildir. Platform; gelen bildirimlerin ilçe, okul, kategori ve zaman bazında kayıt altına alınmasını, harita ve ısı haritası üzerinde analiz edilmesini, doğrulama, risk önceliği ve saha değerlendirmesi yapılmak üzere ilgili birimlere iletilmesini ve gerekli görülmesi hâlinde kaydın yürürlükteki mevzuat kapsamında yetkili mercilere aktarılabilmesini sağlayan bir bilgi ve takip sistemidir. Bildirimler, doğrulanıncaya kadar teyide muhtaç bilgi olarak kabul edilir ve gerekli inceleme yapılmadan hiçbir kişi hakkında suçlama, disiplin işlemi veya başka bir yaptırımın tek başına dayanağı olarak kullanılmaz. Değerlendirmede kişilerin hakları, özel hayatın gizliliği, çocukların üstün yararı, masumiyet karinesi ve kişisel verilerin korunması esasları gözetilir.</p>
-          <p>Kimlik bilgisi zorunlu değildir; anonim bildirim esastır. Paylaşılan bilgiler; okul güvenliği risklerinin erken görülmesi, tekrar eden sorunların tespit edilmesi ve kurumlar arası koordinasyonun hızlandırılması amacıyla kullanılır. Konum bilgisi yalnızca kullanıcının bu amaçla ayrıca ve açıkça izin vermesi hâlinde alınır; konum izni verilmemesi formun kullanılmasına engel oluşturmaz. Sistemin güvenliğinin sağlanması, kötüye kullanımın önlenmesi ve teknik sorunların tespit edilmesi amacıyla cihaz türü, işletim sistemi, tarayıcı bilgisi ile işlem tarihi ve saatine ilişkin sınırlı teknik kayıtlar işlenebilir. Kasıtlı olarak gerçeğe aykırı bilgi verilmesi, kişilere suç isnat edilmesi, hakaret, tehdit, iftira, karalama veya kişilerin hedef gösterilmesi hâlinde konu yürürlükteki mevzuat çerçevesinde değerlendirilebilir.</p>
-          <div class="notice"><strong>Önemli uyarı:</strong> Bu form, devam eden veya acil müdahale gerektiren olayların bildirilmesi için <strong><u>kullanılmamalıdır</u></strong>. Can veya mal güvenliğini tehdit eden, hâlen devam eden ya da derhâl polis müdahalesi gerektiren durumlarda (devam eden kavga, yaralanma, silah, yangın, ciddi tehdit veya anlık tehlike dâhil) derhal 155 Polis İmdat veya 112 Acil Çağrı Merkezi telefon hattı aranmalıdır. Bu formda aciliyet beyanı, acil seçenek veya öncelik seviyesi niteliğinde hiçbir alan bulunmaz.</div>
+      <!-- 1: Kurumsal baslik bandi -->
+      <div class="home-topbar">
+        <div class="home-topbar-inner">
+          <img class="home-logo" src="assets/logos/polvak-logo.png" alt="POLVAK - Polis Güçlendirme Vakfı logosu">
+          <div class="home-topbar-title">
+            <h1>GÜVENLİ OKUL <span>PROJESİ</span></h1>
+            <p>GÜVENLİ YARINLAR, GÜÇLÜ NESİLLER</p>
+          </div>
+          <img class="home-logo" src="assets/logos/polis-logo.png" alt="KKTC Polis Genel Müdürlüğü logosu">
+        </div>
+      </div>
+
+      <div class="home-body">
+        <!-- 2-5: Hero ve yan kartlar -->
+        <div class="home-hero-grid">
+          <article class="home-card home-purpose">
+            <div class="home-card-head home-head-red">
+              <svg class="home-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+              <h2>PROJENİN AMACI</h2>
+            </div>
+            <p>İlkokul, ortaokul ve lise düzeyindeki tüm okullarda daha güvenli, huzurlu ve destekleyici bir ortam oluşturarak öğrencilerimizin sağlıklı, bilinçli ve güvenli bireyler olarak yetişmelerini sağlamaktır.</p>
+          </article>
+
+          <figure class="home-hero-figure">
+            <img src="assets/images/home/hero-guvenli-okul.png" alt="Okul bahçesinde öğrencilerin yanında duran polis memuru">
+          </figure>
+
+          <div class="home-side">
+            <article class="home-card">
+              <div class="home-card-head home-head-navy">
+                <svg class="home-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 17l-4-4"/><path d="M14 7l4 4"/><path d="M3 21l5-5"/><path d="M16 3l5 5"/></svg>
+                <h2>POLİS GÜCÜNÜ HALKTAN ALIR</h2>
+              </div>
+              <p class="home-slogan">Birlikte koruruz,<br>Birlikte güçleniriz,<br>Birlikte güvendeyiz!</p>
+            </article>
+            <article class="home-card">
+              <div class="home-card-head home-head-green">
+                <svg class="home-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                <h2>GÜVENLİ İHBAR HATTI</h2>
+              </div>
+              <div class="home-hotline">
+                <a class="home-hotline-link" href="tel:+905428520021">
+                  <span class="home-hotline-icon">
+                    <svg class="home-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                  </span>
+                  <span class="home-hotline-text">
+                    <span class="home-hotline-label">İhbar hattı</span>
+                    <span class="home-hotline-number">0542 852 00 21</span>
+                  </span>
+                </a>
+                <img class="home-qr" src="assets/qr/guvenli-okul-ihbar-qr.png" alt="Güvenli İhbar Hattı bildirim formuna götüren QR kod">
+              </div>
+              <p class="home-hotline-foot">7/24 GİZLİ &bull; GÜVENLİ &bull; ETKİLİ</p>
+            </article>
+          </div>
         </div>
 
+        <!-- 6: Acil durum uyarisi -->
+        <div class="home-alert">
+          <svg class="home-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <p>Bu platform, devam eden veya acil müdahale gerektiren olayların bildirilmesi için <strong><u>kullanılmamalıdır</u></strong>. Acil durumlarda derhal <strong>155 Polis İmdat</strong> veya <strong>112 Acil Çağrı Merkezi</strong> aranmalıdır.</p>
+        </div>
+
+        <!-- 7: Konu kartlari -->
+        <h2 class="sr-only">Proje konu başlıkları</h2>
+        <div class="home-topics">
+          <article class="home-topic home-topic-navy">
+            <div class="home-topic-bar"></div>
+            <div class="home-topic-head"><h3>Suç ve suçludan korunma</h3></div>
+            <ul>
+              <li>Suçtan korunma yolları</li>
+              <li>Hak ve sorumluluklarımız</li>
+              <li>Siber suçlar</li>
+              <li>Zorbalık (akran zorbalığı)</li>
+              <li>Şiddetle mücadele</li>
+              <li>Tütün ürünleri satışlarının kontrolü</li>
+              <li>Kişisel güvenlik</li>
+            </ul>
+          </article>
+          <article class="home-topic home-topic-green">
+            <div class="home-topic-bar"></div>
+            <div class="home-topic-head"><h3>Trafik güvenliği</h3></div>
+            <ul>
+              <li>Yaya ve okul geçitlerinde güvenlik</li>
+              <li>Servis araçlarında güvenlik</li>
+              <li>Okul önlerine park yapma kuralları</li>
+              <li>Trafik kurallarına uyma</li>
+              <li>Güvenli bisiklet kullanımı</li>
+            </ul>
+          </article>
+          <article class="home-topic home-topic-purple">
+            <div class="home-topic-bar"></div>
+            <div class="home-topic-head"><h3>Bağımlılıkla mücadele</h3></div>
+            <ul>
+              <li>Uyuşturucu maddeler ve zararları</li>
+              <li>Bağımlılıkla mücadele</li>
+              <li>Madde kullanımına yönlendiren riskler</li>
+              <li>Doğru arkadaş seçimi</li>
+              <li>Yasa dışı madde kullanımına basamak teşkil edecek maddeleri okul ve okul çevrelerinden uzaklaştırma</li>
+              <li>Yardım alabileceğiniz yerler</li>
+            </ul>
+          </article>
+          <article class="home-topic home-topic-red">
+            <div class="home-topic-bar"></div>
+            <div class="home-topic-head"><h3>İtfaiye güvenliği</h3></div>
+            <ul>
+              <li>Yangın güvenliği</li>
+              <li>Tahliye kuralları</li>
+              <li>Yangın söndürücü kullanımı</li>
+              <li>Acil durumlarda doğru davranışlar</li>
+            </ul>
+          </article>
+          <article class="home-topic home-topic-blue">
+            <div class="home-topic-bar"></div>
+            <div class="home-topic-head"><h3>Scooter kullanımı</h3></div>
+            <ul>
+              <li>KKTC'de 18 yaşından küçüklerin scooter (kickscooter) kullanması yasaktır.</li>
+              <li>Okul alanlarında scooter kullanımı uygun değildir.</li>
+              <li>Trafik kurallarına uyun, kendinizin ve başkalarının güvenliğini tehlikeye atmayın.</li>
+            </ul>
+          </article>
+        </div>
+
+        <!-- 8-9: Sizin dikkatiniz + Unutmayin -->
+        <div class="home-bottom-grid">
+          <section class="home-card home-awareness">
+            <div class="home-card-head home-head-navy">
+              <svg class="home-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
+              <h2>Sizin dikkatiniz, bizim gücümüz!</h2>
+            </div>
+            <div class="home-awareness-body">
+              <p class="home-awareness-lead">Okullarımızı daha güvenli hale getirmek için hepimizin sorumluluğu var.</p>
+              <ul class="home-awareness-list">
+                <li>Şüpheli kişi ve durumları bildiriniz.</li>
+                <li>Güvenlik zaafiyetlerini paylaşınız.</li>
+                <li>Trafik kurallarına aykırı davranışları bildiriniz.</li>
+                <li>Suç ihtiva eden durumları paylaşınız.</li>
+                <li>Okul içinde ve okul dışında çocuklardan öğrenilip polisin bilmesi gereken hususları iletiniz.</li>
+                <li>Sosyal medya kullanımındaki usulsüzlükleri bildiriniz.</li>
+              </ul>
+              <p class="home-awareness-foot">
+                <svg class="home-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
+                Gördüğünüz, duyduğunuz, şüphelendiğiniz her durumda bize ulaşın.
+              </p>
+            </div>
+          </section>
+
+          <section class="home-card home-reminder">
+            <div class="home-card-head home-head-green">
+              <svg class="home-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+              <h2>Unutmayın!</h2>
+            </div>
+            <ul class="home-reminder-list">
+              <li>Bir ihbar, bir hayat kurtarır.</li>
+              <li>Güvenli okul, mutlu öğrenci demektir.</li>
+              <li>Mutlu öğrenci, mutlu bir gelecek demektir.</li>
+            </ul>
+          </section>
+        </div>
+      </div>
+
+      <!-- 10: Kapanis bandi -->
+      <div class="home-closing">
+        <p class="home-closing-top">Daha güvenli okullar için</p>
+        <p class="home-closing-main">Hep Birlikte el ele!</p>
       </div>
     </section>
 
