@@ -36,6 +36,7 @@ const MAP_CONTROL_IDS = {
   modeText: 'mapMode'
 };
 const ADMIN_PAGE_SIZE = 100;
+const REPORTS_UPDATED_DEBOUNCE_MS = 150;
 
 const RISK_BUCKETS = Object.freeze([
   {
@@ -86,6 +87,7 @@ const STATUS_META = Object.freeze({
 let currentFilteredReports = [];
 let activeRiskBucket = 'all';
 let renderRequestId = 0;
+let reportsUpdatedTimer = null;
 
 export function initUI() {
   initNavigation();
@@ -93,11 +95,28 @@ export function initUI() {
   initRiskControlEvents();
   initMapControlEvents();
 
-  document.addEventListener('reports:updated', () => {
-    void renderAdminPanel();
-  });
+  document.addEventListener('reports:updated', scheduleAdminPanelRender);
+}
 
-  void renderAdminPanel();
+function scheduleAdminPanelRender() {
+  if (!isAdminViewActive()) {
+    return;
+  }
+
+  clearTimeout(reportsUpdatedTimer);
+  reportsUpdatedTimer = setTimeout(() => {
+    reportsUpdatedTimer = null;
+
+    if (!isAdminViewActive()) {
+      return;
+    }
+
+    void renderAdminPanel();
+  }, REPORTS_UPDATED_DEBOUNCE_MS);
+}
+
+function isAdminViewActive() {
+  return document.querySelector('main .view.active')?.id === 'admin';
 }
 
 export async function renderAdminPanel() {
@@ -106,38 +125,38 @@ export async function renderAdminPanel() {
 
   setPanelLoadingState(true);
 
+  let reports = [];
+
   try {
-    const [reportsResponse, summaryResponse] = await Promise.all([
-      fetchAdminReports({
-        filters,
-        page: 1,
-        pageSize: ADMIN_PAGE_SIZE
-      }),
-      fetchAdminSummary({ filters })
-    ]);
+    const reportsResponse = await fetchAdminReports({
+      filters,
+      page: 1,
+      pageSize: ADMIN_PAGE_SIZE
+    });
 
     if (requestId !== renderRequestId) {
       return;
     }
 
-    const reports = Array.isArray(reportsResponse && reportsResponse.items)
+    reports = Array.isArray(reportsResponse && reportsResponse.items)
       ? reportsResponse.items
       : [];
 
     populateFilterOptions(reports);
 
     const filteredReports = applyRiskBucketFilter(reports);
-    const summary = normalizeSummaryData(summaryResponse, reports);
-    const hasLimitedResult = Boolean(reportsResponse && reportsResponse.hasNext) || Boolean(summary.truncated);
+    const totalCount = Number(reportsResponse && reportsResponse.totalCount);
+    const hasLimitedResult = Boolean(reportsResponse && reportsResponse.hasNext);
 
     currentFilteredReports = filteredReports;
 
-    updateSummaryCards(filteredReports, summary);
     renderRegionalRiskPanel(filteredReports);
     renderReportTable(filteredReports);
     updateMapVisualization(filteredReports);
     syncMapControlUI();
-    updateFilterResult(summary.totalReports, filteredReports.length, { limited: hasLimitedResult });
+    updateFilterResult(Number.isFinite(totalCount) ? totalCount : filteredReports.length, filteredReports.length, {
+      limited: hasLimitedResult
+    });
     syncRiskFocusUI();
   } catch (error) {
     if (requestId !== renderRequestId) {
@@ -145,10 +164,31 @@ export async function renderAdminPanel() {
     }
 
     handleAdminPanelLoadError(error);
+    return;
   } finally {
     if (requestId === renderRequestId) {
       setPanelLoadingState(false);
     }
+  }
+
+  void loadAdminSummary(requestId, filters, reports);
+}
+
+async function loadAdminSummary(requestId, filters, reports) {
+  try {
+    const summaryResponse = await fetchAdminSummary({ filters });
+
+    if (requestId !== renderRequestId) {
+      return;
+    }
+
+    updateSummaryCards(reports, normalizeSummaryData(summaryResponse, reports));
+  } catch (error) {
+    if (requestId !== renderRequestId) {
+      return;
+    }
+
+    handleSummaryLoadError();
   }
 }
 
@@ -773,6 +813,23 @@ function handleAdminPanelLoadError(error) {
       }
     }));
   }
+}
+
+function handleSummaryLoadError() {
+  const placeholderIds = [
+    'summaryTotalReports',
+    'summaryNewReports',
+    'summaryReviewReports',
+    'summaryTopDistrict',
+    'summaryTopCategory'
+  ];
+
+  placeholderIds.forEach(id => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.textContent = '-';
+    }
+  });
 }
 
 function getAdminLoadErrorMessage(error) {
