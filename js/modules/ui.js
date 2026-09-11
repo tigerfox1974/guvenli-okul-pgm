@@ -1,4 +1,5 @@
-import { getReports, showEmergencyGateOnReportEntry } from './form.js';
+import { showEmergencyGateOnReportEntry } from './form.js';
+import { AdminApiError, fetchAdminReports, fetchAdminSummary } from './admin-api.js';
 import {
   fitToIsland,
   getMapLayerVisibility,
@@ -34,6 +35,7 @@ const MAP_CONTROL_IDS = {
   heatToolbar: 'mapHeatToggle',
   modeText: 'mapMode'
 };
+const ADMIN_PAGE_SIZE = 100;
 
 const RISK_BUCKETS = Object.freeze([
   {
@@ -83,6 +85,7 @@ const STATUS_META = Object.freeze({
 
 let currentFilteredReports = [];
 let activeRiskBucket = 'all';
+let renderRequestId = 0;
 
 export function initUI() {
   initNavigation();
@@ -91,27 +94,62 @@ export function initUI() {
   initMapControlEvents();
 
   document.addEventListener('reports:updated', () => {
-    renderAdminPanel();
+    void renderAdminPanel();
   });
 
-  renderAdminPanel();
+  void renderAdminPanel();
 }
 
-export function renderAdminPanel() {
-  const reports = getReports();
-  populateFilterOptions(reports);
-
+export async function renderAdminPanel() {
+  const requestId = ++renderRequestId;
   const filters = getFilterValues();
-  const filteredReports = applyFilters(reports, filters);
-  currentFilteredReports = filteredReports;
 
-  updateSummaryCards(filteredReports);
-  renderRegionalRiskPanel(filteredReports);
-  renderReportTable(filteredReports);
-  updateMapVisualization(filteredReports);
-  syncMapControlUI();
-  updateFilterResult(reports.length, filteredReports.length);
-  syncRiskFocusUI();
+  setPanelLoadingState(true);
+
+  try {
+    const [reportsResponse, summaryResponse] = await Promise.all([
+      fetchAdminReports({
+        filters,
+        page: 1,
+        pageSize: ADMIN_PAGE_SIZE
+      }),
+      fetchAdminSummary({ filters })
+    ]);
+
+    if (requestId !== renderRequestId) {
+      return;
+    }
+
+    const reports = Array.isArray(reportsResponse && reportsResponse.items)
+      ? reportsResponse.items
+      : [];
+
+    populateFilterOptions(reports);
+
+    const filteredReports = applyRiskBucketFilter(reports);
+    const summary = normalizeSummaryData(summaryResponse, reports);
+    const hasLimitedResult = Boolean(reportsResponse && reportsResponse.hasNext) || Boolean(summary.truncated);
+
+    currentFilteredReports = filteredReports;
+
+    updateSummaryCards(filteredReports, summary);
+    renderRegionalRiskPanel(filteredReports);
+    renderReportTable(filteredReports);
+    updateMapVisualization(filteredReports);
+    syncMapControlUI();
+    updateFilterResult(summary.totalReports, filteredReports.length, { limited: hasLimitedResult });
+    syncRiskFocusUI();
+  } catch (error) {
+    if (requestId !== renderRequestId) {
+      return;
+    }
+
+    handleAdminPanelLoadError(error);
+  } finally {
+    if (requestId === renderRequestId) {
+      setPanelLoadingState(false);
+    }
+  }
 }
 
 function initNavigation() {
@@ -152,7 +190,7 @@ function activateView(viewId, navButtons) {
   }
 
   if (viewId === 'admin') {
-    renderAdminPanel();
+    void renderAdminPanel();
     requestAdminMapRefresh();
   }
 }
@@ -173,7 +211,7 @@ function initAdminFilterEvents() {
       if (item.key === 'category' || item.key === 'district' || item.key === 'school') {
         activeRiskBucket = 'all';
       }
-      renderAdminPanel();
+      void renderAdminPanel();
     });
   });
 
@@ -184,7 +222,7 @@ function initAdminFilterEvents() {
         item.element.value = 'all';
       });
       activeRiskBucket = 'all';
-      renderAdminPanel();
+      void renderAdminPanel();
       fitToIsland();
     });
   }
@@ -195,7 +233,7 @@ function initRiskControlEvents() {
   if (clearRiskButton) {
     clearRiskButton.addEventListener('click', () => {
       clearRiskFocus();
-      renderAdminPanel();
+      void renderAdminPanel();
       fitToIsland();
     });
   }
@@ -348,46 +386,47 @@ function populateSchoolSelect(selectElement, reports) {
   selectElement.value = schoolMap.has(previousValue) ? previousValue : 'all';
 }
 
-function applyFilters(reports, filters) {
-  return reports.filter(report => {
-    const district = normalizeDistrictName(report.district || report.region || '', '');
-
-    if (filters.district !== 'all' && district !== filters.district) return false;
-    if (filters.school !== 'all' && String(report.schoolId) !== filters.school) return false;
-    if (filters.category !== 'all' && report.category !== filters.category) return false;
-    if (activeRiskBucket !== 'all' && getRiskBucketKey(report.category) !== activeRiskBucket) return false;
-    if (filters.status !== 'all' && report.status !== filters.status) return false;
-    if (filters.date !== 'all' && !isInDateRange(report, filters.date)) return false;
-    return true;
-  });
-}
-
-function isInDateRange(report, dateFilter) {
-  const sourceDate = report.eventDate || report.createdAt;
-  const date = new Date(sourceDate);
-  if (Number.isNaN(date.getTime())) return false;
-
-  const now = new Date();
-  if (dateFilter === 'year') {
-    return date.getFullYear() === now.getFullYear();
+function applyRiskBucketFilter(reports) {
+  if (activeRiskBucket === 'all') {
+    return reports;
   }
 
-  const days = Number(dateFilter);
-  if (!Number.isFinite(days) || days <= 0) return true;
-
-  const diff = now.getTime() - date.getTime();
-  return diff <= days * 24 * 60 * 60 * 1000;
+  return reports.filter(report => getRiskBucketKey(report.category) === activeRiskBucket);
 }
 
-function updateSummaryCards(reports) {
-  const totalReports = reports.length;
-  const newReports = reports.filter(report => report.status === 'Yeni').length;
-  const reviewedReports = reports.filter(report => report.status !== 'Yeni').length;
-  const topDistrict = getMostFrequent(
+function normalizeSummaryData(summaryData, reports) {
+  const safeData = summaryData && typeof summaryData === 'object' ? summaryData : {};
+
+  const fallbackTopDistrict = getMostFrequent(
     reports,
     report => normalizeDistrictName(report.district || report.region || '', '')
   );
-  const topCategory = getMostFrequent(reports, report => report.category || '');
+  const fallbackTopCategory = getMostFrequent(reports, report => report.category || '');
+
+  const totalReports = Number(safeData.totalReports);
+  const newReports = Number(safeData.newReports);
+  const reviewedReports = Number(safeData.reviewedReports);
+
+  return {
+    totalReports: Number.isFinite(totalReports) ? totalReports : reports.length,
+    newReports: Number.isFinite(newReports)
+      ? newReports
+      : reports.filter(report => report.status === 'Yeni').length,
+    reviewedReports: Number.isFinite(reviewedReports)
+      ? reviewedReports
+      : reports.filter(report => report.status !== 'Yeni').length,
+    topDistrict: String(safeData.topDistrict || fallbackTopDistrict || ''),
+    topCategory: String(safeData.topCategory || fallbackTopCategory || ''),
+    truncated: Boolean(safeData.truncated)
+  };
+}
+
+function updateSummaryCards(reports, summary) {
+  const totalReports = Number(summary && summary.totalReports);
+  const newReports = Number(summary && summary.newReports);
+  const reviewedReports = Number(summary && summary.reviewedReports);
+  const topDistrict = String(summary && summary.topDistrict || '');
+  const topCategory = String(summary && summary.topCategory || '');
 
   const totalElement = document.getElementById('summaryTotalReports');
   const newElement = document.getElementById('summaryNewReports');
@@ -395,9 +434,9 @@ function updateSummaryCards(reports) {
   const topDistrictElement = document.getElementById('summaryTopDistrict');
   const topCategoryElement = document.getElementById('summaryTopCategory');
 
-  if (totalElement) totalElement.textContent = String(totalReports);
-  if (newElement) newElement.textContent = String(newReports);
-  if (reviewElement) reviewElement.textContent = String(reviewedReports);
+  if (totalElement) totalElement.textContent = String(Number.isFinite(totalReports) ? totalReports : reports.length);
+  if (newElement) newElement.textContent = String(Number.isFinite(newReports) ? newReports : 0);
+  if (reviewElement) reviewElement.textContent = String(Number.isFinite(reviewedReports) ? reviewedReports : 0);
   if (topDistrictElement) topDistrictElement.textContent = topDistrict ? getDistrictLabel(topDistrict) : '-';
   if (topCategoryElement) topCategoryElement.textContent = topCategory || '-';
 }
@@ -657,13 +696,20 @@ function renderDetailPanel(items, group) {
   list.setAttribute('aria-busy', 'false');
 }
 
-function updateFilterResult(totalCount, filteredCount) {
+function updateFilterResult(totalCount, filteredCount, options = {}) {
+  const { limited = false } = options;
   const resultElement = document.getElementById('filterResult');
   if (!resultElement) return;
 
   if (totalCount === 0) {
     resultElement.textContent = 'Henüz panelde gösterilecek bildirim yok.';
     announcePanelState('Panelde bildirilecek kayıt bulunmuyor.');
+    return;
+  }
+
+  if (limited && activeRiskBucket === 'all') {
+    resultElement.textContent = `Toplam ${totalCount} bildirimin ilk ${filteredCount} kaydı listeleniyor.`;
+    announcePanelState(`${totalCount} bildirimin ilk ${filteredCount} kaydı listeleniyor.`);
     return;
   }
 
@@ -675,6 +721,70 @@ function updateFilterResult(totalCount, filteredCount) {
 
   resultElement.textContent = `Toplam ${totalCount} bildirimin ${filteredCount} adedi filtrelere uyuyor.${getRiskFocusLabel()}`;
   announcePanelState(`${filteredCount} bildirim filtrelere uyuyor.`);
+}
+
+function setPanelLoadingState(isLoading) {
+  const resultElement = document.getElementById('filterResult');
+  if (resultElement && isLoading) {
+    resultElement.textContent = 'Panel verileri yükleniyor...';
+  }
+
+  const detailList = document.getElementById('detailList');
+  if (detailList) {
+    detailList.setAttribute('aria-busy', isLoading ? 'true' : 'false');
+  }
+}
+
+function handleAdminPanelLoadError(error) {
+  currentFilteredReports = [];
+  updateSummaryCards([], {
+    totalReports: 0,
+    newReports: 0,
+    reviewedReports: 0,
+    topDistrict: '',
+    topCategory: ''
+  });
+  renderRegionalRiskPanel([]);
+  renderReportTable([]);
+  updateMapVisualization([]);
+  syncMapControlUI();
+  syncRiskFocusUI();
+
+  const message = getAdminLoadErrorMessage(error);
+  const resultElement = document.getElementById('filterResult');
+  if (resultElement) {
+    resultElement.textContent = message;
+  }
+  announcePanelState(message);
+
+  if (error instanceof AdminApiError && (error.status === 401 || error.status === 403)) {
+    document.dispatchEvent(new CustomEvent('pgm:admin-auth-invalid', {
+      detail: {
+        code: error.code,
+        status: error.status
+      }
+    }));
+  }
+}
+
+function getAdminLoadErrorMessage(error) {
+  if (error instanceof AdminApiError) {
+    if (error.status === 401) {
+      return 'Admin oturumu geçersiz. Lütfen yeniden giriş yapın.';
+    }
+
+    if (error.status === 403) {
+      return 'Bu hesap panel erişim rolüne sahip değil.';
+    }
+
+    if (error.code === 'request_failed') {
+      return 'Panel verileri alınamadı. Sunucu yanıtı başarısız oldu.';
+    }
+
+    return error.message || 'Panel verileri alınamadı.';
+  }
+
+  return 'Panel verileri yüklenemedi. Lütfen tekrar deneyin.';
 }
 
 function announcePanelState(message) {
@@ -704,7 +814,7 @@ function applyRiskFocus(district, bucket) {
   categorySelect.value = 'all';
   activeRiskBucket = bucket || 'all';
 
-  renderAdminPanel();
+  void renderAdminPanel();
 
   if (normalizedDistrict === 'all') {
     fitToIsland();

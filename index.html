@@ -141,30 +141,23 @@
       </div>
 
       <div id="adminAuthGate" class="panel">
-        <h3>Operatör Girişi (Demo)</h3>
-        <p class="hint">Halka açık kullanıcılar yalnızca bildirim sayfasını kullanabilir. Operatör paneli için rol doğrulaması gerekir.</p>
+        <h3>Yetkili Girişi</h3>
+        <p class="hint">Halka açık kullanıcılar yalnızca bildirim sayfasını kullanabilir. PGM paneli için Supabase üzerinde yetkili hesap gerekir.</p>
         <form id="adminAuthForm" autocomplete="off">
-          <label>Rol
-            <select id="adminRoleSelect" required>
-              <option value="reporter">Halka açık kullanıcı (yalnızca bildirim)</option>
-              <option value="operator">PGM Operatör (demo)</option>
-              <option value="supervisor">PGM Süpervizör (demo)</option>
-            </select>
-          </label>
-          <label>Kullanıcı adı
-            <input id="adminUsernameInput" type="text" required placeholder="operator">
+          <label>E-posta
+            <input id="adminEmailInput" type="email" required placeholder="operator@kurum.gov.ct.tr" autocomplete="username">
           </label>
           <label>Şifre
-            <input id="adminPasswordInput" type="password" required placeholder="1234">
+            <input id="adminPasswordInput" type="password" required placeholder="Şifreniz" autocomplete="current-password">
           </label>
           <div class="full actions">
-            <button id="adminLoginButton" class="primary" type="submit">Demo Girişi Aç</button>
+            <button id="adminLoginButton" class="primary" type="submit">Giriş Yap</button>
           </div>
         </form>
-        <p id="adminAuthMessage" class="hint">Demo hesaplar: operator / 1234 ve supervisor / 1234</p>
+        <p id="adminAuthMessage" class="hint">PGM paneli için yetkili Supabase hesabınızla giriş yapın.</p>
         <div id="adminSessionBox" class="actions" hidden>
           <strong id="adminSessionText"></strong>
-          <button id="adminLogoutButton" class="secondary" type="button">Demo Oturumunu Kapat</button>
+          <button id="adminLogoutButton" class="secondary" type="button">Oturumu Kapat</button>
         </div>
       </div>
 

@@ -1,6 +1,12 @@
-import { initForm, showEmergencyGateOnReportEntry } from './modules/form.js?v=20260910-5';
+import { initForm, showEmergencyGateOnReportEntry } from './modules/form.js';
+import {
+  clearStoredAdminSession,
+  ensureValidAdminSession,
+  hasOperatorAccess,
+  loadStoredAdminSession,
+  signInAdmin
+} from './modules/admin-api.js';
 
-const ADMIN_SESSION_KEY = 'pgm-demo-admin-session-v1';
 const VIEW_ROUTE_TOKENS = Object.freeze({
   home: 'anasayfa',
   report: 'ihbar',
@@ -14,23 +20,9 @@ const ROUTE_VIEW_MAP = Object.freeze({
   panel: 'admin',
   admin: 'admin'
 });
-const OPERATOR_ROLES = new Set(['operator', 'supervisor']);
-const DEMO_ACCOUNTS = Object.freeze([
-  {
-    role: 'operator',
-    username: 'operator',
-    password: '1234',
-    roleLabel: 'PGM Operatör'
-  },
-  {
-    role: 'supervisor',
-    username: 'supervisor',
-    password: '1234',
-    roleLabel: 'PGM Süpervizör'
-  }
-]);
+const DEFAULT_AUTH_HINT = 'PGM paneli için yetkili Supabase hesabınızla giriş yapın.';
 
-let authSession = loadAuthSession();
+let authSession = loadStoredAdminSession();
 let publicNavigationController = null;
 let operatorRuntime = null;
 
@@ -39,10 +31,21 @@ document.addEventListener('DOMContentLoaded', function() {
   initAdminGate();
   initPublicNavigation();
   initMobileNav();
-  applyAuthStateOnLoad();
+  initAdminAuthEventHandlers();
+  void applyAuthStateOnLoad();
 
   console.log('Güvenli Okul PGM başlatıldı.');
 });
+
+function initAdminAuthEventHandlers() {
+  document.addEventListener('pgm:admin-auth-invalid', () => {
+    clearStoredAdminSession();
+    authSession = null;
+    applyAdminVisibility(false);
+    showPublicView('admin', { syncUrl: false });
+    setAuthMessage('Oturum süresi doldu veya yetkiniz kaldırıldı. Lütfen tekrar giriş yapın.', true);
+  });
+}
 
 function initPublicNavigation() {
   publicNavigationController = new AbortController();
@@ -57,7 +60,7 @@ function initPublicNavigation() {
 
     if (requestedView === 'admin' && !hasOperatorAccess(authSession)) {
       showPublicView('admin', { syncUrl: false });
-      setAuthMessage('PGM paneli demo rol doğrulaması gerektirir. Lütfen operatör girişi yapın.', false);
+      setAuthMessage(DEFAULT_AUTH_HINT, false);
       return;
     }
 
@@ -74,7 +77,7 @@ function initPublicNavigation() {
 
       if (targetView === 'admin' && !hasOperatorAccess(authSession)) {
         showPublicView('admin', { syncUrl: true });
-        setAuthMessage('PGM paneli demo rol doğrulaması gerektirir. Lütfen operatör girişi yapın.', false);
+        setAuthMessage(DEFAULT_AUTH_HINT, false);
         return;
       }
 
@@ -190,7 +193,7 @@ function initAdminGate() {
 
   if (logoutButton) {
     logoutButton.addEventListener('click', () => {
-      sessionStorage.removeItem(ADMIN_SESSION_KEY);
+      clearStoredAdminSession();
       window.location.reload();
     });
   }
@@ -199,44 +202,43 @@ function initAdminGate() {
 async function handleAdminLogin(event) {
   event.preventDefault();
 
-  const roleSelect = document.getElementById('adminRoleSelect');
-  const usernameInput = document.getElementById('adminUsernameInput');
+  const emailInput = document.getElementById('adminEmailInput');
   const passwordInput = document.getElementById('adminPasswordInput');
+  const loginButton = document.getElementById('adminLoginButton');
 
-  if (!roleSelect || !usernameInput || !passwordInput) {
+  if (!emailInput || !passwordInput) {
     return;
   }
 
-  const selectedRole = roleSelect.value;
-  const username = usernameInput.value.trim().toLowerCase();
+  const email = emailInput.value.trim().toLowerCase();
   const password = passwordInput.value;
 
-  if (!OPERATOR_ROLES.has(selectedRole)) {
-    setAuthMessage('Seçilen rol yalnızca halka açık bildirim içindir. Operatör veya süpervizör seçin.', true);
-    return;
+  if (loginButton) {
+    loginButton.disabled = true;
   }
 
-  const account = DEMO_ACCOUNTS.find(item => item.role === selectedRole && item.username === username);
-  if (!account || account.password !== password) {
-    setAuthMessage('Demo giriş bilgileri doğrulanamadı. Kullanıcı adı, rol veya şifreyi kontrol edin.', true);
-    return;
+  try {
+    authSession = await signInAdmin(email, password);
+    await enableOperatorRuntime({ openAdminView: true });
+    setAuthMessage(`${authSession.roleLabel} oturumu açıldı: ${authSession.email}`, false);
+  } catch (error) {
+    authSession = null;
+    const errorMessage = error instanceof Error && error.message
+      ? error.message
+      : 'Giriş sırasında beklenmeyen bir hata oluştu.';
+    setAuthMessage(errorMessage, true);
+  } finally {
+    if (loginButton) {
+      loginButton.disabled = false;
+    }
   }
-
-  authSession = {
-    role: account.role,
-    roleLabel: account.roleLabel,
-    username: account.username,
-    issuedAt: new Date().toISOString()
-  };
-
-  saveAuthSession(authSession);
-  await enableOperatorRuntime({ openAdminView: true });
-  setAuthMessage(`${account.roleLabel} demo oturumu açıldı.`, false);
 }
 
-function applyAuthStateOnLoad() {
+async function applyAuthStateOnLoad() {
+  authSession = await ensureValidAdminSession();
+
   if (hasOperatorAccess(authSession)) {
-    enableOperatorRuntime({ openAdminView: false });
+    await enableOperatorRuntime({ openAdminView: false });
     return;
   }
 
@@ -305,12 +307,12 @@ function applyAdminVisibility(isAuthorized) {
 
   if (sessionText) {
     sessionText.textContent = isAuthorized && authSession
-      ? `${authSession.roleLabel} olarak giriş yapıldı: ${authSession.username}`
+      ? `${authSession.roleLabel} olarak giriş yapıldı: ${authSession.email}`
       : '';
   }
 
   if (authMessage && !isAuthorized) {
-    authMessage.textContent = 'Demo hesaplar: operator / 1234 ve supervisor / 1234';
+    authMessage.textContent = DEFAULT_AUTH_HINT;
     authMessage.classList.remove('notice');
   }
 }
@@ -321,28 +323,4 @@ function setAuthMessage(message, isError) {
 
   authMessage.textContent = message;
   authMessage.classList.toggle('notice', Boolean(isError));
-}
-
-function hasOperatorAccess(session) {
-  return Boolean(session && OPERATOR_ROLES.has(session.role));
-}
-
-function saveAuthSession(session) {
-  sessionStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(session));
-}
-
-function loadAuthSession() {
-  const raw = sessionStorage.getItem(ADMIN_SESSION_KEY);
-  if (!raw) return null;
-
-  try {
-    const parsed = JSON.parse(raw);
-    if (!hasOperatorAccess(parsed)) {
-      return null;
-    }
-
-    return parsed;
-  } catch {
-    return null;
-  }
 }
