@@ -123,6 +123,10 @@ input.field-invalid, select.field-invalid, textarea.field-invalid { border-color
 .admin-layout .filters .secondary {
   width: 100%;
 }
+.admin-layout .filters select option.is-empty {
+  color: #9aa3ad;
+  font-style: italic;
+}
 .filter-result {
   border: 1px solid #bfdbfe;
   border-radius: 10px;

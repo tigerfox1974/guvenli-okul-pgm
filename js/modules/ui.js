@@ -12,10 +12,13 @@ import {
 import {
   compareDistrictOrder,
   formatDate,
+  getCategoryOptions,
   getDistrictLabel,
   getDistrictOptions,
+  getStatusOptions,
   normalizeDistrictName
 } from './utils.js';
+import { schools as MASTER_SCHOOLS } from '../data/schools.js';
 
 const VIEW_IDS = ['home', 'report', 'admin'];
 const FILTER_IDS = {
@@ -37,6 +40,8 @@ const MAP_CONTROL_IDS = {
 };
 const ADMIN_PAGE_SIZE = 100;
 const REPORTS_UPDATED_DEBOUNCE_MS = 150;
+// Sayaç/pasiflik kesinliğini bozan daraltıcı filtreler (server-side uygulanır).
+const NARROWING_FILTER_KEYS = Object.freeze(['district', 'school', 'category', 'status', 'date']);
 
 const RISK_BUCKETS = Object.freeze([
   {
@@ -137,7 +142,7 @@ export async function renderAdminPanel() {
     }
 
     const reports = extractReportItems(panelResponse);
-    paintAdminPanelData(reports, panelResponse);
+    paintAdminPanelData(reports, panelResponse, filters);
     updateSummaryCards(reports, normalizeSummaryData(panelResponse && panelResponse.summary, reports));
   } catch (error) {
     if (requestId !== renderRequestId) {
@@ -162,12 +167,16 @@ function extractReportItems(response) {
   return Array.isArray(response && response.items) ? response.items : [];
 }
 
-function paintAdminPanelData(reports, reportsResponse) {
-  populateFilterOptions(reports);
+function paintAdminPanelData(reports, reportsResponse, filters = getFilterValues()) {
+  const hasLimitedResult = Boolean(reportsResponse && reportsResponse.hasNext);
+
+  populateFilterOptions(reports, {
+    truncated: hasLimitedResult,
+    filters
+  });
 
   const filteredReports = applyRiskBucketFilter(reports);
   const totalCount = Number(reportsResponse && reportsResponse.totalCount);
-  const hasLimitedResult = Boolean(reportsResponse && reportsResponse.hasNext);
 
   currentFilteredReports = filteredReports;
 
@@ -194,7 +203,7 @@ async function loadAdminPanelFallback(requestId, filters) {
     }
 
     const reports = extractReportItems(reportsResponse);
-    paintAdminPanelData(reports, reportsResponse);
+    paintAdminPanelData(reports, reportsResponse, filters);
 
     updateSummaryCards(reports, normalizeSummaryData(null, reports));
   } catch (error) {
@@ -364,7 +373,8 @@ function getFilterValues() {
   };
 }
 
-function populateFilterOptions(reports) {
+function populateFilterOptions(reports, options = {}) {
+  const { truncated = false, filters = {} } = options;
   const districtSelect = document.getElementById(FILTER_IDS.district);
   const schoolSelect = document.getElementById(FILTER_IDS.school);
   const categorySelect = document.getElementById(FILTER_IDS.category);
@@ -373,23 +383,36 @@ function populateFilterOptions(reports) {
   populateDistrictFilter(districtSelect);
 
   const selectedDistrict = districtSelect?.value || 'all';
+  const hasNarrowingFilter = NARROWING_FILTER_KEYS.some(key => {
+    const value = String(filters[key] || 'all').trim();
+    return value !== '' && value !== 'all';
+  });
 
-  const schoolsForFilter = selectedDistrict === 'all'
-    ? reports
-    : reports.filter(report => report.district === selectedDistrict);
-  populateSchoolSelect(schoolSelect, schoolsForFilter);
+  // Sayaç/pasiflik kuralı: yalnızca (a) tüm kayıtlar yüklüyse ve (b) daraltıcı filtre yoksa
+  // 0 sonuçlu seçenekler pasifleştirilir. Aksi halde yanlış-negatif üretmemek için dokunulmaz.
+  const allowDisable = !truncated && !hasNarrowingFilter;
+  const showCounts = !truncated;
 
-  populateSimpleSelect(
-    categorySelect,
-    reports.map(report => report.category).filter(Boolean),
-    'Tüm kategoriler'
-  );
+  const schoolCounts = countBy(reports, report => String(report.schoolId || ''));
+  const categoryCounts = countBy(reports, report => report.category || '');
+  const statusCounts = countBy(reports, report => report.status || '');
 
-  populateSimpleSelect(
-    statusSelect,
-    reports.map(report => report.status).filter(Boolean),
-    'Tüm durumlar'
-  );
+  populateSchoolSelect(schoolSelect, selectedDistrict, schoolCounts, {
+    showCounts,
+    allowDisable
+  });
+
+  populateCanonicalSelect(categorySelect, getCategoryOptions(), categoryCounts, {
+    defaultLabel: 'Tüm kategoriler',
+    showCounts,
+    allowDisable
+  });
+
+  populateCanonicalSelect(statusSelect, getStatusOptions(), statusCounts, {
+    defaultLabel: 'Tüm durumlar',
+    showCounts,
+    allowDisable
+  });
 }
 
 function populateDistrictFilter(selectElement) {
@@ -407,37 +430,94 @@ function populateDistrictFilter(selectElement) {
     : 'all';
 }
 
-function populateSimpleSelect(selectElement, values, defaultLabel) {
-  if (!selectElement) return;
+function countBy(items, getKey) {
+  const counts = new Map();
 
-  const previousValue = selectElement.value || 'all';
-  const uniqueValues = Array.from(new Set(values)).sort((a, b) => a.localeCompare(b, 'tr'));
-
-  selectElement.innerHTML = `<option value="all">${defaultLabel}</option>${uniqueValues
-    .map(value => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`)
-    .join('')}`;
-
-  selectElement.value = uniqueValues.includes(previousValue) ? previousValue : 'all';
-}
-
-function populateSchoolSelect(selectElement, reports) {
-  if (!selectElement) return;
-
-  const previousValue = selectElement.value || 'all';
-  const schoolMap = new Map();
-
-  reports.forEach(report => {
-    if (!report.schoolId || !report.schoolName) return;
-    schoolMap.set(String(report.schoolId), report.schoolName);
+  (Array.isArray(items) ? items : []).forEach(item => {
+    const key = getKey(item);
+    if (!key) return;
+    counts.set(key, (counts.get(key) || 0) + 1);
   });
 
-  const schoolOptions = Array.from(schoolMap.entries())
-    .sort((left, right) => left[1].localeCompare(right[1], 'tr'))
-    .map(([id, name]) => `<option value="${id}">${escapeHtml(name)}</option>`)
+  return counts;
+}
+
+function buildSelectOption(value, label, count, { showCounts, isDisabled }) {
+  const optionLabel = showCounts ? `${label} (${count})` : label;
+  const disabledAttr = isDisabled ? ' disabled' : '';
+  const classAttr = isDisabled ? ' class="is-empty"' : '';
+
+  return `<option value="${escapeHtml(value)}"${classAttr}${disabledAttr}>${escapeHtml(optionLabel)}</option>`;
+}
+
+function populateCanonicalSelect(selectElement, canonicalValues, counts, options = {}) {
+  if (!selectElement) return;
+
+  const {
+    defaultLabel = 'Tümü',
+    showCounts = true,
+    allowDisable = false
+  } = options;
+  const countMap = counts instanceof Map ? counts : new Map();
+  const previousValue = String(selectElement.value || 'all');
+  const values = Array.from(new Set((canonicalValues || []).filter(Boolean)));
+
+  const optionsMarkup = values
+    .map(value => {
+      const count = Number(countMap.get(value)) || 0;
+      return buildSelectOption(value, value, count, {
+        showCounts,
+        isDisabled: allowDisable && count === 0
+      });
+    })
     .join('');
 
-  selectElement.innerHTML = `<option value="all">Tüm okullar</option>${schoolOptions}`;
-  selectElement.value = schoolMap.has(previousValue) ? previousValue : 'all';
+  selectElement.innerHTML = `<option value="all">${escapeHtml(defaultLabel)}</option>${optionsMarkup}`;
+
+  const previousCount = Number(countMap.get(previousValue)) || 0;
+  const canRestorePrevious = values.includes(previousValue)
+    && !(allowDisable && previousCount === 0);
+
+  selectElement.value = canRestorePrevious ? previousValue : 'all';
+}
+
+function populateSchoolSelect(selectElement, selectedDistrict, counts, options = {}) {
+  if (!selectElement) return;
+
+  const { showCounts = true, allowDisable = false } = options;
+  const countMap = counts instanceof Map ? counts : new Map();
+  const previousValue = String(selectElement.value || 'all');
+  const districtFilter = String(selectedDistrict || 'all') === 'all'
+    ? 'all'
+    : normalizeDistrictName(selectedDistrict, 'all');
+
+  // Okul seçenekleri yüklenen rapora göre değil, master listeden üretilir; ilçe seçimiyle daraltılır.
+  const schoolOptions = MASTER_SCHOOLS
+    .filter(school => districtFilter === 'all'
+      || normalizeDistrictName(school.district, 'all') === districtFilter)
+    .map(school => ({
+      id: String(school.id),
+      name: school.name || 'Bilinmeyen okul'
+    }))
+    .sort((left, right) => left.name.localeCompare(right.name, 'tr'));
+
+  const optionsMarkup = schoolOptions
+    .map(school => {
+      const count = Number(countMap.get(school.id)) || 0;
+      return buildSelectOption(school.id, school.name, count, {
+        showCounts,
+        isDisabled: allowDisable && count === 0
+      });
+    })
+    .join('');
+
+  selectElement.innerHTML = `<option value="all">Tüm okullar</option>${optionsMarkup}`;
+
+  const previousCount = Number(countMap.get(previousValue)) || 0;
+  const canRestorePrevious = schoolOptions.some(school => school.id === previousValue)
+    && !(allowDisable && previousCount === 0);
+
+  selectElement.value = canRestorePrevious ? previousValue : 'all';
 }
 
 function applyRiskBucketFilter(reports) {
