@@ -18,14 +18,14 @@ const OPERATOR_ROLES = new Set(['operator', 'supervisor']);
 const DEMO_ACCOUNTS = Object.freeze([
   {
     role: 'operator',
-    username: 'demo.operator',
-    password: 'PGM-Operator-2026',
+    username: 'operator',
+    password: '1234',
     roleLabel: 'PGM Operatör'
   },
   {
     role: 'supervisor',
-    username: 'demo.supervisor',
-    password: 'PGM-Supervisor-2026',
+    username: 'supervisor',
+    password: '1234',
     roleLabel: 'PGM Süpervizör'
   }
 ]);
@@ -310,7 +310,7 @@ function applyAdminVisibility(isAuthorized) {
   }
 
   if (authMessage && !isAuthorized) {
-    authMessage.textContent = 'Demo hesaplar: demo.operator / PGM-Operator-2026 ve demo.supervisor / PGM-Supervisor-2026';
+    authMessage.textContent = 'Demo hesaplar: operator / 1234 ve supervisor / 1234';
     authMessage.classList.remove('notice');
   }
 }
