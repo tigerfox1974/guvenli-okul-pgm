@@ -20,7 +20,7 @@ const ROUTE_VIEW_MAP = Object.freeze({
   panel: 'admin',
   admin: 'admin'
 });
-const DEFAULT_AUTH_HINT = 'PGM paneli için yetkili Supabase hesabınızla giriş yapın.';
+const DEFAULT_AUTH_HINT = 'PGM paneli için yetkili kullanıcı adı ve şifrenizle giriş yapın.';
 
 let authSession = loadStoredAdminSession();
 let publicNavigationController = null;
@@ -202,15 +202,15 @@ function initAdminGate() {
 async function handleAdminLogin(event) {
   event.preventDefault();
 
-  const emailInput = document.getElementById('adminEmailInput');
+  const usernameInput = document.getElementById('adminUsernameInput');
   const passwordInput = document.getElementById('adminPasswordInput');
   const loginButton = document.getElementById('adminLoginButton');
 
-  if (!emailInput || !passwordInput) {
+  if (!usernameInput || !passwordInput) {
     return;
   }
 
-  const email = emailInput.value.trim().toLowerCase();
+  const username = usernameInput.value.trim().toLowerCase();
   const password = passwordInput.value;
 
   if (loginButton) {
@@ -218,9 +218,9 @@ async function handleAdminLogin(event) {
   }
 
   try {
-    authSession = await signInAdmin(email, password);
+    authSession = await signInAdmin(username, password);
     await enableOperatorRuntime({ openAdminView: true });
-    setAuthMessage(`${authSession.roleLabel} oturumu açıldı: ${authSession.email}`, false);
+    setAuthMessage(`${authSession.roleLabel} oturumu açıldı: ${authSession.username}`, false);
   } catch (error) {
     authSession = null;
     const errorMessage = error instanceof Error && error.message
@@ -307,7 +307,7 @@ function applyAdminVisibility(isAuthorized) {
 
   if (sessionText) {
     sessionText.textContent = isAuthorized && authSession
-      ? `${authSession.roleLabel} olarak giriş yapıldı: ${authSession.email}`
+      ? `${authSession.roleLabel} olarak giriş yapıldı: ${authSession.username || '-'}`
       : '';
   }
 

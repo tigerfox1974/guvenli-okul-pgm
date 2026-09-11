@@ -4,6 +4,7 @@ const ADMIN_SESSION_KEY = 'pgm-admin-auth-session-v2';
 const DEFAULT_TIMEOUT_MS = 10000;
 const MAX_PAGE_SIZE = 100;
 const OPERATOR_ROLES = new Set(['operator', 'supervisor']);
+const ADMIN_USER_DIRECTORY = createAdminUserDirectory(SUPABASE_CONFIG.adminUsers);
 
 export class AdminApiError extends Error {
   constructor(code, message, status = 0, details = '') {
@@ -15,20 +16,29 @@ export class AdminApiError extends Error {
   }
 }
 
-export async function signInAdmin(email, password) {
-  const normalizedEmail = String(email || '').trim().toLowerCase();
+export async function signInAdmin(username, password) {
+  const normalizedUsername = normalizeUsername(username);
   const normalizedPassword = String(password || '');
 
-  if (!normalizedEmail || !normalizedPassword) {
-    throw new AdminApiError('invalid_credentials', 'E-posta ve şifre zorunludur.', 400);
+  if (!normalizedUsername || !normalizedPassword) {
+    throw new AdminApiError('invalid_credentials', 'Kullanıcı adı ve şifre zorunludur.', 400);
+  }
+
+  if (ADMIN_USER_DIRECTORY.size === 0) {
+    throw new AdminApiError('admin_users_not_configured', 'Admin kullanıcı eşlemesi yapılandırılmadı.', 500);
+  }
+
+  const account = ADMIN_USER_DIRECTORY.get(normalizedUsername);
+  if (!account) {
+    throw new AdminApiError('invalid_credentials', 'Kullanıcı adı veya şifre hatalı.', 401);
   }
 
   const payload = await requestAuthToken('password', {
-    email: normalizedEmail,
+    email: account.email,
     password: normalizedPassword
   });
 
-  const session = mapAuthPayloadToSession(payload);
+  const session = mapAuthPayloadToSession(payload, account);
   saveStoredAdminSession(session);
   return session;
 }
@@ -53,7 +63,10 @@ export async function ensureValidAdminSession() {
       refresh_token: currentSession.refreshToken
     });
 
-    const refreshedSession = mapAuthPayloadToSession(payload);
+    const refreshedSession = mapAuthPayloadToSession(payload, {
+      username: currentSession.username,
+      allowedRoles: currentSession.allowedRoles
+    });
     saveStoredAdminSession(refreshedSession);
     return refreshedSession;
   } catch {
@@ -207,14 +220,20 @@ async function requestAuthToken(grantType, payload) {
   return body;
 }
 
-function mapAuthPayloadToSession(payload) {
+function mapAuthPayloadToSession(payload, account = null) {
   const accessToken = String(payload && payload.access_token || '').trim();
   const refreshToken = String(payload && payload.refresh_token || '').trim();
   const user = payload && typeof payload.user === 'object' ? payload.user : {};
 
   const role = extractRoleFromUser(user);
+  const allowedRoles = normalizeAllowedRoles(account && account.allowedRoles);
+
   if (!role || !OPERATOR_ROLES.has(role)) {
     throw new AdminApiError('forbidden_role', 'Bu hesap panel için yetkili değil.', 403);
+  }
+
+  if (allowedRoles.size > 0 && !allowedRoles.has(role)) {
+    throw new AdminApiError('forbidden_role', 'Bu kullanıcı adı için rol yetkisi uyuşmuyor.', 403);
   }
 
   if (!accessToken) {
@@ -226,16 +245,92 @@ function mapAuthPayloadToSession(payload) {
     ? Date.now() + (expiresInSeconds * 1000)
     : Date.now() + (60 * 60 * 1000);
 
+  const username = String(account && account.username || '').trim().toLowerCase() || extractUsernameFromUser(user);
+
   return {
     userId: String(user.id || ''),
-    email: String(user.email || '').trim().toLowerCase(),
+    username,
     role,
     roleLabel: getRoleLabel(role),
     accessToken,
     refreshToken,
+    allowedRoles: Array.from(allowedRoles),
     expiresAtMs,
     issuedAt: new Date().toISOString()
   };
+}
+
+function extractUsernameFromUser(user) {
+  if (!user || typeof user !== 'object') {
+    return '';
+  }
+
+  const appMetadata = user.app_metadata && typeof user.app_metadata === 'object' ? user.app_metadata : {};
+  const userMetadata = user.user_metadata && typeof user.user_metadata === 'object' ? user.user_metadata : {};
+
+  const candidates = [
+    userMetadata.username,
+    userMetadata.preferred_username,
+    appMetadata.username,
+    user.email ? String(user.email).split('@')[0] : ''
+  ];
+
+  for (const candidate of candidates) {
+    const normalized = normalizeUsername(candidate);
+    if (normalized) {
+      return normalized;
+    }
+  }
+
+  return '';
+}
+
+function normalizeAllowedRoles(values) {
+  if (!Array.isArray(values)) {
+    return new Set();
+  }
+
+  const normalized = values
+    .map(value => String(value || '').trim().toLowerCase())
+    .filter(Boolean);
+
+  return new Set(normalized);
+}
+
+function normalizeUsername(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function createAdminUserDirectory(adminUsers) {
+  if (!Array.isArray(adminUsers)) {
+    return new Map();
+  }
+
+  const directory = new Map();
+
+  adminUsers.forEach(item => {
+    if (!item || typeof item !== 'object') {
+      return;
+    }
+
+    const username = normalizeUsername(item.username);
+    const email = String(item.email || '').trim().toLowerCase();
+    const allowedRoles = Array.isArray(item.allowedRoles)
+      ? item.allowedRoles
+      : [item.role];
+
+    if (!username || !email) {
+      return;
+    }
+
+    directory.set(username, {
+      username,
+      email,
+      allowedRoles: Array.from(normalizeAllowedRoles(allowedRoles))
+    });
+  });
+
+  return directory;
 }
 
 function extractRoleFromUser(user) {

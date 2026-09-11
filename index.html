@@ -142,10 +142,10 @@
 
       <div id="adminAuthGate" class="panel">
         <h3>Yetkili Girişi</h3>
-        <p class="hint">Halka açık kullanıcılar yalnızca bildirim sayfasını kullanabilir. PGM paneli için Supabase üzerinde yetkili hesap gerekir.</p>
+        <p class="hint">Halka açık kullanıcılar yalnızca bildirim sayfasını kullanabilir. PGM paneli için yetkili kullanıcı adı ve şifre gerekir.</p>
         <form id="adminAuthForm" autocomplete="off">
-          <label>E-posta
-            <input id="adminEmailInput" type="email" required placeholder="operator@kurum.gov.ct.tr" autocomplete="username">
+          <label>Kullanıcı adı
+            <input id="adminUsernameInput" type="text" required placeholder="operator" autocomplete="username" spellcheck="false">
           </label>
           <label>Şifre
             <input id="adminPasswordInput" type="password" required placeholder="Şifreniz" autocomplete="current-password">
@@ -154,7 +154,7 @@
             <button id="adminLoginButton" class="primary" type="submit">Giriş Yap</button>
           </div>
         </form>
-        <p id="adminAuthMessage" class="hint">PGM paneli için yetkili Supabase hesabınızla giriş yapın.</p>
+        <p id="adminAuthMessage" class="hint">PGM paneli için yetkili kullanıcı adı ve şifrenizle giriş yapın.</p>
         <div id="adminSessionBox" class="actions" hidden>
           <strong id="adminSessionText"></strong>
           <button id="adminLogoutButton" class="secondary" type="button">Oturumu Kapat</button>
