@@ -81,6 +81,23 @@ export async function fetchAdminReports({ filters = {}, page = 1, pageSize = 100
   return requestAdminApi(`/api/admin/reports?${query.toString()}`, session.accessToken);
 }
 
+export async function fetchAdminPanel({ filters = {}, page = 1, pageSize = 100 } = {}) {
+  const session = await requireAdminSession();
+  const normalizedPageSize = Math.min(Math.max(Number(pageSize) || 1, 1), MAX_PAGE_SIZE);
+  const normalizedPage = Math.max(Number(page) || 1, 1);
+
+  const query = new URLSearchParams();
+  query.set('district', normalizeFilterValue(filters.district));
+  query.set('school', normalizeFilterValue(filters.school));
+  query.set('category', normalizeFilterValue(filters.category));
+  query.set('status', normalizeFilterValue(filters.status));
+  query.set('date', normalizeFilterValue(filters.date));
+  query.set('page', String(normalizedPage));
+  query.set('pageSize', String(normalizedPageSize));
+
+  return requestAdminApi(`/api/admin/panel?${query.toString()}`, session.accessToken);
+}
+
 export async function fetchAdminSummary({ filters = {} } = {}) {
   const session = await requireAdminSession();
 

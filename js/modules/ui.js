@@ -1,5 +1,5 @@
 import { showEmergencyGateOnReportEntry } from './form.js';
-import { AdminApiError, fetchAdminReports, fetchAdminSummary } from './admin-api.js';
+import { AdminApiError, fetchAdminPanel, fetchAdminReports, fetchAdminSummary } from './admin-api.js';
 import {
   fitToIsland,
   getMapLayerVisibility,
@@ -125,8 +125,63 @@ export async function renderAdminPanel() {
 
   setPanelLoadingState(true);
 
-  let reports = [];
+  try {
+    const panelResponse = await fetchAdminPanel({
+      filters,
+      page: 1,
+      pageSize: ADMIN_PAGE_SIZE
+    });
 
+    if (requestId !== renderRequestId) {
+      return;
+    }
+
+    const reports = extractReportItems(panelResponse);
+    paintAdminPanelData(reports, panelResponse);
+    updateSummaryCards(reports, normalizeSummaryData(panelResponse && panelResponse.summary, reports));
+  } catch (error) {
+    if (requestId !== renderRequestId) {
+      return;
+    }
+
+    if (error instanceof AdminApiError && error.status === 404) {
+      await loadAdminPanelFallback(requestId, filters);
+      return;
+    }
+
+    handleAdminPanelLoadError(error);
+    return;
+  } finally {
+    if (requestId === renderRequestId) {
+      setPanelLoadingState(false);
+    }
+  }
+}
+
+function extractReportItems(response) {
+  return Array.isArray(response && response.items) ? response.items : [];
+}
+
+function paintAdminPanelData(reports, reportsResponse) {
+  populateFilterOptions(reports);
+
+  const filteredReports = applyRiskBucketFilter(reports);
+  const totalCount = Number(reportsResponse && reportsResponse.totalCount);
+  const hasLimitedResult = Boolean(reportsResponse && reportsResponse.hasNext);
+
+  currentFilteredReports = filteredReports;
+
+  renderRegionalRiskPanel(filteredReports);
+  renderReportTable(filteredReports);
+  updateMapVisualization(filteredReports);
+  syncMapControlUI();
+  updateFilterResult(Number.isFinite(totalCount) ? totalCount : filteredReports.length, filteredReports.length, {
+    limited: hasLimitedResult
+  });
+  syncRiskFocusUI();
+}
+
+async function loadAdminPanelFallback(requestId, filters) {
   try {
     const reportsResponse = await fetchAdminReports({
       filters,
@@ -138,40 +193,17 @@ export async function renderAdminPanel() {
       return;
     }
 
-    reports = Array.isArray(reportsResponse && reportsResponse.items)
-      ? reportsResponse.items
-      : [];
+    const reports = extractReportItems(reportsResponse);
+    paintAdminPanelData(reports, reportsResponse);
 
-    populateFilterOptions(reports);
-
-    const filteredReports = applyRiskBucketFilter(reports);
-    const totalCount = Number(reportsResponse && reportsResponse.totalCount);
-    const hasLimitedResult = Boolean(reportsResponse && reportsResponse.hasNext);
-
-    currentFilteredReports = filteredReports;
-
-    renderRegionalRiskPanel(filteredReports);
-    renderReportTable(filteredReports);
-    updateMapVisualization(filteredReports);
-    syncMapControlUI();
-    updateFilterResult(Number.isFinite(totalCount) ? totalCount : filteredReports.length, filteredReports.length, {
-      limited: hasLimitedResult
-    });
-    syncRiskFocusUI();
+    void loadAdminSummary(requestId, filters, reports);
   } catch (error) {
     if (requestId !== renderRequestId) {
       return;
     }
 
     handleAdminPanelLoadError(error);
-    return;
-  } finally {
-    if (requestId === renderRequestId) {
-      setPanelLoadingState(false);
-    }
   }
-
-  void loadAdminSummary(requestId, filters, reports);
 }
 
 async function loadAdminSummary(requestId, filters, reports) {
