@@ -545,6 +545,8 @@ function renderRegionalRiskPanel(reports) {
   if (!matrixBody || !riskGrid) return;
 
   const districtRows = createRegionalRows(reports);
+  updateRegionalRiskStats(reports);
+
   if (districtRows.length === 0) {
     matrixBody.innerHTML = '<tr><td class="empty-row" colspan="7">Filtrelere uygun risk kaydı bulunamadı.</td></tr>';
     riskGrid.innerHTML = '<div class="empty-row">Risk dağılımı oluştuğunda odak kartları burada gösterilir.</div>';
@@ -556,30 +558,26 @@ function renderRegionalRiskPanel(reports) {
       const bucketCells = RISK_BUCKETS
         .map(bucket => {
           const count = row.bucketCounts[bucket.key] || 0;
-          return `<td>${renderRiskCountButton(row.district, bucket.key, count)}</td>`;
+          const intensity = row.total > 0 ? count / row.total : 0;
+          return `<td>${renderRiskCountButton(row.district, bucket.key, count, intensity)}</td>`;
         })
         .join('');
 
       return `
-        <tr>
+        <tr data-risk-row="${escapeHtml(row.district)}">
           <td>${renderRiskDistrictButton(row.district, row.total)}</td>
           ${bucketCells}
-          <td>${row.total}</td>
+          <td class="risk-total-cell">${row.total}</td>
         </tr>
       `;
     })
     .join('');
 
   const highlightItems = buildRiskHighlights(districtRows);
+  const maxHighlightCount = highlightItems.length > 0 ? highlightItems[0].count : 1;
   riskGrid.innerHTML = highlightItems.length > 0
     ? highlightItems
-      .map(item => {
-        return `
-          <button type="button" class="secondary risk-focus-button" data-risk-district="${escapeHtml(item.district)}" data-risk-bucket="${escapeHtml(item.bucket)}">
-            ${escapeHtml(getDistrictLabel(item.district))} - ${escapeHtml(item.bucketLabel)} (${item.count})
-          </button>
-        `;
-      })
+      .map(item => renderRiskCard(item, maxHighlightCount))
       .join('')
     : '<div class="empty-row">Risk dağılımı oluştuğunda odak kartları burada gösterilir.</div>';
 }
@@ -853,6 +851,12 @@ function syncRiskFocusUI() {
     button.classList.toggle('is-selected', isSelected);
     button.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
   });
+
+  document.querySelectorAll('tr[data-risk-row]').forEach(row => {
+    const rowDistrict = normalizeDistrictName(row.dataset.riskRow || 'all', 'all');
+    const rowMatches = selectedDistrict !== 'all' && rowDistrict === selectedDistrict;
+    row.classList.toggle('is-row-selected', rowMatches);
+  });
 }
 
 function createRegionalRows(reports) {
@@ -896,16 +900,55 @@ function createRegionalRow(district) {
 
 function renderRiskDistrictButton(district, total) {
   const label = getDistrictLabel(district);
-  return `<button type="button" class="secondary risk-chip" data-risk-district="${escapeHtml(district)}" data-risk-bucket="all">${escapeHtml(label)} (${total})</button>`;
+  return `<button type="button" class="risk-cell risk-cell-district" data-risk-district="${escapeHtml(district)}" data-risk-bucket="all" aria-label="${escapeHtml(label)} ilçesi, toplam ${total} bildirim"><span>${escapeHtml(label)}</span><span class="risk-total-cell">${total}</span></button>`;
 }
 
-function renderRiskCountButton(district, bucket, count) {
+function renderRiskCountButton(district, bucket, count, intensity = 0) {
+  const bucketLabel = RISK_BUCKETS.find(item => item.key === bucket)?.label || 'Kategori';
+  const districtLabel = getDistrictLabel(district);
+
   if (count === 0) {
-    return '<span class="hint risk-zero">0</span>';
+    return `<span class="risk-zero" aria-label="${escapeHtml(districtLabel)} ${escapeHtml(bucketLabel)}: 0 bildirim">0</span>`;
   }
 
-  const bucketLabel = RISK_BUCKETS.find(item => item.key === bucket)?.label || 'Kategori';
-  return `<button type="button" class="secondary risk-chip" data-risk-district="${escapeHtml(district)}" data-risk-bucket="${escapeHtml(bucket)}">${escapeHtml(bucketLabel)}: ${count}</button>`;
+  const ratio = Math.max(0, Math.min(1, intensity));
+  return `<button type="button" class="risk-cell" style="--risk-intensity: ${ratio.toFixed(3)}" data-risk-district="${escapeHtml(district)}" data-risk-bucket="${escapeHtml(bucket)}" aria-label="${escapeHtml(districtLabel)} ${escapeHtml(bucketLabel)}: ${count} bildirim"><span>${count}</span><span class="risk-cell-bar" aria-hidden="true"><i></i></span></button>`;
+}
+
+function renderRiskCard(item, maxCount) {
+  const ratio = maxCount > 0 ? Math.max(0, Math.min(1, item.count / maxCount)) : 0;
+  const districtLabel = getDistrictLabel(item.district);
+  return `
+    <button type="button" class="risk-card" style="--risk-intensity: ${ratio.toFixed(3)}" data-risk-district="${escapeHtml(item.district)}" data-risk-bucket="${escapeHtml(item.bucket)}" aria-label="${escapeHtml(districtLabel)} ${escapeHtml(item.bucketLabel)}: ${item.count} bildirim">
+      <span class="risk-card-head">
+        <span>${escapeHtml(districtLabel)} · ${escapeHtml(item.bucketLabel)}</span>
+        <strong>${item.count}</strong>
+      </span>
+      <span class="risk-card-bar" aria-hidden="true"><i></i></span>
+    </button>
+  `;
+}
+
+function updateRegionalRiskStats(reports) {
+  const totalElement = document.getElementById('regionalStatTotal');
+  const districtElement = document.getElementById('regionalStatDistrict');
+  const categoryElement = document.getElementById('regionalStatCategory');
+
+  if (totalElement) {
+    totalElement.textContent = String(Array.isArray(reports) ? reports.length : 0);
+  }
+
+  if (districtElement) {
+    const districtFilter = document.getElementById(FILTER_IDS.district)?.value || 'all';
+    districtElement.textContent = districtFilter === 'all'
+      ? 'Tümü'
+      : getDistrictLabel(normalizeDistrictName(districtFilter, districtFilter));
+  }
+
+  if (categoryElement) {
+    const bucket = RISK_BUCKETS.find(item => item.key === activeRiskBucket);
+    categoryElement.textContent = bucket ? bucket.label : 'Tümü';
+  }
 }
 
 function buildRiskHighlights(rows) {

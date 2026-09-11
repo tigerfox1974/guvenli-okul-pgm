@@ -209,12 +209,18 @@
               </div>
               <button id="clearRiskFocus" class="secondary" type="button">Risk Odağını Temizle</button>
             </div>
+            <div class="regional-risk-stats" aria-label="Bölgesel risk özet bilgileri">
+              <div class="regional-stat"><span>Toplam kayıt</span><strong id="regionalStatTotal">0</strong></div>
+              <div class="regional-stat"><span>Aktif ilçe</span><strong id="regionalStatDistrict">Tümü</strong></div>
+              <div class="regional-stat"><span>Aktif kategori</span><strong id="regionalStatCategory">Tümü</strong></div>
+            </div>
             <div class="regional-matrix-wrap">
               <table class="regional-matrix">
                 <thead><tr><th scope="col">İlçe</th><th scope="col">Trafik</th><th scope="col">Kavga/Zorbalık</th><th scope="col">Şüpheli kişi/araç</th><th scope="col">Servis</th><th scope="col">Diğer</th><th scope="col">Toplam</th></tr></thead>
                 <tbody id="regionalRiskMatrix"><tr><td class="empty-row" colspan="7">Bölgesel özet hazırlanıyor.</td></tr></tbody>
               </table>
             </div>
+            <h3 class="regional-grid-title">Öne Çıkan Risk Başlıkları</h3>
             <div id="regionalRiskGrid" class="regional-risk-grid" aria-label="İlçe ve kategori risk özeti"></div>
           </div>
           <div class="panel map-panel">
