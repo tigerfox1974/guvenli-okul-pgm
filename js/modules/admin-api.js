@@ -213,11 +213,28 @@ async function requestAuthToken(grantType, payload) {
   const body = await safeReadResponseJson(response);
 
   if (!response.ok) {
-    const message = getResponseErrorMessage(body) || 'Kimlik doğrulama başarısız oldu.';
+    const message = getAuthErrorMessage(body, response.status);
     throw new AdminApiError('auth_failed', message, response.status, JSON.stringify(body || {}));
   }
 
   return body;
+}
+
+function getAuthErrorMessage(body, status) {
+  const rawMessage = String(getResponseErrorMessage(body) || '').trim();
+  const normalizedMessage = rawMessage.toLowerCase();
+
+  if (status === 400 || status === 401) {
+    if (
+      normalizedMessage.includes('invalid login credentials')
+      || normalizedMessage.includes('invalid credentials')
+      || normalizedMessage.includes('email not confirmed')
+    ) {
+      return 'Kullanıcı adı veya şifre hatalı.';
+    }
+  }
+
+  return rawMessage || 'Kimlik doğrulama başarısız oldu.';
 }
 
 function mapAuthPayloadToSession(payload, account = null) {
@@ -307,6 +324,7 @@ function createAdminUserDirectory(adminUsers) {
   }
 
   const directory = new Map();
+  const emailDomain = normalizeEmailDomain(SUPABASE_CONFIG.adminAuthEmailDomain);
 
   adminUsers.forEach(item => {
     if (!item || typeof item !== 'object') {
@@ -314,7 +332,7 @@ function createAdminUserDirectory(adminUsers) {
     }
 
     const username = normalizeUsername(item.username);
-    const email = String(item.email || '').trim().toLowerCase();
+    const email = resolveAdminLoginEmail(item, username, emailDomain);
     const allowedRoles = Array.isArray(item.allowedRoles)
       ? item.allowedRoles
       : [item.role];
@@ -331,6 +349,26 @@ function createAdminUserDirectory(adminUsers) {
   });
 
   return directory;
+}
+
+function resolveAdminLoginEmail(item, username, emailDomain) {
+  const explicitEmail = String(item && item.email || '').trim().toLowerCase();
+  if (explicitEmail) {
+    return explicitEmail;
+  }
+
+  if (!username || !emailDomain) {
+    return '';
+  }
+
+  return `${username}@${emailDomain}`;
+}
+
+function normalizeEmailDomain(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/^@+/, '');
 }
 
 function extractRoleFromUser(user) {

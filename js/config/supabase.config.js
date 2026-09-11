@@ -7,15 +7,38 @@ export const SUPABASE_CONFIG = Object.freeze({
   schema: 'public',
   reportsTable: 'anonymous_reports',
   requestTimeoutMs: 10000,
+  adminAuthEmailDomain: 'kurum.gov.ct.tr',
   adminUsers: [
     {
       username: 'operator',
-      email: 'operator@kurum.gov.ct.tr',
       allowedRoles: ['operator']
     },
     {
       username: 'supervisor',
-      email: 'supervisor@kurum.gov.ct.tr',
+      allowedRoles: ['supervisor']
+    },
+    {
+      username: 'operator1',
+      allowedRoles: ['operator']
+    },
+    {
+      username: 'operator2',
+      allowedRoles: ['operator']
+    },
+    {
+      username: 'supervisor1',
+      allowedRoles: ['supervisor']
+    },
+    {
+      username: 'supervisor2',
+      allowedRoles: ['supervisor']
+    },
+    {
+      username: 'bolgeoperator',
+      allowedRoles: ['operator']
+    },
+    {
+      username: 'nobetsupervisor',
       allowedRoles: ['supervisor']
     }
   ]
