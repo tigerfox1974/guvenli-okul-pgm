@@ -2,7 +2,6 @@ const DEFAULT_TIMEOUT_MS = 10000;
 const DEFAULT_PAGE_SIZE = 50;
 const MAX_PAGE_SIZE = 100;
 const SUMMARY_SCAN_CHUNK_SIZE = 500;
-const SUMMARY_SCAN_MAX_ROWS = 5000;
 const ALLOWED_DATE_FILTERS = new Set(['all', '7', '30', 'year']);
 const DEFAULT_ALLOWED_ROLES = ['operator', 'supervisor'];
 
@@ -414,13 +413,6 @@ function buildRequestError(status, message) {
   return error;
 }
 
-function getSummaryLimits() {
-  return {
-    chunkSize: SUMMARY_SCAN_CHUNK_SIZE,
-    maxRows: SUMMARY_SCAN_MAX_ROWS
-  };
-}
-
 module.exports = {
   applyReportFilters,
   authenticateAdmin,
@@ -431,7 +423,6 @@ module.exports = {
   fetchReportSummary,
   fetchWithTimeout,
   getAdminServerConfig,
-  getSummaryLimits,
   mapSupabaseRowToReport,
   parseRoleFromUser,
   parseContentRangeTotal,

@@ -98,19 +98,6 @@ export async function fetchAdminPanel({ filters = {}, page = 1, pageSize = 100 }
   return requestAdminApi(`/api/admin/panel?${query.toString()}`, session.accessToken);
 }
 
-export async function fetchAdminSummary({ filters = {} } = {}) {
-  const session = await requireAdminSession();
-
-  const query = new URLSearchParams();
-  query.set('district', normalizeFilterValue(filters.district));
-  query.set('school', normalizeFilterValue(filters.school));
-  query.set('category', normalizeFilterValue(filters.category));
-  query.set('status', normalizeFilterValue(filters.status));
-  query.set('date', normalizeFilterValue(filters.date));
-
-  return requestAdminApi(`/api/admin/summary?${query.toString()}`, session.accessToken);
-}
-
 export function loadStoredAdminSession() {
   try {
     const raw = sessionStorage.getItem(ADMIN_SESSION_KEY);
