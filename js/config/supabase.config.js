@@ -6,40 +6,5 @@ export const SUPABASE_CONFIG = Object.freeze({
   anonKey: 'sb_publishable_5EngZ0rUKUlolB5qK7gaWA_jVg6zNQF',
   schema: 'public',
   reportsTable: 'anonymous_reports',
-  requestTimeoutMs: 10000,
-  adminAuthEmailDomain: 'kurum.gov.ct.tr',
-  adminUsers: [
-    {
-      username: 'operator',
-      allowedRoles: ['operator']
-    },
-    {
-      username: 'supervisor',
-      allowedRoles: ['supervisor']
-    },
-    {
-      username: 'operator1',
-      allowedRoles: ['operator']
-    },
-    {
-      username: 'operator2',
-      allowedRoles: ['operator']
-    },
-    {
-      username: 'supervisor1',
-      allowedRoles: ['supervisor']
-    },
-    {
-      username: 'supervisor2',
-      allowedRoles: ['supervisor']
-    },
-    {
-      username: 'bolgeoperator',
-      allowedRoles: ['operator']
-    },
-    {
-      username: 'nobetsupervisor',
-      allowedRoles: ['supervisor']
-    }
-  ]
+  requestTimeoutMs: 10000
 });

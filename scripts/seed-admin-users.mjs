@@ -4,6 +4,19 @@ const SERVICE_ROLE_KEY = String(process.env.SUPABASE_SERVICE_ROLE_KEY || '').tri
 const DEFAULT_PASSWORD = String(process.env.PGM_ADMIN_DEFAULT_PASSWORD || '').trim();
 const RESET_EXISTING_PASSWORDS = String(process.env.PGM_ADMIN_RESET_PASSWORDS || 'false').trim().toLowerCase() === 'true';
 const DOMAIN_OVERRIDE = String(process.env.PGM_ADMIN_EMAIL_DOMAIN || '').trim().toLowerCase();
+const ADMIN_USERS_TABLE = String(process.env.SUPABASE_ADMIN_USERS_TABLE || 'admin_users').trim() || 'admin_users';
+const DEFAULT_EMAIL_DOMAIN = 'kurum.gov.ct.tr';
+const SUPPORTED_ROLES = new Set(['operator', 'supervisor']);
+const DEFAULT_ADMIN_USERS = Object.freeze([
+  { username: 'operator', role: 'operator' },
+  { username: 'supervisor', role: 'supervisor' },
+  { username: 'operator1', role: 'operator' },
+  { username: 'operator2', role: 'operator' },
+  { username: 'supervisor1', role: 'supervisor' },
+  { username: 'supervisor2', role: 'supervisor' },
+  { username: 'bolgeoperator', role: 'operator' },
+  { username: 'nobetsupervisor', role: 'supervisor' }
+]);
 
 async function main() {
   if (!SERVICE_ROLE_KEY) {
@@ -30,6 +43,7 @@ async function main() {
 
   let created = 0;
   let updated = 0;
+  let mapped = 0;
 
   for (const target of targetUsers) {
     const existing = existingUsers.find(user => normalizeEmail(user && user.email) === target.email);
@@ -37,21 +51,25 @@ async function main() {
     if (!existing) {
       await createAuthUser(baseUrl, target);
       created += 1;
-      console.log(`[created] ${target.username} -> ${target.email} (${target.role})`);
-      continue;
+      console.log(`[auth-created] ${target.username} -> ${target.email} (${target.role})`);
+    } else {
+      await updateAuthUser(baseUrl, existing.id, target, RESET_EXISTING_PASSWORDS);
+      updated += 1;
+      console.log(`[auth-updated] ${target.username} -> ${target.email} (${target.role})`);
     }
 
-    await updateAuthUser(baseUrl, existing.id, target, RESET_EXISTING_PASSWORDS);
-    updated += 1;
-    console.log(`[updated] ${target.username} -> ${target.email} (${target.role})`);
+    await upsertAdminDirectoryRow(baseUrl, target);
+    mapped += 1;
+    console.log(`[table-upserted] ${target.username} (${target.role})`);
   }
 
   console.log('');
   console.log('Tamamlandi.');
-  console.log(`Olusturulan: ${created}`);
-  console.log(`Guncellenen: ${updated}`);
+  console.log(`Auth olusturulan: ${created}`);
+  console.log(`Auth guncellenen: ${updated}`);
+  console.log(`Tablo upsert: ${mapped}`);
   console.log(`Toplam hedef: ${targetUsers.length}`);
-  console.log('Not: Giris ekrani kullanici adi ister, e-posta istemez.');
+  console.log('Not: Giris ekrani yalnizca kullanici adi + sifre ister.');
 }
 
 function getBaseUrl() {
@@ -64,8 +82,7 @@ function getBaseUrl() {
 }
 
 function getEmailDomain() {
-  const fromConfig = String(SUPABASE_CONFIG.adminAuthEmailDomain || '').trim().toLowerCase();
-  const domain = (DOMAIN_OVERRIDE || fromConfig).replace(/^@+/, '');
+  const domain = (DOMAIN_OVERRIDE || DEFAULT_EMAIL_DOMAIN).replace(/^@+/, '');
 
   if (!domain) {
     throw new Error('adminAuthEmailDomain bos olamaz.');
@@ -75,7 +92,7 @@ function getEmailDomain() {
 }
 
 function getTargetUsers(emailDomain) {
-  const users = Array.isArray(SUPABASE_CONFIG.adminUsers) ? SUPABASE_CONFIG.adminUsers : [];
+  const users = parseAdminUsersFromEnv() || DEFAULT_ADMIN_USERS;
 
   return users
     .map(item => {
@@ -83,9 +100,9 @@ function getTargetUsers(emailDomain) {
       const allowedRoles = Array.isArray(item && item.allowedRoles)
         ? item.allowedRoles.map(role => String(role || '').trim().toLowerCase()).filter(Boolean)
         : [String(item && item.role || '').trim().toLowerCase()].filter(Boolean);
-      const role = allowedRoles[0] || '';
+      const role = normalizeRole(allowedRoles[0] || '');
 
-      if (!username || !role) {
+      if (!username || !role || !SUPPORTED_ROLES.has(role)) {
         return null;
       }
 
@@ -100,7 +117,25 @@ function getTargetUsers(emailDomain) {
     .filter(Boolean);
 }
 
+function parseAdminUsersFromEnv() {
+  const raw = String(process.env.PGM_ADMIN_USERS_JSON || '').trim();
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : null;
+  } catch {
+    throw new Error('PGM_ADMIN_USERS_JSON gecerli bir JSON dizi olmali.');
+  }
+}
+
 function normalizeUsername(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function normalizeRole(value) {
   return String(value || '').trim().toLowerCase();
 }
 
@@ -168,6 +203,34 @@ async function updateAuthUser(baseUrl, userId, target, resetPassword) {
     method: 'PUT',
     body
   });
+}
+
+async function upsertAdminDirectoryRow(baseUrl, target) {
+  const endpoint = `${baseUrl}/rest/v1/${encodeURIComponent(ADMIN_USERS_TABLE)}?on_conflict=username`;
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      apikey: SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+      'Content-Type': 'application/json',
+      'Accept-Profile': 'public',
+      'Content-Profile': 'public',
+      Prefer: 'resolution=merge-duplicates,return=minimal'
+    },
+    body: JSON.stringify([
+      {
+        username: target.username,
+        auth_email: target.email,
+        role: target.role,
+        is_active: true
+      }
+    ])
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`admin_users tablosuna yazma basarisiz: ${text || `HTTP ${response.status}`}`);
+  }
 }
 
 async function adminRequest(baseUrl, path, options = {}) {

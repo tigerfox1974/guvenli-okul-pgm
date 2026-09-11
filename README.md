@@ -160,6 +160,7 @@ Bu nedenle Vercel Project Settings > Environment Variables ekraninda su degerler
 4. SUPABASE_REPORTS_TABLE = anonymous_reports
 5. REPORT_SECURITY_SALT = rastgele_uzun_bir_metin
 6. SUPABASE_SECURITY_EVENTS_TABLE = security_events (opsiyonel, varsayilan tablo adi)
+7. SUPABASE_ADMIN_USERS_TABLE = admin_users (opsiyonel, varsayilan tablo adi)
 
 Guvenlik kurali:
 
@@ -182,19 +183,16 @@ Kontrol noktasi:
 
 ### Aşama 4.3: Panel Girisi Icin Admin Kullanicilarini Olustur
 
-Panel girisi kullanici adi + sifre ile calisir. Teknik olarak Supabase Auth e-posta ile kimlik dogruladigi icin sistem arka planda su deseni kullanir:
+Bu surumde panel kullanicilari frontend config'ten degil `public.admin_users` tablosundan yonetilir.
+
+1. Once SQL Editor'de [docs/supabase-admin-users.sql](docs/supabase-admin-users.sql) dosyasini calistirin.
+2. Bu script `admin_users` tablosunu, index/policy/trigger yapisini ve ornek kullanicilari olusturur.
+
+Panel girisi kullanici adi + sifre ile calisir. Supabase Auth teknik olarak e-posta ile dogruladigi icin arka planda su desen kullanilir:
 
 1. kullaniciAdi@kurum.gov.ct.tr
 
-Ornek:
-
-1. supervisor girisi -> supervisor@kurum.gov.ct.tr
-2. operator1 girisi -> operator1@kurum.gov.ct.tr
-
-Bu hesaplari tek seferde olusturmak icin:
-
-1. Terminali acin.
-2. Proje klasorunde su komutu calistirin:
+Hesaplarin Auth + tablo kaydini tek komutla esitlemek icin:
 
 ```powershell
 $env:SUPABASE_SERVICE_ROLE_KEY='SIZIN_SERVICE_ROLE_KEY'; $env:PGM_ADMIN_DEFAULT_PASSWORD='Sifre123456!'; $env:PGM_ADMIN_RESET_PASSWORDS='true'; node scripts/seed-admin-users.mjs
@@ -202,10 +200,10 @@ $env:SUPABASE_SERVICE_ROLE_KEY='SIZIN_SERVICE_ROLE_KEY'; $env:PGM_ADMIN_DEFAULT_
 
 Notlar:
 
-1. Bu komut [js/config/supabase.config.js](js/config/supabase.config.js) icindeki adminUsers listesinin tamamini Supabase Auth'a yazar.
+1. Bu komut hem Supabase Auth kullanicilarini hem `admin_users` tablo satirlarini upsert eder.
 2. Kullanici ekranda yalnizca kullanici adini girer (e-posta girmez).
-3. `PGM_ADMIN_RESET_PASSWORDS='true'` aktifken mevcut kullanicilarin sifresi de `PGM_ADMIN_DEFAULT_PASSWORD` degerine cekilir.
-4. `PGM_ADMIN_DEFAULT_PASSWORD` en az 6 karakter olmalidir.
+3. `PGM_ADMIN_RESET_PASSWORDS='true'` ise mevcut Auth kullanicilarinin sifresi de sifirlanir.
+4. `PGM_ADMIN_USERS_JSON` ortam degiskeni ile varsayilan kullanici listesini JSON olarak override edebilirsiniz.
 
 ### Aşama 5: Uygulamayı Doğru Şekilde Aç
 

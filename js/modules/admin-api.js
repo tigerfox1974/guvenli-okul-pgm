@@ -4,7 +4,6 @@ const ADMIN_SESSION_KEY = 'pgm-admin-auth-session-v2';
 const DEFAULT_TIMEOUT_MS = 10000;
 const MAX_PAGE_SIZE = 100;
 const OPERATOR_ROLES = new Set(['operator', 'supervisor']);
-const ADMIN_USER_DIRECTORY = createAdminUserDirectory(SUPABASE_CONFIG.adminUsers);
 
 export class AdminApiError extends Error {
   constructor(code, message, status = 0, details = '') {
@@ -24,21 +23,11 @@ export async function signInAdmin(username, password) {
     throw new AdminApiError('invalid_credentials', 'Kullanıcı adı ve şifre zorunludur.', 400);
   }
 
-  if (ADMIN_USER_DIRECTORY.size === 0) {
-    throw new AdminApiError('admin_users_not_configured', 'Admin kullanıcı eşlemesi yapılandırılmadı.', 500);
-  }
-
-  const account = ADMIN_USER_DIRECTORY.get(normalizedUsername);
-  if (!account) {
-    throw new AdminApiError('invalid_credentials', 'Kullanıcı adı veya şifre hatalı.', 401);
-  }
-
-  const payload = await requestAuthToken('password', {
-    email: account.email,
-    password: normalizedPassword
+  const payload = await requestAdminLogin(normalizedUsername, normalizedPassword);
+  const session = mapAuthPayloadToSession(payload, {
+    username: normalizedUsername,
+    allowedRoles: [payload && payload.expectedRole]
   });
-
-  const session = mapAuthPayloadToSession(payload, account);
   saveStoredAdminSession(session);
   return session;
 }
@@ -193,6 +182,32 @@ async function requestAdminApi(path, accessToken) {
   return body;
 }
 
+async function requestAdminLogin(username, password) {
+  const response = await fetchWithTimeout('/api/admin/login', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      username,
+      password
+    })
+  }, getRequestTimeoutMs());
+
+  const body = await safeReadResponseJson(response);
+
+  if (!response.ok) {
+    const message = getAuthErrorMessage(body, response.status);
+    throw new AdminApiError('auth_failed', message, response.status, JSON.stringify(body || {}));
+  }
+
+  if (!body || typeof body !== 'object') {
+    throw new AdminApiError('invalid_auth_payload', 'Kimlik doğrulama yanıtı okunamadı.', 500);
+  }
+
+  return body;
+}
+
 async function requestAuthToken(grantType, payload) {
   const baseUrl = getConfiguredBaseUrl();
   const anonKey = getConfiguredAnonKey();
@@ -223,6 +238,15 @@ async function requestAuthToken(grantType, payload) {
 function getAuthErrorMessage(body, status) {
   const rawMessage = String(getResponseErrorMessage(body) || '').trim();
   const normalizedMessage = rawMessage.toLowerCase();
+  const errorCode = String(body && body.error || '').trim().toLowerCase();
+
+  if (errorCode === 'invalid_credentials' || errorCode === 'invalid_credentials_input') {
+    return 'Kullanıcı adı veya şifre hatalı.';
+  }
+
+  if (errorCode === 'role_mismatch') {
+    return 'Bu kullanıcı için rol yetkisi uyuşmuyor.';
+  }
 
   if (status === 400 || status === 401) {
     if (
@@ -316,59 +340,6 @@ function normalizeAllowedRoles(values) {
 
 function normalizeUsername(value) {
   return String(value || '').trim().toLowerCase();
-}
-
-function createAdminUserDirectory(adminUsers) {
-  if (!Array.isArray(adminUsers)) {
-    return new Map();
-  }
-
-  const directory = new Map();
-  const emailDomain = normalizeEmailDomain(SUPABASE_CONFIG.adminAuthEmailDomain);
-
-  adminUsers.forEach(item => {
-    if (!item || typeof item !== 'object') {
-      return;
-    }
-
-    const username = normalizeUsername(item.username);
-    const email = resolveAdminLoginEmail(item, username, emailDomain);
-    const allowedRoles = Array.isArray(item.allowedRoles)
-      ? item.allowedRoles
-      : [item.role];
-
-    if (!username || !email) {
-      return;
-    }
-
-    directory.set(username, {
-      username,
-      email,
-      allowedRoles: Array.from(normalizeAllowedRoles(allowedRoles))
-    });
-  });
-
-  return directory;
-}
-
-function resolveAdminLoginEmail(item, username, emailDomain) {
-  const explicitEmail = String(item && item.email || '').trim().toLowerCase();
-  if (explicitEmail) {
-    return explicitEmail;
-  }
-
-  if (!username || !emailDomain) {
-    return '';
-  }
-
-  return `${username}@${emailDomain}`;
-}
-
-function normalizeEmailDomain(value) {
-  return String(value || '')
-    .trim()
-    .toLowerCase()
-    .replace(/^@+/, '');
 }
 
 function extractRoleFromUser(user) {

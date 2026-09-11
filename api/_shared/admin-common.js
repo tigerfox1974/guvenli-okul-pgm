@@ -17,6 +17,7 @@ function getAdminServerConfig() {
   const authApiKey = String(process.env.SUPABASE_ANON_KEY || serviceRoleKey).trim();
   const schema = String(process.env.SUPABASE_SCHEMA || 'public').trim() || 'public';
   const table = String(process.env.SUPABASE_REPORTS_TABLE || 'anonymous_reports').trim() || 'anonymous_reports';
+  const adminUsersTable = String(process.env.SUPABASE_ADMIN_USERS_TABLE || 'admin_users').trim() || 'admin_users';
   const timeoutMs = Number(process.env.REPORT_API_TIMEOUT_MS || DEFAULT_TIMEOUT_MS);
 
   const baseUrl = normalizeSupabaseBaseUrl(rawUrl);
@@ -28,6 +29,7 @@ function getAdminServerConfig() {
     authApiKey,
     schema,
     table,
+    adminUsersTable,
     timeoutMs: Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : DEFAULT_TIMEOUT_MS
   };
 }
@@ -371,6 +373,7 @@ module.exports = {
   getAdminServerConfig,
   getSummaryLimits,
   mapSupabaseRowToReport,
+  parseRoleFromUser,
   parseContentRangeTotal,
   parseListFilters,
   safeReadResponseText,
