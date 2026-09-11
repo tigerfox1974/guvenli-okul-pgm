@@ -880,7 +880,7 @@ body.modal-open { overflow: hidden; }
 }
 
 .home-hero-figure { margin: 0; overflow: hidden; border: 1px solid #e2e8f0; border-radius: 12px; background: #eef2f7; }
-.home-hero-figure img { display: block; width: 100%; height: 100%; min-height: 340px; object-fit: cover; }
+.home-hero-figure img { display: block; width: 100%; height: auto; object-fit: contain; }
 
 .home-hotline { display: flex; align-items: center; gap: 12px; padding: 14px 16px; }
 .home-hotline-link {
@@ -1060,6 +1060,47 @@ body.modal-open { overflow: hidden; }
 .home-closing-top { padding: 32px 24px 0; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: rgba(255, 255, 255, 0.8); }
 .home-closing-main { padding: 8px 24px 32px; font-size: 32px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; color: #facc15; }
 
+/* 10: Yasal bilgilendirme (katlanabilir) */
+.home-legal {
+  margin-top: 32px;
+  margin-bottom: 32px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+.home-legal-summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  cursor: pointer;
+  list-style: none;
+  background: #f1f5f9;
+  color: #14213d;
+  font-weight: 700;
+}
+.home-legal-summary::-webkit-details-marker { display: none; }
+.home-legal-summary:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
+.home-legal-icon { display: inline-flex; color: #14213d; }
+.home-legal-heading { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.home-legal-title { font-size: 15px; text-transform: uppercase; letter-spacing: 0.02em; line-height: 1.2; }
+.home-legal-subtitle { font-size: 12px; font-weight: 500; line-height: 1.4; opacity: 0.75; }
+.home-legal-action { flex: 0 0 auto; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.75; }
+.home-legal-summary:hover .home-legal-subtitle,
+.home-legal-summary:hover .home-legal-action { opacity: 1; }
+.home-legal-action-close { display: none; }
+.home-legal[open] .home-legal-action-open { display: none; }
+.home-legal[open] .home-legal-action-close { display: inline; }
+.home-legal-chevron { display: inline-flex; flex: 0 0 auto; transition: transform 0.2s ease; }
+.home-legal-chevron svg { width: 20px; height: 20px; }
+.home-legal[open] .home-legal-chevron { transform: rotate(180deg); }
+.home-legal-body { padding: 20px; font-size: 14px; line-height: 1.75; color: #374151; }
+.home-legal-body h4 { margin: 18px 0 6px; font-size: 14px; color: #14213d; }
+.home-legal-body p { margin: 0 0 10px; }
+.home-legal-body p:last-child { margin-bottom: 0; }
+
 @media (max-width: 1040px) {
   .home-cards-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .home-topics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -1077,10 +1118,14 @@ body.modal-open { overflow: hidden; }
   .home-closing-main { font-size: 24px; }
   .home-alert p { font-size: 16px; }
   .home-cards-row { grid-template-columns: 1fr; }
+  .home-legal-summary { padding: 14px 16px; }
+  .home-legal-body { padding: 16px; }
 }
 @media (max-width: 480px) {
   .home-topics { grid-template-columns: 1fr; }
   .home-hotline { flex-direction: column; align-items: stretch; }
   .home-qr-modal { align-self: center; }
   .home-closing-main { font-size: 20px; }
+  .home-legal-subtitle { display: none; }
+  .home-legal-action { display: none; }
 }
