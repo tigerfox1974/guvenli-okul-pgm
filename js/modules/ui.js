@@ -1,5 +1,5 @@
 import { showEmergencyGateOnReportEntry } from './form.js';
-import { AdminApiError, fetchAdminPanel, fetchAdminReports, fetchAdminSummary } from './admin-api.js';
+import { AdminApiError, fetchAdminPanel, fetchAdminReports } from './admin-api.js';
 import {
   fitToIsland,
   getMapLayerVisibility,
@@ -196,31 +196,13 @@ async function loadAdminPanelFallback(requestId, filters) {
     const reports = extractReportItems(reportsResponse);
     paintAdminPanelData(reports, reportsResponse);
 
-    void loadAdminSummary(requestId, filters, reports);
+    updateSummaryCards(reports, normalizeSummaryData(null, reports));
   } catch (error) {
     if (requestId !== renderRequestId) {
       return;
     }
 
     handleAdminPanelLoadError(error);
-  }
-}
-
-async function loadAdminSummary(requestId, filters, reports) {
-  try {
-    const summaryResponse = await fetchAdminSummary({ filters });
-
-    if (requestId !== renderRequestId) {
-      return;
-    }
-
-    updateSummaryCards(reports, normalizeSummaryData(summaryResponse, reports));
-  } catch (error) {
-    if (requestId !== renderRequestId) {
-      return;
-    }
-
-    handleSummaryLoadError();
   }
 }
 
@@ -488,8 +470,7 @@ function normalizeSummaryData(summaryData, reports) {
       ? reviewedReports
       : reports.filter(report => report.status !== 'Yeni').length,
     topDistrict: String(safeData.topDistrict || fallbackTopDistrict || ''),
-    topCategory: String(safeData.topCategory || fallbackTopCategory || ''),
-    truncated: Boolean(safeData.truncated)
+    topCategory: String(safeData.topCategory || fallbackTopCategory || '')
   };
 }
 
@@ -845,23 +826,6 @@ function handleAdminPanelLoadError(error) {
       }
     }));
   }
-}
-
-function handleSummaryLoadError() {
-  const placeholderIds = [
-    'summaryTotalReports',
-    'summaryNewReports',
-    'summaryReviewReports',
-    'summaryTopDistrict',
-    'summaryTopCategory'
-  ];
-
-  placeholderIds.forEach(id => {
-    const element = document.getElementById(id);
-    if (element) {
-      element.textContent = '-';
-    }
-  });
 }
 
 function getAdminLoadErrorMessage(error) {
