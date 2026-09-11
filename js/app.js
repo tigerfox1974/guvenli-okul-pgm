@@ -285,7 +285,7 @@ async function enableOperatorRuntime(options = { openAdminView: false }) {
     operatorRuntime.initialized = true;
   }
 
-  if (options.openAdminView) {
+  if (options.openAdminView && getActiveViewId() !== 'admin') {
     const adminButton = document.querySelector('header nav button[data-view="admin"]');
     if (adminButton) {
       adminButton.click();
