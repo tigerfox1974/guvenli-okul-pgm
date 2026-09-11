@@ -180,6 +180,33 @@ Kontrol noktasi:
 2. Ilk rate limit veya duplicate testinden sonra tabloda olay kaydi olusmali.
 3. Security Advisor tarafinda public.security_events icin "RLS Enabled No Policy" infosu goruluyorsa, ayni scripti tekrar calistirin; script explicit deny policy olusturur.
 
+### Aşama 4.3: Panel Girisi Icin Admin Kullanicilarini Olustur
+
+Panel girisi kullanici adi + sifre ile calisir. Teknik olarak Supabase Auth e-posta ile kimlik dogruladigi icin sistem arka planda su deseni kullanir:
+
+1. kullaniciAdi@kurum.gov.ct.tr
+
+Ornek:
+
+1. supervisor girisi -> supervisor@kurum.gov.ct.tr
+2. operator1 girisi -> operator1@kurum.gov.ct.tr
+
+Bu hesaplari tek seferde olusturmak icin:
+
+1. Terminali acin.
+2. Proje klasorunde su komutu calistirin:
+
+```powershell
+$env:SUPABASE_SERVICE_ROLE_KEY='SIZIN_SERVICE_ROLE_KEY'; $env:PGM_ADMIN_DEFAULT_PASSWORD='Sifre123456!'; $env:PGM_ADMIN_RESET_PASSWORDS='true'; node scripts/seed-admin-users.mjs
+```
+
+Notlar:
+
+1. Bu komut [js/config/supabase.config.js](js/config/supabase.config.js) icindeki adminUsers listesinin tamamini Supabase Auth'a yazar.
+2. Kullanici ekranda yalnizca kullanici adini girer (e-posta girmez).
+3. `PGM_ADMIN_RESET_PASSWORDS='true'` aktifken mevcut kullanicilarin sifresi de `PGM_ADMIN_DEFAULT_PASSWORD` degerine cekilir.
+4. `PGM_ADMIN_DEFAULT_PASSWORD` en az 6 karakter olmalidir.
+
 ### Aşama 5: Uygulamayı Doğru Şekilde Aç
 
 Supabase testinde file ile açmak yerine yerel sunucu kullanın.
