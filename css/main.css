@@ -282,7 +282,7 @@ input.field-invalid, select.field-invalid, textarea.field-invalid { border-color
   font-variant-numeric: tabular-nums;
 }
 .risk-zero {
-  color: #94a3b8;
+  color: #64748b;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
@@ -326,6 +326,14 @@ input.field-invalid, select.field-invalid, textarea.field-invalid { border-color
   font-variant-numeric: tabular-nums;
 }
 .risk-card-bar { height: 6px; }
+.risk-cell:focus-visible,
+.risk-card:focus-visible {
+  outline: 3px solid #1d4ed8;
+  outline-offset: 2px;
+}
+/* Mobilde kart oncelikli akis: matris yerine tam kart listesi gosterilir. */
+.regional-grid-title-mobile,
+.regional-risk-grid-mobile { display: none; }
 .map-toolbar {
   display: grid;
   gap: 14px;
@@ -746,8 +754,11 @@ body.modal-open { overflow: hidden; }
   }
   .admin-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .regional-risk-head { flex-direction: column; }
-  .regional-matrix { min-width: 520px; }
-  .regional-risk-grid { grid-template-columns: 1fr; }
+  .regional-matrix-wrap { display: none; }
+  .regional-grid-title { display: none; }
+  .regional-risk-grid { display: none; }
+  .regional-grid-title-mobile { display: block; }
+  .regional-risk-grid-mobile { display: grid; grid-template-columns: 1fr; }
   .map-controls button { flex: 1 1 155px; }
   .detail-header { flex-direction: column; }
   .admin-table-wrap table { min-width: 680px; }
@@ -763,8 +774,6 @@ body.modal-open { overflow: hidden; }
   .map-controls button { flex: 1 1 100%; }
   .optional-grid { grid-template-columns: 1fr; }
   .map { min-height: 280px; height: 52vh; }
-  .regional-matrix { min-width: 440px; font-size: 12px; }
-  .regional-matrix th,
-  .regional-matrix td { padding: 6px; }
   .regional-stat strong { font-size: 16px; }
+  .risk-card { padding: 10px; }
 }
