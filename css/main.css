@@ -894,15 +894,17 @@ body.modal-open { overflow: hidden; }
 .home-head-green { background: #047857; }
 
 .home-anonymous-body {
-  display: grid;
-  justify-items: center;
-  justify-content: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 12px;
   padding: 16px 20px 20px;
   text-align: center;
 }
 
 .home-qr.home-anonymous-qr {
+  display: block;
+  margin-inline: auto;
   width: min(220px, 100%);
   max-width: 100%;
   height: auto;
@@ -964,9 +966,9 @@ body.modal-open { overflow: hidden; }
 .home-qr { display: block; width: 96px; height: 96px; flex: 0 0 auto; object-fit: contain; padding: 4px; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; }
 
 /* QR büyütme modalı — JS'siz (checkbox + hover/focus), yalnız #home içinde izole */
-.home-qr-modal { flex: 0 0 auto; position: relative; }
+.home-qr-modal { position: relative; margin-inline: auto; }
 .home-qr-toggle { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
-.home-qr-trigger { position: relative; display: block; cursor: zoom-in; border-radius: 8px; }
+.home-qr-trigger { position: relative; display: block; width: fit-content; margin-inline: auto; cursor: zoom-in; border-radius: 8px; }
 .home-qr-hint {
   position: absolute;
   inset: auto 4px 4px 4px;
