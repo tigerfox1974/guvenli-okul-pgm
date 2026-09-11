@@ -104,6 +104,8 @@ input.field-invalid, select.field-invalid, textarea.field-invalid { border-color
   background: linear-gradient(150deg, #eff6ff 0%, #ffffff 75%);
   border-color: #bfdbfe;
 }
+#adminDemoBanner[hidden],
+#adminAuthGate[hidden] { display: none; }
 #adminDashboard { margin-top: 16px; }
 .admin-layout .filters {
   position: sticky;

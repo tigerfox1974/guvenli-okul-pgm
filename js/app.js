@@ -185,18 +185,26 @@ function syncUrlWithView(viewId, replaceUrl) {
 
 function initAdminGate() {
   const authForm = document.getElementById('adminAuthForm');
-  const logoutButton = document.getElementById('adminLogoutButton');
+  const logoutButtons = [
+    document.getElementById('adminLogoutButton'),
+    document.getElementById('navLogoutButton')
+  ].filter(Boolean);
 
   if (authForm) {
     authForm.addEventListener('submit', handleAdminLogin);
   }
 
-  if (logoutButton) {
-    logoutButton.addEventListener('click', () => {
-      clearStoredAdminSession();
-      window.location.reload();
-    });
-  }
+  logoutButtons.forEach(button => {
+    button.addEventListener('click', handleAdminLogout);
+  });
+}
+
+function handleAdminLogout() {
+  clearStoredAdminSession();
+  authSession = null;
+  applyAdminVisibility(false);
+  window.location.hash = `#${VIEW_ROUTE_TOKENS.home}`;
+  window.location.reload();
 }
 
 async function handleAdminLogin(event) {
@@ -291,6 +299,16 @@ function applyAdminVisibility(isAuthorized) {
   const sessionBox = document.getElementById('adminSessionBox');
   const sessionText = document.getElementById('adminSessionText');
   const dashboard = document.getElementById('adminDashboard');
+  const demoBanner = document.getElementById('adminDemoBanner');
+  const authGate = document.getElementById('adminAuthGate');
+
+  if (demoBanner) {
+    demoBanner.hidden = isAuthorized;
+  }
+
+  if (authGate) {
+    authGate.hidden = isAuthorized;
+  }
 
   if (dashboard) {
     dashboard.hidden = !isAuthorized;
@@ -311,9 +329,24 @@ function applyAdminVisibility(isAuthorized) {
       : '';
   }
 
+  updateNavAuthButtons(isAuthorized);
+
   if (authMessage && !isAuthorized) {
     authMessage.textContent = DEFAULT_AUTH_HINT;
     authMessage.classList.remove('notice');
+  }
+}
+
+function updateNavAuthButtons(isAuthorized) {
+  const loginButton = document.querySelector('header nav button[data-view="admin"]');
+  const logoutButton = document.getElementById('navLogoutButton');
+
+  if (loginButton) {
+    loginButton.hidden = isAuthorized;
+  }
+
+  if (logoutButton) {
+    logoutButton.hidden = !isAuthorized;
   }
 }
 
