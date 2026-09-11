@@ -271,6 +271,64 @@ function buildSupabaseEndpoint(config, tableName = config.table) {
   return `${config.baseUrl}/rest/v1/${encodeURIComponent(normalizedTableName)}`;
 }
 
+function buildSupabaseRpcEndpoint(config, functionName) {
+  const normalizedName = String(functionName || '').trim();
+  return `${config.baseUrl}/rest/v1/rpc/${encodeURIComponent(normalizedName)}`;
+}
+
+function buildSummaryRpcArgs(filters) {
+  const safeFilters = filters && typeof filters === 'object' ? filters : {};
+
+  return {
+    p_district: normalizeRpcFilterValue(safeFilters.district),
+    p_school: normalizeRpcFilterValue(safeFilters.school),
+    p_category: normalizeRpcFilterValue(safeFilters.category),
+    p_status: normalizeRpcFilterValue(safeFilters.status),
+    p_date: normalizeFilterValue(safeFilters.date)
+  };
+}
+
+function normalizeRpcFilterValue(value) {
+  const normalized = normalizeFilterValue(value);
+  return normalized === 'all' ? null : normalized;
+}
+
+async function fetchReportSummary(config, filters) {
+  const endpoint = buildSupabaseRpcEndpoint(config, 'get_report_summary');
+  const response = await fetchWithTimeout(endpoint, {
+    method: 'POST',
+    headers: buildSupabaseHeaders(config),
+    body: JSON.stringify(buildSummaryRpcArgs(filters))
+  }, config.timeoutMs);
+
+  if (!response.ok) {
+    const details = await safeReadResponseText(response);
+    throw buildRequestError(response.status, `supabase_summary_rpc_failed: ${details}`);
+  }
+
+  const payload = await response.json();
+  return normalizeSummaryPayload(payload);
+}
+
+function normalizeSummaryPayload(payload) {
+  const source = Array.isArray(payload)
+    ? (payload[0] && typeof payload[0] === 'object' ? payload[0] : {})
+    : (payload && typeof payload === 'object' ? payload : {});
+
+  return {
+    totalReports: toSafeCount(source.totalReports),
+    newReports: toSafeCount(source.newReports),
+    reviewedReports: toSafeCount(source.reviewedReports),
+    topDistrict: String(source.topDistrict || ''),
+    topCategory: String(source.topCategory || '')
+  };
+}
+
+function toSafeCount(value) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) && numeric >= 0 ? numeric : 0;
+}
+
 function buildSupabaseHeaders(config, extraHeaders = {}) {
   return {
     'Content-Type': 'application/json',
@@ -368,7 +426,9 @@ module.exports = {
   authenticateAdmin,
   buildRequestError,
   buildSupabaseEndpoint,
+  buildSupabaseRpcEndpoint,
   buildSupabaseHeaders,
+  fetchReportSummary,
   fetchWithTimeout,
   getAdminServerConfig,
   getSummaryLimits,

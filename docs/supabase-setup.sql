@@ -27,6 +27,7 @@ create table if not exists public.anonymous_reports (
 create index if not exists idx_anonymous_reports_created_at on public.anonymous_reports (created_at desc);
 create index if not exists idx_anonymous_reports_district on public.anonymous_reports (district);
 create index if not exists idx_anonymous_reports_category on public.anonymous_reports (category);
+create index if not exists idx_anonymous_reports_status on public.anonymous_reports (status);
 
 create table if not exists public.security_events (
   id bigserial primary key,
