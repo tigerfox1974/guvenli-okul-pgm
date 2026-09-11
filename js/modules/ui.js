@@ -238,7 +238,7 @@ function initRiskControlEvents() {
     });
   }
 
-  const riskContainers = ['regionalRiskMatrix', 'regionalRiskGrid']
+  const riskContainers = ['regionalRiskMatrix', 'regionalRiskGrid', 'regionalRiskFullGrid']
     .map(id => document.getElementById(id))
     .filter(Boolean);
 
@@ -541,6 +541,7 @@ function renderReportTable(reports) {
 function renderRegionalRiskPanel(reports) {
   const matrixBody = document.getElementById('regionalRiskMatrix');
   const riskGrid = document.getElementById('regionalRiskGrid');
+  const fullGrid = document.getElementById('regionalRiskFullGrid');
 
   if (!matrixBody || !riskGrid) return;
 
@@ -550,6 +551,9 @@ function renderRegionalRiskPanel(reports) {
   if (districtRows.length === 0) {
     matrixBody.innerHTML = '<tr><td class="empty-row" colspan="7">Filtrelere uygun risk kaydı bulunamadı.</td></tr>';
     riskGrid.innerHTML = '<div class="empty-row">Risk dağılımı oluştuğunda odak kartları burada gösterilir.</div>';
+    if (fullGrid) {
+      fullGrid.innerHTML = '<div class="empty-row">Filtrelere uygun risk kaydı bulunamadı.</div>';
+    }
     return;
   }
 
@@ -580,6 +584,12 @@ function renderRegionalRiskPanel(reports) {
       .map(item => renderRiskCard(item, maxHighlightCount))
       .join('')
     : '<div class="empty-row">Risk dağılımı oluştuğunda odak kartları burada gösterilir.</div>';
+
+  if (fullGrid) {
+    fullGrid.innerHTML = districtRows
+      .map(row => renderRiskDistrictCard(row))
+      .join('');
+  }
 }
 
 function groupReports(reports) {
@@ -903,16 +913,39 @@ function renderRiskDistrictButton(district, total) {
   return `<button type="button" class="risk-cell risk-cell-district" data-risk-district="${escapeHtml(district)}" data-risk-bucket="all" aria-label="${escapeHtml(label)} ilçesi, toplam ${total} bildirim"><span>${escapeHtml(label)}</span><span class="risk-total-cell">${total}</span></button>`;
 }
 
-function renderRiskCountButton(district, bucket, count, intensity = 0) {
+function renderRiskCountButton(district, bucket, count, intensity = 0, options = {}) {
+  const { includeLabel = false } = options;
   const bucketLabel = RISK_BUCKETS.find(item => item.key === bucket)?.label || 'Kategori';
   const districtLabel = getDistrictLabel(district);
 
   if (count === 0) {
+    if (includeLabel) {
+      return `<span class="risk-zero" aria-label="${escapeHtml(districtLabel)} ${escapeHtml(bucketLabel)}: 0 bildirim">${escapeHtml(bucketLabel)}: 0</span>`;
+    }
+
     return `<span class="risk-zero" aria-label="${escapeHtml(districtLabel)} ${escapeHtml(bucketLabel)}: 0 bildirim">0</span>`;
   }
 
   const ratio = Math.max(0, Math.min(1, intensity));
-  return `<button type="button" class="risk-cell" style="--risk-intensity: ${ratio.toFixed(3)}" data-risk-district="${escapeHtml(district)}" data-risk-bucket="${escapeHtml(bucket)}" aria-label="${escapeHtml(districtLabel)} ${escapeHtml(bucketLabel)}: ${count} bildirim"><span>${count}</span><span class="risk-cell-bar" aria-hidden="true"><i></i></span></button>`;
+  const bucketTitle = includeLabel
+    ? `<span class="hint">${escapeHtml(bucketLabel)}</span>`
+    : '';
+  return `<button type="button" class="risk-cell" style="--risk-intensity: ${ratio.toFixed(3)}" data-risk-district="${escapeHtml(district)}" data-risk-bucket="${escapeHtml(bucket)}" aria-label="${escapeHtml(districtLabel)} ${escapeHtml(bucketLabel)}: ${count} bildirim">${bucketTitle}<span>${count}</span><span class="risk-cell-bar" aria-hidden="true"><i></i></span></button>`;
+}
+
+function renderRiskDistrictCard(row) {
+  const districtLabel = getDistrictLabel(row.district);
+
+  return `
+    <article class="risk-card" aria-label="${escapeHtml(districtLabel)} ilçesi toplam ${row.total} bildirim">
+      ${renderRiskDistrictButton(row.district, row.total)}
+      ${RISK_BUCKETS.map(bucket => {
+        const count = row.bucketCounts[bucket.key] || 0;
+        const intensity = row.total > 0 ? count / row.total : 0;
+        return renderRiskCountButton(row.district, bucket.key, count, intensity, { includeLabel: true });
+      }).join('')}
+    </article>
+  `;
 }
 
 function renderRiskCard(item, maxCount) {
