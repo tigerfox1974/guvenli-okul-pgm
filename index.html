@@ -13,7 +13,7 @@
   <meta property="og:image" content="assets/images/og/og-image.svg">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="css/main.css?v=20260911-9">
+  <link rel="stylesheet" href="css/main.css?v=20260911-10">
 </head>
 <body>
   <header>
@@ -83,17 +83,29 @@
                   <span class="home-hotline-number">155</span>
                 </span>
               </a>
+            </div>
+            <p class="home-hotline-foot">7/24 GİZLİ &bull; GÜVENLİ &bull; ETKİLİ</p>
+          </article>
+
+          <article class="home-card home-anonymous">
+            <div class="home-card-head home-head-green">
+              <svg class="home-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4v6c0 5-3.5 10-8 11-4.5-1-8-6-8-11V7l8-4z"/><path d="M9 12l2 2 4-4"/></svg>
+              <h2>ANONİM GÜVENLİ İHBAR</h2>
+            </div>
+            <div class="home-anonymous-body">
+              <p class="home-anonymous-text">Okul güvenliği için güvenli ve anonim bildirim kanalına doğrudan ulaşmak için kodu okutun.</p>
               <div class="home-qr-modal">
-                <input type="checkbox" id="homeQrToggle" class="home-qr-toggle" aria-label="QR kodu büyüt">
-                <label for="homeQrToggle" class="home-qr-trigger" title="QR kodu büyütmek için tıklayın">
-                  <img class="home-qr" src="assets/qr/guvenli-okul-ihbar-qr.png" alt="Güvenli İhbar Hattı bildirim formuna götüren QR kod. Büyütmek için tıklayın.">
+                <input type="checkbox" id="homeAnonQrToggle" class="home-qr-toggle" aria-label="QR kodu büyüt">
+                <label for="homeAnonQrToggle" class="home-qr-trigger" title="QR kodu büyütmek için tıklayın">
+                  <img class="home-qr home-anonymous-qr" src="assets/qr/guvenli-okul-ihbar-qr.png" alt="Anonim Güvenli İhbar Hattı bildirim formuna götüren QR kod. Büyütmek için tıklayın.">
                   <span class="home-qr-hint" aria-hidden="true">Büyüt</span>
                 </label>
                 <div class="home-qr-overlay" role="dialog" aria-modal="true" aria-label="Büyütülmüş QR kod">
-                  <label for="homeQrToggle" class="home-qr-backdrop" aria-label="Kapat"></label>
+                  <label for="homeAnonQrToggle" class="home-qr-backdrop" aria-label="Kapat"></label>
                   <div class="home-qr-overlay-content">
                     <a
                       id="homeWhatsappShareButton"
+                      data-whatsapp-share
                       class="home-qr-share"
                       href="#"
                       target="_blank"
@@ -102,12 +114,22 @@
                     >
                       Farkındalık İçin Daha Çok Kişiyle Paylaşın
                     </a>
-                    <img class="home-qr-large" src="assets/qr/guvenli-okul-ihbar-qr.png" alt="Büyütülmüş Güvenli İhbar Hattı QR kodu">
+                    <img class="home-qr-large" src="assets/qr/guvenli-okul-ihbar-qr.png" alt="Büyütülmüş Anonim Güvenli İhbar QR kodu">
                   </div>
                 </div>
               </div>
+              <a
+                data-whatsapp-share
+                class="home-qr-share home-anonymous-share"
+                href="#"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="WhatsApp ile ana sayfa ve ihbar hattı linklerini paylaş"
+              >
+                Farkındalık İçin Daha Çok Kişiyle Paylaşın
+              </a>
+              <p class="home-anonymous-hint">Telefonunuzun kamerasını açarak QR kodunu okutmanız yeterlidir.</p>
             </div>
-            <p class="home-hotline-foot">7/24 GİZLİ &bull; GÜVENLİ &bull; ETKİLİ</p>
           </article>
         </div>
 

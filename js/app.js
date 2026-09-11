@@ -50,8 +50,16 @@ function getPublicHomePageUrl() {
 }
 
 function initHomeWhatsappShare() {
-  const shareButton = document.getElementById('homeWhatsappShareButton');
-  if (!shareButton) return;
+  const shareButtons = [
+    ...document.querySelectorAll('[data-whatsapp-share]')
+  ];
+
+  const fallbackButton = document.getElementById('homeWhatsappShareButton');
+  if (fallbackButton && !shareButtons.includes(fallbackButton)) {
+    shareButtons.push(fallbackButton);
+  }
+
+  if (!shareButtons.length) return;
 
   const homePageUrl = getPublicHomePageUrl();
   const reportPageUrl = `${homePageUrl}#ihbar`;
@@ -65,7 +73,11 @@ function initHomeWhatsappShare() {
     'Bu bağlantı ile doğrudan anonim ihbar formuna geçebilirsiniz.'
   ].join('\n');
 
-  shareButton.href = `https://wa.me/?text=${encodeURIComponent(shareMessage)}`;
+  const href = `https://wa.me/?text=${encodeURIComponent(shareMessage)}`;
+
+  for (const button of shareButtons) {
+    button.href = href;
+  }
 }
 
 function initAdminAuthEventHandlers() {
