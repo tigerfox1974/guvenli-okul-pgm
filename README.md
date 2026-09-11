@@ -19,6 +19,10 @@ Güvenli Okul, öğrenciler, veliler, öğretmenler, okul personeli ve okul çev
 - Bildirim durumu takibi
 - Kurumsal raporlama temeli
 
+## Guncel Surum Notu
+
+- 2026-09-11 panel gelistirmeleri (Faz 0-3): [docs/surum-notu-2026-09-11-panel-faz3.md](docs/surum-notu-2026-09-11-panel-faz3.md)
+
 ## Okul Seçimi
 
 Kullanıcı önce ilçeyi seçer. Okul alanında yalnızca seçilen ilçeye bağlı okullar listelenir. İlçe seçilmeden tüm okullar gösterilmez.
