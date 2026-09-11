@@ -13,7 +13,7 @@
   <meta property="og:image" content="assets/images/og/og-image.svg">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="css/main.css?v=20260911-1">
+  <link rel="stylesheet" href="css/main.css?v=20260911-2">
 </head>
 <body>
   <header>
@@ -196,7 +196,8 @@
           <button id="countToggle" class="secondary" type="button">Olay Sayılarını Gizle</button>
           <button id="heatToggle" class="primary" type="button">Isı Haritasını Aç</button>
           <button id="clearFilters" class="secondary" type="button">Filtreleri Temizle</button>
-          <div id="filterResult" class="filter-result">Demo bildirimleri filtrelenmeye hazır.</div>
+          <div id="filterResult" class="filter-result" role="status" aria-live="polite" aria-atomic="true">Demo bildirimleri filtrelenmeye hazır.</div>
+          <p id="adminAnnouncer" class="sr-only" aria-live="polite" aria-atomic="true"></p>
           <p class="hint">Okul pinleri sabit kurum verisidir; ısı haritası demo/gerçek bildirim yoğunluğundan ayrıca üretilir.</p>
         </aside>
         <div>
@@ -217,7 +218,7 @@
             </div>
             <div class="regional-matrix-wrap">
               <table class="regional-matrix">
-                <thead><tr><th>İlçe</th><th>Trafik</th><th>Kavga/Zorbalık</th><th>Şüpheli kişi/araç</th><th>Servis</th><th>Diğer</th><th>Toplam</th></tr></thead>
+                <thead><tr><th scope="col">İlçe</th><th scope="col">Trafik</th><th scope="col">Kavga/Zorbalık</th><th scope="col">Şüpheli kişi/araç</th><th scope="col">Servis</th><th scope="col">Diğer</th><th scope="col">Toplam</th></tr></thead>
                 <tbody id="regionalRiskMatrix"><tr><td class="empty-row" colspan="7">Bölgesel özet hazırlanıyor.</td></tr></tbody>
               </table>
             </div>
@@ -227,9 +228,9 @@
             <div class="map-toolbar">
               <div><h2>KKTC Okul Güvenliği Haritası</h2><p>Okul pinleri Excel koordinat listesine göre sabit gösterilir. Isı haritası ayrı demo bildirim verisinden üretilir.</p></div>
               <div class="map-controls" aria-label="Harita katmanları">
-                <button id="mapMarkerToggle" class="active" type="button">Okul Pinleri</button>
-                <button id="mapCountToggle" class="active" type="button">Olay Sayıları</button>
-                <button id="mapHeatToggle" class="heat" type="button">Renkli Isı Haritası</button>
+                <button id="mapMarkerToggle" class="active" type="button" aria-pressed="true">Okul Pinleri</button>
+                <button id="mapCountToggle" class="active" type="button" aria-pressed="true">Olay Sayıları</button>
+                <button id="mapHeatToggle" class="heat" type="button" aria-pressed="false">Renkli Isı Haritası</button>
               </div>
               <strong id="mapMode">Okul pinleri ve olay sayıları görünümü</strong>
             </div>
@@ -238,7 +239,7 @@
           </div>
           <div class="table-wrap admin-table-wrap">
             <table>
-              <thead><tr><th>Okul</th><th>İlçe</th><th>Kategori</th><th>Bildirim</th><th>Durum Dağılımı</th></tr></thead>
+              <thead><tr><th scope="col">Okul</th><th scope="col">İlçe</th><th scope="col">Kategori</th><th scope="col">Bildirim</th><th scope="col">Durum Dağılımı</th></tr></thead>
               <tbody id="adminReportRows">
                 <tr><td class="empty-row" colspan="5">Demo bildirimleri yükleniyor.</td></tr>
               </tbody>
@@ -252,7 +253,7 @@
               </div>
               <button id="detailMapButton" class="secondary" type="button" disabled>Haritada Göster</button>
             </div>
-            <div id="detailList" class="detail-list">
+            <div id="detailList" class="detail-list" aria-live="polite" aria-busy="false">
               <div class="empty-row">Henüz grup seçilmedi.</div>
             </div>
           </div>
@@ -415,7 +416,7 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
-  <script type="module" src="js/app.js?v=20260911-1"></script>
+  <script type="module" src="js/app.js?v=20260911-2"></script>
 </body>
 </html>
 

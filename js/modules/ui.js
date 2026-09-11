@@ -111,6 +111,7 @@ export function renderAdminPanel() {
   updateMapVisualization(filteredReports);
   syncMapControlUI();
   updateFilterResult(reports.length, filteredReports.length);
+  syncRiskFocusUI();
 }
 
 function initNavigation() {
@@ -467,12 +468,26 @@ function renderReportTable(reports) {
     });
 
     row.addEventListener('keydown', event => {
-      if (event.key !== 'Enter' && event.key !== ' ') {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        row.click();
+        return;
+      }
+
+      if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') {
         return;
       }
 
       event.preventDefault();
-      row.click();
+      const rows = Array.from(tbody.querySelectorAll('tr[data-group-key]'));
+      const currentIndex = rows.indexOf(row);
+      if (currentIndex < 0) return;
+
+      const nextIndex = event.key === 'ArrowDown'
+        ? Math.min(currentIndex + 1, rows.length - 1)
+        : Math.max(currentIndex - 1, 0);
+
+      rows[nextIndex]?.focus();
     });
   });
 
@@ -600,6 +615,7 @@ function renderStatusBadge(status, count) {
 function setActiveGroupRow(activeRow, tbody) {
   tbody.querySelectorAll('tr[data-group-key]').forEach(row => {
     row.classList.toggle('is-active', row === activeRow);
+    row.setAttribute('aria-pressed', row === activeRow ? 'true' : 'false');
   });
 }
 
@@ -612,16 +628,21 @@ function renderDetailPanel(items, group) {
 
   if (!items || items.length === 0 || !group) {
     intro.textContent = 'Ana tablodan bir okul/kategori grubuna tıklayın; bağlı tekil bildirimler burada listelenir.';
+    list.setAttribute('aria-busy', 'true');
     list.innerHTML = '<div class="empty-row">Henüz grup seçilmedi.</div>';
+    list.setAttribute('aria-busy', 'false');
     mapButton.disabled = true;
+    mapButton.setAttribute('aria-disabled', 'true');
     mapButton.onclick = null;
     return;
   }
 
   intro.textContent = `${group.schoolName} - ${group.category} grubunda ${group.count} bildirim var.`;
   mapButton.disabled = false;
+  mapButton.setAttribute('aria-disabled', 'false');
   mapButton.onclick = () => zoomToSchool(group.schoolId);
 
+  list.setAttribute('aria-busy', 'true');
   list.innerHTML = items
     .map(item => {
       return `
@@ -633,6 +654,7 @@ function renderDetailPanel(items, group) {
       `;
     })
     .join('');
+  list.setAttribute('aria-busy', 'false');
 }
 
 function updateFilterResult(totalCount, filteredCount) {
@@ -641,15 +663,25 @@ function updateFilterResult(totalCount, filteredCount) {
 
   if (totalCount === 0) {
     resultElement.textContent = 'Henüz panelde gösterilecek bildirim yok.';
+    announcePanelState('Panelde bildirilecek kayıt bulunmuyor.');
     return;
   }
 
   if (filteredCount === totalCount) {
     resultElement.textContent = `Toplam ${totalCount} bildirim listeleniyor.${getRiskFocusLabel()}`;
+    announcePanelState(`${filteredCount} bildirim listeleniyor.`);
     return;
   }
 
   resultElement.textContent = `Toplam ${totalCount} bildirimin ${filteredCount} adedi filtrelere uyuyor.${getRiskFocusLabel()}`;
+  announcePanelState(`${filteredCount} bildirim filtrelere uyuyor.`);
+}
+
+function announcePanelState(message) {
+  const announcer = document.getElementById('adminAnnouncer');
+  if (!announcer) return;
+
+  announcer.textContent = message;
 }
 
 function getRiskFocusLabel() {
@@ -690,6 +722,27 @@ function clearRiskFocus() {
   if (schoolSelect) schoolSelect.value = 'all';
   if (categorySelect) categorySelect.value = 'all';
   activeRiskBucket = 'all';
+}
+
+function syncRiskFocusUI() {
+  const districtFilter = document.getElementById(FILTER_IDS.district)?.value || 'all';
+  const selectedDistrict = districtFilter === 'all'
+    ? 'all'
+    : normalizeDistrictName(districtFilter, 'all');
+  const selectedBucket = activeRiskBucket || 'all';
+
+  document.querySelectorAll('[data-risk-district][data-risk-bucket]').forEach(button => {
+    const buttonDistrict = normalizeDistrictName(button.dataset.riskDistrict || 'all', 'all');
+    const buttonBucket = button.dataset.riskBucket || 'all';
+
+    const hasExplicitFocus = selectedDistrict !== 'all' || selectedBucket !== 'all';
+    const districtMatches = selectedDistrict === 'all' || buttonDistrict === selectedDistrict;
+    const bucketMatches = selectedBucket === 'all' || buttonBucket === selectedBucket;
+    const isSelected = hasExplicitFocus && districtMatches && bucketMatches;
+
+    button.classList.toggle('is-selected', isSelected);
+    button.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+  });
 }
 
 function createRegionalRows(reports) {
@@ -817,6 +870,13 @@ function syncMapControlUI() {
   if (countToolbar) countToolbar.classList.toggle('active', state.counts);
   if (heatToolbar && !heatToolbar.disabled) heatToolbar.classList.toggle('active', state.heat);
 
+  if (markerSidebar) markerSidebar.setAttribute('aria-pressed', state.markers ? 'true' : 'false');
+  if (countSidebar) countSidebar.setAttribute('aria-pressed', state.counts ? 'true' : 'false');
+  if (heatSidebar) heatSidebar.setAttribute('aria-pressed', state.heat ? 'true' : 'false');
+  if (markerToolbar) markerToolbar.setAttribute('aria-pressed', state.markers ? 'true' : 'false');
+  if (countToolbar) countToolbar.setAttribute('aria-pressed', state.counts ? 'true' : 'false');
+  if (heatToolbar) heatToolbar.setAttribute('aria-pressed', state.heat ? 'true' : 'false');
+
   if (modeText) {
     modeText.textContent = createMapModeText(state);
   }
@@ -840,6 +900,7 @@ function markControlUnavailable(control, label) {
   control.disabled = true;
   control.classList.add('is-unavailable');
   control.setAttribute('aria-disabled', 'true');
+  control.setAttribute('aria-pressed', 'false');
   control.textContent = label;
 }
 
