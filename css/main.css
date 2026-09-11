@@ -1050,6 +1050,15 @@ body.modal-open { overflow: hidden; }
   .home-qr-hint { transition: none; }
   .home-qr-backdrop { backdrop-filter: none; }
 }
+.home-hotline-banner {
+  display: block;
+  margin-inline: auto;
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+  padding: 14px 20px;
+  box-sizing: border-box;
+}
 .home-hotline-foot {
   margin: 0;
   padding: 12px 20px;
