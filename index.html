@@ -13,7 +13,7 @@
   <meta property="og:image" content="assets/images/og/og-image.svg">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="css/main.css?v=20260911-3">
+  <link rel="stylesheet" href="css/main.css?v=20260911-6">
 </head>
 <body>
   <header>
@@ -46,8 +46,12 @@
       </div>
 
       <div class="home-body">
-        <!-- 2-5: Hero ve yan kartlar -->
-        <div class="home-hero-grid">
+        <!-- 2-5: Hero gorseli ve yan yana uc kart -->
+        <figure class="home-hero-figure">
+          <img src="assets/images/home/hero-guvenli-okul.png" alt="Okul bahçesinde öğrencilerin yanında duran polis memuru">
+        </figure>
+
+        <div class="home-cards-row">
           <article class="home-card home-purpose">
             <div class="home-card-head home-head-red">
               <svg class="home-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
@@ -56,38 +60,43 @@
             <p>İlkokul, ortaokul ve lise düzeyindeki tüm okullarda daha güvenli, huzurlu ve destekleyici bir ortam oluşturarak öğrencilerimizin sağlıklı, bilinçli ve güvenli bireyler olarak yetişmelerini sağlamaktır.</p>
           </article>
 
-          <figure class="home-hero-figure">
-            <img src="assets/images/home/hero-guvenli-okul.png" alt="Okul bahçesinde öğrencilerin yanında duran polis memuru">
-          </figure>
+          <article class="home-card">
+            <div class="home-card-head home-head-navy">
+              <svg class="home-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 17l-4-4"/><path d="M14 7l4 4"/><path d="M3 21l5-5"/><path d="M16 3l5 5"/></svg>
+              <h2>POLİS GÜCÜNÜ HALKTAN ALIR</h2>
+            </div>
+            <p class="home-slogan">Birlikte koruruz,<br>Birlikte güçleniriz,<br>Birlikte güvendeyiz!</p>
+          </article>
 
-          <div class="home-side">
-            <article class="home-card">
-              <div class="home-card-head home-head-navy">
-                <svg class="home-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 17l-4-4"/><path d="M14 7l4 4"/><path d="M3 21l5-5"/><path d="M16 3l5 5"/></svg>
-                <h2>POLİS GÜCÜNÜ HALKTAN ALIR</h2>
+          <article class="home-card">
+            <div class="home-card-head home-head-red">
+              <svg class="home-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              <h2>ACİL İHBAR HATTI</h2>
+            </div>
+            <div class="home-hotline">
+              <a class="home-hotline-link" href="tel:155">
+                <span class="home-hotline-icon">
+                  <svg class="home-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                </span>
+                <span class="home-hotline-text">
+                  <span class="home-hotline-label">Acil İhbar Hattı</span>
+                  <span class="home-hotline-number">155</span>
+                </span>
+              </a>
+              <div class="home-qr-modal">
+                <input type="checkbox" id="homeQrToggle" class="home-qr-toggle" aria-label="QR kodu büyüt">
+                <label for="homeQrToggle" class="home-qr-trigger" title="QR kodu büyütmek için tıklayın">
+                  <img class="home-qr" src="assets/qr/guvenli-okul-ihbar-qr.png" alt="Güvenli İhbar Hattı bildirim formuna götüren QR kod. Büyütmek için tıklayın.">
+                  <span class="home-qr-hint" aria-hidden="true">Büyüt</span>
+                </label>
+                <div class="home-qr-overlay" role="dialog" aria-modal="true" aria-label="Büyütülmüş QR kod">
+                  <label for="homeQrToggle" class="home-qr-backdrop" aria-label="Kapat"></label>
+                  <img class="home-qr-large" src="assets/qr/guvenli-okul-ihbar-qr.png" alt="Büyütülmüş Güvenli İhbar Hattı QR kodu">
+                </div>
               </div>
-              <p class="home-slogan">Birlikte koruruz,<br>Birlikte güçleniriz,<br>Birlikte güvendeyiz!</p>
-            </article>
-            <article class="home-card">
-              <div class="home-card-head home-head-green">
-                <svg class="home-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                <h2>GÜVENLİ İHBAR HATTI</h2>
-              </div>
-              <div class="home-hotline">
-                <a class="home-hotline-link" href="tel:+905428520021">
-                  <span class="home-hotline-icon">
-                    <svg class="home-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                  </span>
-                  <span class="home-hotline-text">
-                    <span class="home-hotline-label">İhbar hattı</span>
-                    <span class="home-hotline-number">0542 852 00 21</span>
-                  </span>
-                </a>
-                <img class="home-qr" src="assets/qr/guvenli-okul-ihbar-qr.png" alt="Güvenli İhbar Hattı bildirim formuna götüren QR kod">
-              </div>
-              <p class="home-hotline-foot">7/24 GİZLİ &bull; GÜVENLİ &bull; ETKİLİ</p>
-            </article>
-          </div>
+            </div>
+            <p class="home-hotline-foot">7/24 GİZLİ &bull; GÜVENLİ &bull; ETKİLİ</p>
+          </article>
         </div>
 
         <!-- 6: Acil durum uyarisi -->
