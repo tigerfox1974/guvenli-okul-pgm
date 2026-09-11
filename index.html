@@ -13,11 +13,11 @@
   <meta property="og:image" content="assets/images/og/og-image.svg">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="css/main.css?v=20260910-3">
+  <link rel="stylesheet" href="css/main.css?v=20260911-1">
 </head>
 <body>
   <header>
-    <div class="brand"><img class="mark" src="assets/images/icons/PolisLogoYeni.png" alt="KKTC Polis Genel Müdürlüğü logosu" width="42" height="42"><div>Polis Genel Müdürlüğü<br><span style="font-weight:400">Güvenli Okul Bilgi ve Bildirim Platformu</span></div></div>
+    <div class="brand"><img class="mark" src="assets/images/icons/PolisLogoYeni.png" alt="KKTC Polis Genel Müdürlüğü logosu" width="42" height="42"><div>Polis Genel Müdürlüğü<br><span class="brand-subtitle">Güvenli Okul Bilgi ve Bildirim Platformu</span></div></div>
     <button id="navToggle" class="nav-toggle" type="button" aria-label="Menüyü aç/kapat" aria-expanded="false" aria-controls="primaryNav">
       <span class="nav-toggle-bar"></span>
       <span class="nav-toggle-bar"></span>
@@ -77,7 +77,7 @@
               <option value="">İlçe seçiniz</option>
             </select>
           </label>
-          <label><span style="display:inline;">Okul * <span id="schoolCountText" class="field-meta" aria-live="polite"></span></span>
+          <label><span class="inline-label">Okul * <span id="schoolCountText" class="field-meta" aria-live="polite"></span></span>
             <select id="schoolSelect" required data-step="1" disabled>
               <option value="">Önce ilçe seçiniz</option>
             </select>
@@ -234,9 +234,9 @@
               <strong id="mapMode">Okul pinleri ve olay sayıları görünümü</strong>
             </div>
             <div id="map" class="map" aria-label="Leaflet KKTC okul güvenliği haritası"></div>
-            <div class="legend"><span><i class="dot blue"></i> Okul noktası</span><span><i class="heat-swatch"></i> Renkli bildirim yoğunluğu</span><span><i class="count-marker small" style="display:inline-grid;width:22px;height:22px;font-size:11px;border-width:2px">8</i> Okuldaki olay sayısı</span></div>
+            <div class="legend"><span><i class="dot blue"></i> Okul noktası</span><span><i class="heat-swatch"></i> Renkli bildirim yoğunluğu</span><span><i class="count-marker small legend-sample">8</i> Okuldaki olay sayısı</span></div>
           </div>
-          <div class="table-wrap" style="margin-top:18px;overflow:auto">
+          <div class="table-wrap admin-table-wrap">
             <table>
               <thead><tr><th>Okul</th><th>İlçe</th><th>Kategori</th><th>Bildirim</th><th>Durum Dağılımı</th></tr></thead>
               <tbody id="adminReportRows">
@@ -415,7 +415,7 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
-  <script type="module" src="js/app.js?v=20260910-7"></script>
+  <script type="module" src="js/app.js?v=20260911-1"></script>
 </body>
 </html>
 

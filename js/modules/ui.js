@@ -64,6 +64,22 @@ const RISK_BUCKETS = Object.freeze([
 ]);
 
 const CATEGORY_TO_BUCKET = createCategoryToBucketMap();
+const STATUS_ORDER = Object.freeze([
+  'Yeni',
+  'İnceleniyor',
+  'Aktarıldı',
+  'Sonuçlandı',
+  'Arşivlendi',
+  'Asılsız'
+]);
+const STATUS_META = Object.freeze({
+  Yeni: { className: 'is-new', shortLabel: 'Yeni', tooltipLabel: 'yeni' },
+  'İnceleniyor': { className: 'is-review', shortLabel: 'İnceleniyor', tooltipLabel: 'inceleniyor' },
+  Aktarıldı: { className: 'is-forwarded', shortLabel: 'Aktarıldı', tooltipLabel: 'aktarıldı' },
+  Sonuçlandı: { className: 'is-closed', shortLabel: 'Sonuçlandı', tooltipLabel: 'sonuçlandı' },
+  Arşivlendi: { className: 'is-archived', shortLabel: 'Arşivlendi', tooltipLabel: 'arşivlendi' },
+  Asılsız: { className: 'is-invalid', shortLabel: 'Asılsız', tooltipLabel: 'asılsız' }
+});
 
 let currentFilteredReports = [];
 let activeRiskBucket = 'all';
@@ -413,7 +429,7 @@ function renderReportTable(reports) {
   if (!tbody) return;
 
   if (reports.length === 0) {
-    tbody.innerHTML = '<tr><td class="empty-row" colspan="5">Henüz bildirim yok.</td></tr>';
+    tbody.innerHTML = '<tr><td class="empty-row" colspan="5">Filtrelere uygun bildirim bulunamadı.</td></tr>';
     renderDetailPanel([]);
     return;
   }
@@ -422,30 +438,48 @@ function renderReportTable(reports) {
 
   tbody.innerHTML = groupedReports
     .map(group => {
-      const statusSummary = formatStatusSummary(group.statusCounts);
+      const statusBadges = renderStatusBadges(group.statusCounts);
       return `
-        <tr data-school-id="${group.schoolId}" data-group-key="${group.key}">
+        <tr class="report-group-row" data-school-id="${group.schoolId}" data-group-key="${group.key}">
           <td>${escapeHtml(group.schoolName)}</td>
           <td>${escapeHtml(group.districtLabel)}</td>
           <td>${escapeHtml(group.category)}</td>
           <td>${group.count}</td>
-          <td>${escapeHtml(statusSummary)}</td>
+          <td>${statusBadges}</td>
         </tr>
       `;
     })
     .join('');
 
   tbody.querySelectorAll('tr[data-group-key]').forEach(row => {
-    row.style.cursor = 'pointer';
+    row.tabIndex = 0;
+    row.setAttribute('role', 'button');
+    row.setAttribute('aria-label', 'Detayları ve harita odağını aç');
+
     row.addEventListener('click', () => {
       const key = row.dataset.groupKey;
       const selectedGroup = groupedReports.find(group => group.key === key);
       if (!selectedGroup) return;
 
+      setActiveGroupRow(row, tbody);
       zoomToSchool(selectedGroup.schoolId);
       renderDetailPanel(selectedGroup.items, selectedGroup);
     });
+
+    row.addEventListener('keydown', event => {
+      if (event.key !== 'Enter' && event.key !== ' ') {
+        return;
+      }
+
+      event.preventDefault();
+      row.click();
+    });
   });
+
+  const firstRow = tbody.querySelector('tr[data-group-key]');
+  if (firstRow) {
+    setActiveGroupRow(firstRow, tbody);
+  }
 
   renderDetailPanel(groupedReports[0].items, groupedReports[0]);
 }
@@ -487,7 +521,7 @@ function renderRegionalRiskPanel(reports) {
     ? highlightItems
       .map(item => {
         return `
-          <button type="button" class="secondary" data-risk-district="${escapeHtml(item.district)}" data-risk-bucket="${escapeHtml(item.bucket)}">
+          <button type="button" class="secondary risk-focus-button" data-risk-district="${escapeHtml(item.district)}" data-risk-bucket="${escapeHtml(item.bucket)}">
             ${escapeHtml(getDistrictLabel(item.district))} - ${escapeHtml(item.bucketLabel)} (${item.count})
           </button>
         `;
@@ -533,10 +567,40 @@ function groupReports(reports) {
   });
 }
 
-function formatStatusSummary(statusCounts) {
-  return Object.entries(statusCounts)
-    .map(([status, count]) => `${status}: ${count}`)
-    .join(' | ');
+function renderStatusBadges(statusCounts) {
+  const knownEntries = STATUS_ORDER
+    .filter(status => Number(statusCounts[status]) > 0)
+    .map(status => [status, Number(statusCounts[status])]);
+
+  const unknownEntries = Object.entries(statusCounts)
+    .filter(([status, count]) => Number(count) > 0 && !STATUS_ORDER.includes(status))
+    .sort((left, right) => left[0].localeCompare(right[0], 'tr'));
+
+  const entries = [...knownEntries, ...unknownEntries];
+  if (entries.length === 0) {
+    return '<span class="hint">Durum bilgisi yok</span>';
+  }
+
+  return `<div class="status-badges">${entries
+    .map(([status, count]) => renderStatusBadge(status, count))
+    .join('')}</div>`;
+}
+
+function renderStatusBadge(status, count) {
+  const meta = STATUS_META[status] || {
+    className: 'is-unknown',
+    shortLabel: status,
+    tooltipLabel: status
+  };
+  const tooltip = `${count} ${meta.tooltipLabel}`;
+
+  return `<span class="status-pill ${meta.className}" title="${escapeHtml(tooltip)}" aria-label="${escapeHtml(tooltip)}">${count} ${escapeHtml(meta.shortLabel)}</span>`;
+}
+
+function setActiveGroupRow(activeRow, tbody) {
+  tbody.querySelectorAll('tr[data-group-key]').forEach(row => {
+    row.classList.toggle('is-active', row === activeRow);
+  });
 }
 
 function renderDetailPanel(items, group) {
@@ -561,10 +625,10 @@ function renderDetailPanel(items, group) {
   list.innerHTML = items
     .map(item => {
       return `
-        <article>
+        <article class="detail-item">
           <h3>${escapeHtml(item.title || 'Başlık yok')}</h3>
           <p>${escapeHtml(item.description || 'Açıklama girilmemiş.')}</p>
-          <p class="hint">Durum: ${escapeHtml(item.status || 'Belirsiz')} | Olay: ${escapeHtml(item.eventDate || '-')} | Kayıt: ${escapeHtml(formatDate(item.createdAt))}</p>
+          <p class="hint detail-meta">Durum: ${escapeHtml(item.status || 'Belirsiz')} | Olay: ${escapeHtml(item.eventDate || '-')} | Kayıt: ${escapeHtml(formatDate(item.createdAt))}</p>
         </article>
       `;
     })
@@ -669,16 +733,16 @@ function createRegionalRow(district) {
 
 function renderRiskDistrictButton(district, total) {
   const label = getDistrictLabel(district);
-  return `<button type="button" class="secondary" data-risk-district="${escapeHtml(district)}" data-risk-bucket="all">${escapeHtml(label)} (${total})</button>`;
+  return `<button type="button" class="secondary risk-chip" data-risk-district="${escapeHtml(district)}" data-risk-bucket="all">${escapeHtml(label)} (${total})</button>`;
 }
 
 function renderRiskCountButton(district, bucket, count) {
   if (count === 0) {
-    return '<span class="hint">0</span>';
+    return '<span class="hint risk-zero">0</span>';
   }
 
   const bucketLabel = RISK_BUCKETS.find(item => item.key === bucket)?.label || 'Kategori';
-  return `<button type="button" class="secondary" data-risk-district="${escapeHtml(district)}" data-risk-bucket="${escapeHtml(bucket)}">${escapeHtml(bucketLabel)}: ${count}</button>`;
+  return `<button type="button" class="secondary risk-chip" data-risk-district="${escapeHtml(district)}" data-risk-bucket="${escapeHtml(bucket)}">${escapeHtml(bucketLabel)}: ${count}</button>`;
 }
 
 function buildRiskHighlights(rows) {

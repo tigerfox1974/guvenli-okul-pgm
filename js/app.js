@@ -248,8 +248,8 @@ async function enableOperatorRuntime(options = { openAdminView: false }) {
 
   if (!operatorRuntime) {
     const [{ initUI }, { refreshMapAfterAdminVisible }] = await Promise.all([
-      import('./modules/ui.js?v=20260910-1'),
-      import('./modules/map.js?v=20260910-1')
+      import('./modules/ui.js'),
+      import('./modules/map.js')
     ]);
 
     operatorRuntime = {
