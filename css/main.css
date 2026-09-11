@@ -896,22 +896,26 @@ body.modal-open { overflow: hidden; }
 .home-anonymous-body {
   display: grid;
   justify-items: center;
+  justify-content: center;
   gap: 12px;
   padding: 16px 20px 20px;
   text-align: center;
 }
 
 .home-qr.home-anonymous-qr {
-  width: min(220px, 70vw);
+  width: min(220px, 100%);
+  max-width: 100%;
   height: auto;
   aspect-ratio: 1 / 1;
   object-fit: contain;
   padding: 10px;
+  box-sizing: border-box;
 }
 
-.home-anonymous-share {
-  width: min(340px, 100%);
-  max-width: min(320px, 78vw);
+.home-qr-share.home-anonymous-share {
+  width: 100%;
+  max-width: 320px;
+  box-sizing: border-box;
 }
 
 .home-purpose p { margin: 0; padding: 16px 20px; font-size: 15px; line-height: 1.75; color: #374151; }
