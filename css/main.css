@@ -837,13 +837,18 @@ body.modal-open { overflow: hidden; }
 
 .home-body { max-width: 1220px; margin: 0 auto; padding: 32px 24px; }
 
-/* 2-5: Hero gorseli ve yan yana uc kart */
+/* 2-5: Hero gorseli ve yan yana dort kart */
 .home-cards-row {
   margin-top: 20px;
-  display: grid;
-  gap: 20px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   align-items: stretch;
+  gap: 20px;
+}
+.home-cards-row > .home-card {
+  flex: 0 0 calc(25% - 15px);
+  box-sizing: border-box;
 }
 
 .home-card {
@@ -888,10 +893,6 @@ body.modal-open { overflow: hidden; }
 .home-head-navy { background: #14213d; }
 .home-head-green { background: #047857; }
 
-.home-anonymous {
-  grid-column: 1 / -1;
-}
-
 .home-anonymous-body {
   display: grid;
   justify-items: center;
@@ -900,16 +901,10 @@ body.modal-open { overflow: hidden; }
   text-align: center;
 }
 
-.home-anonymous-text {
-  margin: 0;
-  color: #374151;
-  font-size: 15px;
-  line-height: 1.6;
-}
-
-.home-anonymous-qr {
-  width: min(180px, 50vw);
+.home-qr.home-anonymous-qr {
+  width: min(220px, 70vw);
   height: auto;
+  aspect-ratio: 1 / 1;
   object-fit: contain;
   padding: 10px;
 }
@@ -917,14 +912,6 @@ body.modal-open { overflow: hidden; }
 .home-anonymous-share {
   width: min(340px, 100%);
   max-width: min(320px, 78vw);
-}
-
-.home-anonymous-hint {
-  margin: 0;
-  color: #334155;
-  font-size: 13px;
-  line-height: 1.5;
-  font-weight: 600;
 }
 
 .home-purpose p { margin: 0; padding: 16px 20px; font-size: 15px; line-height: 1.75; color: #374151; }
@@ -1192,7 +1179,7 @@ body.modal-open { overflow: hidden; }
 .home-legal-body p:last-child { margin-bottom: 0; }
 
 @media (max-width: 1040px) {
-  .home-cards-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .home-cards-row > .home-card { flex: 0 0 calc(50% - 10px); }
   .home-topics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .home-bottom-grid { grid-template-columns: 1fr; }
   .home-awareness-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -1207,10 +1194,7 @@ body.modal-open { overflow: hidden; }
   .home-awareness-list { grid-template-columns: 1fr; }
   .home-closing-main { font-size: 24px; }
   .home-alert p { font-size: 16px; }
-  .home-cards-row { grid-template-columns: 1fr; }
-  .home-anonymous {
-    grid-column: auto;
-  }
+  .home-cards-row > .home-card { flex: 0 0 100%; }
   .home-legal-summary { padding: 14px 16px; }
   .home-legal-body { padding: 16px; }
 }
