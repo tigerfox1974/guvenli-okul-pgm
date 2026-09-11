@@ -33,9 +33,40 @@ document.addEventListener('DOMContentLoaded', function() {
   initMobileNav();
   initAdminAuthEventHandlers();
   void applyAuthStateOnLoad();
+  initHomeWhatsappShare();
 
   console.log('Güvenli Okul PGM başlatıldı.');
 });
+
+function getPublicHomePageUrl() {
+  const path = window.location.pathname || '/';
+  if (!path || path === '/') {
+    return `${window.location.origin}/`;
+  }
+
+  const normalizedPath = path.endsWith('/') ? path : `${path.substring(0, path.lastIndexOf('/') + 1)}`;
+
+  return `${window.location.origin}${normalizedPath}`;
+}
+
+function initHomeWhatsappShare() {
+  const shareButton = document.getElementById('homeWhatsappShareButton');
+  if (!shareButton) return;
+
+  const homePageUrl = getPublicHomePageUrl();
+  const reportPageUrl = `${homePageUrl}#ihbar`;
+  const shareMessage = [
+    'Güvenli Okul Bilgi ve Bildirim Platformu için iki kritik bağlantı:',
+    '',
+    `Ana Sayfa: ${homePageUrl}`,
+    'Okullar için bilgilendirme ve güvenlik farkındalığı platformu.',
+    '',
+    `Anonim Online İhbar Hattı: ${reportPageUrl}`,
+    'Bu bağlantı ile doğrudan anonim ihbar formuna geçebilirsiniz.'
+  ].join('\n');
+
+  shareButton.href = `https://wa.me/?text=${encodeURIComponent(shareMessage)}`;
+}
 
 function initAdminAuthEventHandlers() {
   document.addEventListener('pgm:admin-auth-invalid', () => {

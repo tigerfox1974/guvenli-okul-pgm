@@ -957,6 +957,36 @@ body.modal-open { overflow: hidden; }
 .home-qr-toggle:focus-visible ~ .home-qr-overlay { display: grid; }
 .home-qr-toggle:focus-visible ~ .home-qr-trigger { outline: 2px solid var(--blue); outline-offset: 2px; }
 
+.home-qr-overlay-content {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+}
+
+.home-qr-share {
+  width: min(320px, 78vw);
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid #047857;
+  background: #25d366;
+  color: #ffffff;
+  text-align: center;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.2;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25);
+}
+
+.home-qr-share:hover { background: #1fb44f; }
+
+.home-qr-share:focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: 2px;
+}
+
 /* NOT: Masaüstü hover ile açma bilinçli olarak kaldırıldı. Full-screen overlay
    (position:fixed; inset:0) açıldığında imlecin altındaki element değiştiği için
    hover durumu kararsız kalıp modal sürekli aç/kapa (flicker) yapıyordu.
