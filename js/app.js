@@ -24,8 +24,8 @@ const DEMO_ACCOUNTS = Object.freeze([
   },
   {
     role: 'supervisor',
-    username: 'demo.supervisor',
-    password: 'PGM-Supervisor-2026',
+    username: 'demo.admin',
+    password: 'admin2026',
     roleLabel: 'PGM Süpervizör'
   }
 ]);
