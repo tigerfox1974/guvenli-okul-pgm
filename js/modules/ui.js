@@ -868,32 +868,62 @@ async function renderGroupDetail(group) {
       return;
     }
 
-    renderDetailPanel(detailItems.length > 0 ? detailItems : localItems, group);
+    const itemsToRender = detailItems.length > 0 ? detailItems : localItems;
+    const truncated = groupCount > 0 && itemsToRender.length < groupCount;
+
+    renderDetailPanel(itemsToRender, group, { truncated });
   } catch {
     if (requestId !== detailRequestId) {
       return;
     }
 
-    renderDetailPanel(localItems, group);
+    renderDetailPanel(localItems, group, {
+      truncated: groupCount > 0 && localItems.length < groupCount
+    });
   }
 }
 
 async function fetchGroupDetailItems(group) {
   const categoryKey = String(group.categoryKey || '');
   const schoolId = Number(group.schoolId) || 0;
+  const expectedCount = Number(group.count) || 0;
 
-  const response = await fetchAdminReports({
-    filters: {
-      ...getFilterValues(),
-      school: schoolId > 0 ? String(schoolId) : 'all',
-      category: categoryKey
-    },
-    page: 1,
-    pageSize: ADMIN_PAGE_SIZE
-  });
+  const filters = {
+    ...getFilterValues(),
+    school: schoolId > 0 ? String(schoolId) : 'all',
+    category: categoryKey
+  };
 
-  return extractReportItems(response)
-    .filter(item => Number(item.schoolId) === schoolId && String(item.category || '') === categoryKey);
+  const collected = [];
+  let page = 1;
+  let hasNext = true;
+
+  while (hasNext) {
+    const response = await fetchAdminReports({
+      filters,
+      page,
+      pageSize: ADMIN_PAGE_SIZE
+    });
+
+    const items = extractReportItems(response);
+    if (!Array.isArray(items) || items.length === 0) {
+      break;
+    }
+
+    collected.push(...items.filter(item => (
+      Number(item.schoolId) === schoolId && String(item.category || '') === categoryKey
+    )));
+
+    hasNext = Boolean(response && response.hasNext);
+
+    if (expectedCount > 0 && collected.length >= expectedCount) {
+      break;
+    }
+
+    page += 1;
+  }
+
+  return collected;
 }
 
 function renderRegionalRiskPanel(regionalEntries, totalRecords = 0) {
@@ -1025,7 +1055,7 @@ function setActiveGroupRow(activeRow, tbody) {
 }
 
 function renderDetailPanel(items, group, options = {}) {
-  const { loading = false } = options;
+  const { loading = false, truncated = false } = options;
   const intro = document.getElementById('detailIntro');
   const list = document.getElementById('detailList');
   const mapButton = document.getElementById('detailMapButton');
@@ -1062,7 +1092,11 @@ function renderDetailPanel(items, group, options = {}) {
     return;
   }
 
-  list.innerHTML = detailItems
+  const truncationNotice = truncated
+    ? `<div class="empty-row">Sunucudan yalnızca ${detailItems.length} kayıt alınabildi; grubun toplam ${group.count} kaydının tamamı listelenemedi.</div>`
+    : '';
+
+  list.innerHTML = truncationNotice + detailItems
     .map(item => {
       return `
         <article class="detail-item">

@@ -71,6 +71,8 @@ module.exports = async (req, res) => {
     return;
   }
 
+  await logSanitizationWarnings(config, sanitized, { routePath, userAgent, ipHash });
+
   const fingerprintSource = buildFingerprintSource(userAgent, sanitized.row.client_snapshot);
   const fingerprintHash = buildFingerprintKey(fingerprintSource, config.hashSalt);
 
@@ -269,8 +271,18 @@ function sanitizeIncomingRow(rawRow, canonicalData) {
     return { ok: false, reason: 'district_school_mismatch' };
   }
 
+  // Istemci tarafindan gelen okul etiketine guvenilmez; kanonik ad, kabul edilen
+  // school_id'den turetilir (satir asagida `canonicalSchool.name` olarak yazilir).
+  // Eski veya yerellesmis bir etiket satiri reddetmek icin kullanilmaz; yalnizca
+  // gozlemlenebilirlik icin kayit altina alinir.
+  const warnings = [];
   if (normalizeComparableText(schoolName) !== normalizeComparableText(canonicalSchool.name)) {
-    return { ok: false, reason: 'school_name_mismatch' };
+    warnings.push({
+      code: 'school_name_mismatch',
+      schoolId,
+      clientSchoolName: schoolName,
+      canonicalSchoolName: canonicalSchool.name
+    });
   }
 
   const linkMarkerCount = countLinkMarkers(title) + countLinkMarkers(description);
@@ -302,7 +314,7 @@ function sanitizeIncomingRow(rawRow, canonicalData) {
     updated_at: updatedAt
   };
 
-  return { ok: true, row };
+  return { ok: true, row, warnings };
 }
 
 async function loadCanonicalData() {
@@ -555,6 +567,30 @@ async function tryLogSecurityEvent(config, event) {
     await logSecurityEvent(config, event);
   } catch {
     // Logging failures must never block report processing.
+  }
+}
+
+async function logSanitizationWarnings(config, sanitized, context) {
+  const warnings = Array.isArray(sanitized && sanitized.warnings) ? sanitized.warnings : [];
+  if (warnings.length === 0) {
+    return;
+  }
+
+  for (const warning of warnings) {
+    await tryLogSecurityEvent(config, {
+      eventType: warning.code || 'sanitization_warning',
+      reason: 'school_name_replaced_with_canonical',
+      route: context.routePath,
+      userAgent: context.userAgent,
+      ipHash: context.ipHash,
+      reportId: sanitized.row && sanitized.row.id,
+      metadata: {
+        stage: 'sanitize_row',
+        school_id: warning.schoolId,
+        client_school_name: warning.clientSchoolName,
+        canonical_school_name: warning.canonicalSchoolName
+      }
+    });
   }
 }
 
