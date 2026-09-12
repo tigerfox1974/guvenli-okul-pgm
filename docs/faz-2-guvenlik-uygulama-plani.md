@@ -38,7 +38,7 @@ Paket B'de devreye alinan kontroller:
 
 1. Tarayicidan dogrudan tablo yazimi yerine `/api/report` sunucu endpoint modeli
 2. Sunucu tarafinda payload dogrulamasi
-3. Sunucu tarafinda IP ve fingerprint tabanli hiz limiti (10 dk penceresi)
+3. Supabase tabanli merkezi IP ve fingerprint hiz limiti (10 dk penceresi)
 4. Sunucu tarafinda duplicate icerik kontrolu (15 dk penceresi)
 5. Service role anahtari sadece sunucu ortaminda kullanilacak sekilde ayrim
 
@@ -81,6 +81,8 @@ Hedef: Tarayicidan dogrudan tabloya yazimi kaldirip denetimli endpoint modeline 
 - IP: 10 dakikada en fazla 5 istek
 - Fingerprint: 10 dakikada en fazla 3 istek
 - Limit asiminda 429 donulur.
+- Limit kararinin Vercel fonksiyon belleginde degil, Supabase uzerindeki atomik sayaç fonksiyonunda tutulmasi gerekir.
+- Gerekli Supabase kurulumu: `docs/supabase-report-rate-limits.sql`
 
 3. Sunucu tarafi dedupe
 - Icerik ozetine gore tekrar kayit engellenir.
@@ -143,6 +145,13 @@ Faz 2 tamamlandi sayilmasi icin:
 
 Paket C dagitimi sonrasi `docs/supabase-package-c-security-events.sql` scripti Supabase'te calistirilir ve canli ortamda olay kaydi dogrulanir.
 
+Kalici hiz limiti icin `docs/supabase-report-rate-limits.sql` scripti Supabase SQL Editor'de calistirilir. Bu script:
+
+1. `report_rate_limits` merkezi sayaç tablosunu olusturur.
+2. `consume_report_rate_limit` atomik karar fonksiyonunu olusturur.
+3. Public, anon ve authenticated rollerinin tabloya dogrudan erisimini kapatir.
+4. API'nin service role anahtariyla RPC uzerinden hiz limiti karari almasini saglar.
+
 ## 10. Faz 2 Kapanis Raporu
 
 Durum: TAMAMLANDI
@@ -169,3 +178,25 @@ Genel sonuc:
 
 1. Paket A, Paket B ve Paket C beklenen guvenlik davranisini canli ortamda vermistir.
 2. Faz 2 teslimati kapanis kriterlerini saglayarak tamamlanmistir.
+
+## 11. Ek Sertlestirme - Kalici Hiz Limiti
+
+Durum: UYGULANDI
+
+Eski davranis:
+
+1. IP ve fingerprint hiz limiti Vercel fonksiyon bellegindeki gecici `Map` kayitlariyla tutuluyordu.
+2. Farkli Vercel fonksiyon instance'lari ayni bellegi paylasmadigi icin limit tutarliligi garanti degildi.
+
+Yeni davranis:
+
+1. `/api/report` hiz limiti kararini Supabase RPC uzerinden alir.
+2. IP ve fingerprint icin ayri bucket anahtarlari kullanilir.
+3. Limit penceresi ve `Retry-After` degeri Supabase'deki ayni merkezi kayittan hesaplanir.
+4. Limit asimi olaylari eskisi gibi `security_events` tablosuna yazilmaya devam eder.
+
+Kurulum notu:
+
+1. Bu degisikligin canli ortamda calismasi icin `docs/supabase-report-rate-limits.sql` scripti Supabase SQL Editor'de bir kez calistirilmelidir.
+2. API varsayilan RPC adi olarak `consume_report_rate_limit` kullanir.
+3. Gerekirse RPC adi `SUPABASE_RATE_LIMIT_RPC` ortam degiskeniyle degistirilebilir.
