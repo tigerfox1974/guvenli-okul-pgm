@@ -1070,11 +1070,17 @@ function renderRiskDistrictCard(row) {
   return `
     <article class="risk-card" aria-label="${escapeHtml(districtLabel)} ilçesi toplam ${row.total} bildirim">
       ${renderRiskDistrictButton(row.district, row.total)}
-      ${RISK_BUCKETS.map(bucket => {
-        const count = row.bucketCounts[bucket.key] || 0;
-        const intensity = row.total > 0 ? count / row.total : 0;
-        return renderRiskCountButton(row.district, bucket.key, count, intensity, { includeLabel: true });
-      }).join('')}
+      ${RISK_BUCKETS
+        .map(bucket => ({ bucket, count: row.bucketCounts[bucket.key] || 0 }))
+        .filter(item => item.count > 0)
+        .map(({ bucket, count }) => renderRiskCountButton(
+          row.district,
+          bucket.key,
+          count,
+          row.total > 0 ? count / row.total : 0,
+          { includeLabel: true }
+        ))
+        .join('')}
     </article>
   `;
 }
