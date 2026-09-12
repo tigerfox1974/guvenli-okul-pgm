@@ -9,9 +9,7 @@ const MAX_DESCRIPTION_LENGTH = 2000;
 const MAX_LINK_MARKER_COUNT = 3;
 const DEFAULT_TIMEOUT_MS = 10000;
 const DEFAULT_SECURITY_EVENTS_TABLE = 'security_events';
-
-const ipRateBuckets = new Map();
-const fingerprintRateBuckets = new Map();
+const DEFAULT_RATE_LIMIT_RPC = 'consume_report_rate_limit';
 let canonicalDataPromise = null;
 
 module.exports = async (req, res) => {
@@ -36,7 +34,6 @@ module.exports = async (req, res) => {
   const requestIp = extractRequestIp(req);
   const userAgent = normalizeText(req.headers['user-agent'] || '', 300) || 'unknown';
   const routePath = normalizeText(req.url || '/api/report', 240) || '/api/report';
-  const nowMs = Date.now();
   const ipHash = buildIpKey(requestIp, config.hashSalt);
 
   let payload;
@@ -74,56 +71,80 @@ module.exports = async (req, res) => {
     return;
   }
 
-  cleanupRateBuckets(ipRateBuckets, nowMs, RATE_LIMIT_WINDOW_MS);
-  cleanupRateBuckets(fingerprintRateBuckets, nowMs, RATE_LIMIT_WINDOW_MS);
-
-  const ipDecision = consumeRateToken(ipRateBuckets, ipHash, nowMs, RATE_LIMIT_WINDOW_MS, RATE_LIMIT_MAX_PER_IP);
-  if (!ipDecision.allowed) {
-    await tryLogSecurityEvent(config, {
-      eventType: 'rate_limit_block',
-      reason: 'rate_limit_ip',
-      route: routePath,
-      userAgent,
-      ipHash,
-      reportId: sanitized.row.id,
-      metadata: {
-        retryAfterSeconds: ipDecision.retryAfterSeconds,
-        windowMs: RATE_LIMIT_WINDOW_MS,
-        maxPerIp: RATE_LIMIT_MAX_PER_IP
-      }
-    });
-    res.setHeader('Retry-After', String(ipDecision.retryAfterSeconds));
-    res.status(429).json({ error: 'rate_limit_ip', message: 'Kisa surede cok fazla gonderim yapildi. Lutfen daha sonra tekrar deneyin.' });
-    return;
-  }
-
   const fingerprintSource = buildFingerprintSource(userAgent, sanitized.row.client_snapshot);
   const fingerprintHash = buildFingerprintKey(fingerprintSource, config.hashSalt);
-  const fingerprintDecision = consumeRateToken(
-    fingerprintRateBuckets,
-    fingerprintHash,
-    nowMs,
-    RATE_LIMIT_WINDOW_MS,
-    RATE_LIMIT_MAX_PER_FINGERPRINT
-  );
 
-  if (!fingerprintDecision.allowed) {
+  try {
+    const ipDecision = await consumeSharedRateLimit(config, {
+      scope: 'ip',
+      key: ipHash,
+      windowMs: RATE_LIMIT_WINDOW_MS,
+      maxCount: RATE_LIMIT_MAX_PER_IP
+    });
+    if (!ipDecision.allowed) {
+      await tryLogSecurityEvent(config, {
+        eventType: 'rate_limit_block',
+        reason: 'rate_limit_ip',
+        route: routePath,
+        userAgent,
+        ipHash,
+        fingerprintHash,
+        reportId: sanitized.row.id,
+        metadata: {
+          retryAfterSeconds: ipDecision.retryAfterSeconds,
+          windowMs: RATE_LIMIT_WINDOW_MS,
+          maxPerIp: RATE_LIMIT_MAX_PER_IP,
+          store: 'supabase'
+        }
+      });
+      res.setHeader('Retry-After', String(ipDecision.retryAfterSeconds));
+      res.status(429).json({ error: 'rate_limit_ip', message: 'Kisa surede cok fazla gonderim yapildi. Lutfen daha sonra tekrar deneyin.' });
+      return;
+    }
+
+    const fingerprintDecision = await consumeSharedRateLimit(config, {
+      scope: 'fingerprint',
+      key: fingerprintHash,
+      windowMs: RATE_LIMIT_WINDOW_MS,
+      maxCount: RATE_LIMIT_MAX_PER_FINGERPRINT
+    });
+
+    if (!fingerprintDecision.allowed) {
+      await tryLogSecurityEvent(config, {
+        eventType: 'rate_limit_block',
+        reason: 'rate_limit_fingerprint',
+        route: routePath,
+        userAgent,
+        ipHash,
+        fingerprintHash,
+        reportId: sanitized.row.id,
+        metadata: {
+          retryAfterSeconds: fingerprintDecision.retryAfterSeconds,
+          windowMs: RATE_LIMIT_WINDOW_MS,
+          maxPerFingerprint: RATE_LIMIT_MAX_PER_FINGERPRINT,
+          store: 'supabase'
+        }
+      });
+      res.setHeader('Retry-After', String(fingerprintDecision.retryAfterSeconds));
+      res.status(429).json({ error: 'rate_limit_fingerprint', message: 'Kisa surede tekrarlayan gonderim algilandi. Lutfen daha sonra tekrar deneyin.' });
+      return;
+    }
+  } catch (error) {
     await tryLogSecurityEvent(config, {
-      eventType: 'rate_limit_block',
-      reason: 'rate_limit_fingerprint',
+      eventType: 'submit_error',
+      reason: 'rate_limit_check_failed',
       route: routePath,
       userAgent,
       ipHash,
       fingerprintHash,
       reportId: sanitized.row.id,
       metadata: {
-        retryAfterSeconds: fingerprintDecision.retryAfterSeconds,
-        windowMs: RATE_LIMIT_WINDOW_MS,
-        maxPerFingerprint: RATE_LIMIT_MAX_PER_FINGERPRINT
+        status: error && Number.isFinite(error.status) ? error.status : null
       }
     });
-    res.setHeader('Retry-After', String(fingerprintDecision.retryAfterSeconds));
-    res.status(429).json({ error: 'rate_limit_fingerprint', message: 'Kisa surede tekrarlayan gonderim algilandi. Lutfen daha sonra tekrar deneyin.' });
+
+    const status = error && Number.isFinite(error.status) ? error.status : 500;
+    res.status(status).json({ error: 'submit_failed', message: 'rate_limit_check_failed' });
     return;
   }
 
@@ -180,6 +201,7 @@ function getServerConfig() {
   const schema = String(process.env.SUPABASE_SCHEMA || 'public').trim() || 'public';
   const table = String(process.env.SUPABASE_REPORTS_TABLE || 'anonymous_reports').trim() || 'anonymous_reports';
   const securityEventsTable = String(process.env.SUPABASE_SECURITY_EVENTS_TABLE || DEFAULT_SECURITY_EVENTS_TABLE).trim() || DEFAULT_SECURITY_EVENTS_TABLE;
+  const rateLimitRpc = String(process.env.SUPABASE_RATE_LIMIT_RPC || DEFAULT_RATE_LIMIT_RPC).trim() || DEFAULT_RATE_LIMIT_RPC;
   const hashSalt = String(process.env.REPORT_SECURITY_SALT || process.env.VERCEL_URL || 'pgm-default-salt').trim();
   const timeoutMs = Number(process.env.REPORT_API_TIMEOUT_MS || DEFAULT_TIMEOUT_MS);
 
@@ -192,6 +214,7 @@ function getServerConfig() {
     schema,
     table,
     securityEventsTable,
+    rateLimitRpc,
     hashSalt,
     timeoutMs: Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : DEFAULT_TIMEOUT_MS
   };
@@ -407,40 +430,6 @@ function createSha256(value) {
   return crypto.createHash('sha256').update(String(value || '')).digest('hex');
 }
 
-function cleanupRateBuckets(bucket, nowMs, windowMs) {
-  for (const [key, timestamps] of bucket.entries()) {
-    const valid = timestamps.filter(timestamp => nowMs - timestamp <= windowMs);
-    if (valid.length === 0) {
-      bucket.delete(key);
-      continue;
-    }
-
-    bucket.set(key, valid);
-  }
-}
-
-function consumeRateToken(bucket, key, nowMs, windowMs, maxCount) {
-  const previous = bucket.get(key) || [];
-  const valid = previous.filter(timestamp => nowMs - timestamp <= windowMs);
-
-  if (valid.length >= maxCount) {
-    const oldestInWindow = valid[0];
-    const retryAfterMs = Math.max(windowMs - (nowMs - oldestInWindow), 1000);
-    return {
-      allowed: false,
-      retryAfterSeconds: Math.ceil(retryAfterMs / 1000)
-    };
-  }
-
-  valid.push(nowMs);
-  bucket.set(key, valid);
-
-  return {
-    allowed: true,
-    retryAfterSeconds: 0
-  };
-}
-
 async function hasRecentDuplicateSubmission(config, row) {
   const sinceIso = new Date(Date.now() - DUPLICATE_WINDOW_MS).toISOString();
   const endpoint = buildSupabaseEndpoint(config);
@@ -460,6 +449,44 @@ async function hasRecentDuplicateSubmission(config, row) {
 
   const data = await response.json();
   return Array.isArray(data) && data.length > 0;
+}
+
+async function consumeSharedRateLimit(config, options) {
+  const endpoint = buildSupabaseRpcEndpoint(config, config.rateLimitRpc);
+  const windowSeconds = Math.max(1, Math.ceil(Number(options.windowMs || 0) / 1000));
+  const maxCount = Math.max(1, Number(options.maxCount || 0));
+  const scope = normalizeText(options.scope, 40);
+  const key = normalizeText(options.key, 160);
+  const bucketKey = `${scope}:${key}`;
+
+  const response = await fetchWithTimeout(endpoint, {
+    method: 'POST',
+    headers: buildSupabaseHeaders(config),
+    body: JSON.stringify({
+      p_bucket_key: bucketKey,
+      p_scope: scope,
+      p_window_seconds: windowSeconds,
+      p_max_count: maxCount
+    })
+  }, config.timeoutMs);
+
+  if (!response.ok) {
+    const details = await safeReadResponseText(response);
+    throw buildRequestError(response.status, `rate_limit_check_failed: ${details}`);
+  }
+
+  const payload = await response.json();
+  const row = Array.isArray(payload) ? payload[0] : payload;
+  if (!row || typeof row !== 'object') {
+    throw buildRequestError(500, 'rate_limit_check_failed: empty_response');
+  }
+
+  return {
+    allowed: Boolean(row.allowed),
+    retryAfterSeconds: Math.max(0, Number(row.retry_after_seconds) || 0),
+    requestCount: Math.max(0, Number(row.request_count) || 0),
+    resetAt: normalizeNullableText(row.reset_at, 80)
+  };
 }
 
 async function insertReport(config, row) {
@@ -563,6 +590,11 @@ function sanitizeEventMetadata(metadata) {
 function buildSupabaseEndpoint(config, tableName = config.table) {
   const normalizedTableName = String(tableName || '').trim() || config.table;
   return `${config.baseUrl}/rest/v1/${encodeURIComponent(normalizedTableName)}`;
+}
+
+function buildSupabaseRpcEndpoint(config, functionName) {
+  const normalizedName = String(functionName || '').trim();
+  return `${config.baseUrl}/rest/v1/rpc/${encodeURIComponent(normalizedName)}`;
 }
 
 function buildSupabaseHeaders(config, extraHeaders = {}) {
