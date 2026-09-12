@@ -924,13 +924,6 @@ body.modal-open { overflow: hidden; }
 
 .home-card-action-navy:hover { background: #0f172a; }
 
-.home-card-action-red {
-  border-color: #991b1b;
-  background: #b91c1c;
-}
-
-.home-card-action-red:hover { background: #991b1b; }
-
 .home-card-action-green {
   border-color: #065f46;
   background: #047857;
@@ -985,9 +978,18 @@ body.modal-open { overflow: hidden; }
   border-radius: 10px;
   background: #fef2f2;
   text-decoration: none;
-  transition: background 0.15s ease;
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
-.home-hotline-link:hover { background: #fee2e2; }
+.home-hotline-link:hover {
+  transform: translateY(-1px);
+  background: #fee2e2;
+  box-shadow: 0 14px 22px rgba(15, 23, 42, 0.16);
+}
+.home-hotline-link:focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: 2px;
+}
 .home-hotline-icon {
   width: 44px;
   height: 44px;
@@ -1064,7 +1066,8 @@ body.modal-open { overflow: hidden; }
 
 @media (prefers-reduced-motion: reduce) {
   .home-qr-hint,
-  .home-card-action { transition: none; }
+  .home-card-action,
+  .home-hotline-link { transition: none; }
   .home-qr-backdrop { backdrop-filter: none; }
   .home-legal:not([open]) .home-legal-chevron svg { animation: none; }
 }
