@@ -1,309 +1,413 @@
-# Güvenli Okul PGM
+# 🏫 Güvenli Okul Bilgi ve Bildirim Platformu
 
-KKTC genelindeki okullarda güvenlik sorunlarının anonim olarak bildirilmesi, PGM panelinde harita, ısı haritası ve kategori bazlı analizlerle takip edilmesi için geliştirilen Güvenli Okul web projesi.
+<div align="center">
 
-## Amaç
+**KKTC Polis Genel Müdürlüğü & POLVAK İş Birliği ile**
 
-Güvenli Okul, öğrenciler, veliler, öğretmenler, okul personeli ve okul çevresindeki vatandaşların güvenlik risklerini kolay, sade ve anonim şekilde bildirebilmesini sağlar. Proje, Polis Genel Müdürlüğü bünyesinde gelen bildirimlerin merkezi olarak takip edilmesi, sınıflandırılması ve harita üzerinden analiz edilmesi amacıyla tasarlanmıştır.
+[![Vercel](https://img.shields.io/badge/Deploy-Vercel-black?style=flat-square&logo=vercel)](https://guvenli-okul-pgm.vercel.app)
+[![Supabase](https://img.shields.io/badge/Database-Supabase-3ECF8E?style=flat-square&logo=supabase)](https://supabase.com)
+[![Leaflet](https://img.shields.io/badge/Maps-Leaflet-199900?style=flat-square&logo=leaflet)](https://leafletjs.com)
+[![Playwright](https://img.shields.io/badge/Tests-Playwright-45ba4b?style=flat-square&logo=playwright)](https://playwright.dev)
 
-## İlk Demo Kapsamı
+*Güvenli Yarınlar, Güçlü Nesiller*
 
-- Halka açık tanıtım sayfası
-- Anonim güvenlik bildirimi formu
-- Bildirim sayfasına girişte 5 saniyelik acil durum telefon yönlendirme uyarısı
-- İlçe seçimine göre filtrelenen gerçek okul listesi
-- Fotoğraf veya dosya ekleme alanı
-- PGM yönetim paneli tasarımı
-- KKTC haritası üzerinde okul noktaları
-- Kategori ve olay sayısına göre ısı haritası görünümü
-- Bildirim durumu takibi
-- Kurumsal raporlama temeli
+</div>
 
-## Guncel Surum Notu
+---
 
-- 2026-09-11 panel gelistirmeleri (Faz 0-3): [docs/surum-notu-2026-09-11-panel-faz3.md](docs/surum-notu-2026-09-11-panel-faz3.md)
+## 📋 İçindekiler
 
-## Okul Seçimi
+- [Proje Hakkında](#-proje-hakkında)
+- [Özellikler](#-özellikler)
+- [Teknolojiler](#-teknolojiler)
+- [Klasör Yapısı](#-klasör-yapısı)
+- [Kurulum ve Çalıştırma](#-kurulum-ve-çalıştırma)
+- [Supabase Entegrasyonu](#-supabase-entegrasyonu)
+- [Test](#-test)
+- [Vercel Deploy](#-vercel-deploy)
+- [Acil Durum Politikası](#-acil-durum-politikası)
+- [Sürüm Notları](#-sürüm-notları)
 
-Kullanıcı önce ilçeyi seçer. Okul alanında yalnızca seçilen ilçeye bağlı okullar listelenir. İlçe seçilmeden tüm okullar gösterilmez.
+---
 
-## Acil Durum Politikası
+## 🎯 Proje Hakkında
 
-Bu sistem acil olay bildirimi almak için kullanılmaz. Devam eden kavga, yaralanma, silah, yangın, ciddi tehdit veya anlık tehlike gibi durumlar web formu üzerinden alınmamalıdır.
+**Güvenli Okul**, KKTC genelindeki ilkokul, ortaokul ve lise düzeyindeki tüm okullarda güvenlik sorunlarının **anonim** olarak bildirilmesini ve Polis Genel Müdürlüğü (PGM) bünyesinde merkezi olarak takip edilmesini sağlayan web tabanlı bir platformdur.
 
-Bildirim sayfasına girildiğinde kullanıcıya 5 saniyelik zorunlu uyarı gösterilir. Sayım tamamlandıktan sonra yalnızca acil olmayan okul güvenliği bildirimi yapılmasına izin verilir.
+### Amaç
 
-Acil durumlar derhal 155 Polis İmdat veya 112 Acil Çağrı Merkezi telefon hattına bildirilmelidir.
+- 🎓 Öğrenciler, veliler, öğretmenler ve okul çevresindeki vatandaşların güvenlik risklerini **kolay, sade ve anonim** şekilde bildirmesi
+- 🗺️ Bildirimlerin **harita üzerinden analiz** edilmesi ve risk bölgelerinin belirlenmesi
+- 📊 Kategori bazlı sınıflandırma ve **ısı haritası** görselleştirmesi ile önceliklendirme
+- 🔒 Merkezi takip sistemi ile **önleyici tedbirlerin** koordineli alınması
 
-## Çalıştırma
+---
 
-Bu ilk sürüm bağımsız statik demo olarak hazırlanmıştır. `index.html` dosyası tarayıcıda açılarak incelenebilir.
+## ✨ Özellikler
 
-Supabase entegrasyonu test edilirken `file://` yerine yerel HTTP sunucu ile açmanız önerilir.
+### 👥 Herkese Açık Arayüz
 
-Örnek (Python yüklüyse):
+| Özellik | Açıklama |
+|---------|----------|
+| **Tanıtım Sayfası** | Proje hakkında bilgilendirme, güvenlik kategorileri ve kullanım kılavuzu |
+| **Anonim Bildirim Formu** | Kimlik bilgisi gerektirmeyen, güvenli bildirim sistemi |
+| **Okul Seçimi** | İlçeye göre filtrelenen gerçek okul listesi (koordinatlı) |
+| **Acil Durum Uyarısı** | Form girişinde 5 saniyelik zorunlu telefon yönlendirme ekranı |
+| **WhatsApp Paylaşımı** | Platformu sosyal medyada paylaşma imkanı |
+| **QR Kod Erişimi** | Hızlı mobil erişim için QR kod desteği |
 
-1. Terminalde proje klasörüne gidin.
-2. `python -m http.server 5500` komutunu çalıştırın.
-3. Tarayıcıdan `http://localhost:5500` adresine gidin.
+### 🔐 PGM Yönetim Paneli
 
-## Smoke Testleri (Salt Okunur)
+| Özellik | Açıklama |
+|---------|----------|
+| **Rol Tabanlı Kimlik Doğrulama** | Yetkili kullanıcı girişi (Operator, Supervisor, Admin) |
+| **Interaktif Harita** | KKTC haritası üzerinde okul noktaları ve bildirim lokasyonları |
+| **Isı Haritası** | Kategori, olay sayısı ve tarih aralığına göre risk yoğunluğu görselleştirmesi |
+| **Filtreleme** | İlçe, okul, kategori ve tarih bazlı filtreleme |
+| **Özet Kartları** | Toplam, bekleyen, incelenen ve çözülen bildirim sayıları |
+| **Risk Tablosu** | Okul bazlı risk öncelikli sıralama |
+| **Detay Paneli** | Seçilen bildirimin tüm ayrıntıları |
 
-Sürüm kontrollerini hafif tutmak için tarayıcı tabanlı, salt okunur bir smoke test
-takımı vardır. `tests/smoke/` altında yer alır ve; `index.html` yüklenmesini, ihbar
-adım akışını, acil durum ve gönderim bildirim modallarını, admin giriş kapısını,
-çekirdek filtreleri ve harita katman geçişlerini kapsar. Testler hiçbir gerçek ağ
-isteği göndermez (yazma uçları stub'lanır), bu nedenle hem yerel HTTP sunucusuna hem
-Vercel preview adresine karşı güvenle çalıştırılabilir.
+---
 
-Kısa kurulum ve çalıştırma:
+## 🛠️ Teknolojiler
+
+### Frontend
+
+| Teknoloji | Kullanım Alanı |
+|-----------|----------------|
+| **HTML5 / CSS3** | Semantik yapı ve responsive tasarım |
+| **Vanilla JavaScript (ES Modules)** | Uygulama mantığı ve modüler yapı |
+| **Leaflet.js** | İnteraktif harita ve OpenStreetMap entegrasyonu |
+| **Leaflet.heat** | Isı haritası görselleştirmesi |
+
+### Backend & Veritabanı
+
+| Teknoloji | Kullanım Alanı |
+|-----------|----------------|
+| **Supabase PostgreSQL** | Veritabanı ve gerçek zamanlı veri |
+| **Supabase Auth** | Kullanıcı kimlik doğrulama |
+| **Vercel Serverless Functions** | API endpoint'leri (`/api/report`) |
+| **Row Level Security (RLS)** | Veritabanı güvenlik politikaları |
+
+### Güvenlik & Anti-Spam
+
+| Özellik | Açıklama |
+|---------|----------|
+| **Rate Limiting** | IP başına 10 dk'da max 5 gönderim |
+| **Fingerprint Limiting** | Cihaz izi başına 10 dk'da max 3 gönderim |
+| **Duplicate Detection** | 15 dk içinde aynı içerik engelleme |
+| **Content Sanitization** | Link sayısı, metin uzunluğu kontrolü |
+| **Security Event Logging** | Güvenlik olayları kayıt sistemi |
+
+---
+
+## 📁 Klasör Yapısı
+
+```
+guvenli-okul-pgm/
+├── 📄 index.html                    # Ana uygulama sayfası
+├── 📄 vercel.json                   # Vercel yapılandırması ve güvenlik başlıkları
+├── 📄 README.md                     # Proje dokümantasyonu
+│
+├── 📂 api/                          # Vercel Serverless Functions
+│   ├── report.js                    # Bildirim gönderim API'si (rate limit, validation)
+│   ├── _shared/                     # Paylaşımlı yardımcı modüller
+│   │   └── admin-common.js
+│   └── admin/                       # Admin API endpoint'leri
+│       ├── login.js
+│       ├── panel.js
+│       └── reports.js
+│
+├── 📂 js/                           # Frontend JavaScript modülleri
+│   ├── app.js                       # Ana uygulama giriş noktası
+│   ├── config/
+│   │   └── supabase.config.js       # Supabase yapılandırması
+│   ├── data/
+│   │   ├── canonical-source.mjs     # Okul koordinat verisi (tek kaynak)
+│   │   └── schools.js               # Okul listesi export
+│   └── modules/
+│       ├── admin-api.js             # Admin kimlik doğrulama
+│       ├── form.js                  # Bildirim formu mantığı
+│       ├── map.js                   # Harita ve katman yönetimi
+│       ├── supabase.js              # Supabase istemci
+│       ├── ui.js                    # Panel UI bileşenleri
+│       └── utils.js                 # Yardımcı fonksiyonlar
+│
+├── 📂 css/
+│   └── main.css                     # Tüm stil tanımları
+│
+├── 📂 assets/
+│   ├── images/                      # Görseller (brand, icons, illustrations)
+│   ├── logos/                       # Kurumsal logolar
+│   ├── qr/                          # QR kod görselleri
+│   └── vendor/
+│       └── leaflet/                 # Leaflet kütüphanesi (offline)
+│
+├── 📂 docs/                         # Proje dokümantasyonu
+│   ├── proje-plani.md               # Detaylı proje planı
+│   ├── surum-notu-*.md              # Sürüm notları
+│   ├── supabase-setup.sql           # Veritabanı kurulum SQL'i
+│   ├── supabase-admin-users.sql     # Admin kullanıcı tablosu
+│   ├── supabase-rls-fix.sql         # RLS düzeltmeleri
+│   └── ...                          # Diğer teknik dökümanlar
+│
+├── 📂 scripts/
+│   └── seed-admin-users.mjs         # Admin kullanıcı oluşturma scripti
+│
+├── 📂 tests/
+│   └── smoke/                       # Playwright smoke testleri
+│       ├── package.json
+│       ├── playwright.config.js
+│       ├── smoke.spec.js
+│       └── README.md
+│
+└── 📂 _design-reference/            # Tasarım referansları (production dışı)
+    └── magicpatterns/               # React/Tailwind prototip
+```
+
+---
+
+## 🚀 Kurulum ve Çalıştırma
+
+### Gereksinimler
+
+- Modern web tarayıcısı (Chrome, Firefox, Edge, Safari)
+- Yerel geliştirme için: Python 3.x veya Node.js
+
+### Yerel Sunucu ile Çalıştırma
+
+> ⚠️ Supabase entegrasyonu test edilirken `file://` yerine yerel HTTP sunucu ile açmanız **zorunludur**.
+
+#### Yöntem A: Python ile
 
 ```bash
+# Proje klasörüne gidin
+cd guvenli-okul-pgm
+
+# HTTP sunucuyu başlatın
+python -m http.server 5500
+
+# Tarayıcıda açın
+# http://localhost:5500
+```
+
+#### Yöntem B: Node.js ile
+
+```bash
+# Proje klasörüne gidin
+cd guvenli-okul-pgm
+
+# npx ile serve kullanın
+npx serve . -l 5500
+
+# Tarayıcıda açın
+# http://localhost:5500
+```
+
+#### Yöntem C: VS Code Live Server
+
+VS Code kullanıyorsanız **Live Server** eklentisi ile `index.html` dosyasını doğrudan açabilirsiniz.
+
+---
+
+## 🗄️ Supabase Entegrasyonu
+
+### Hızlı Başlangıç
+
+1. **Supabase Hesabı Oluşturun**: [supabase.com](https://supabase.com)
+
+2. **Yeni Proje Oluşturun**: Dashboard'dan "New Project" ile proje oluşturun
+
+3. **Veritabanı Tablolarını Kurun**:
+   ```sql
+   -- docs/supabase-setup.sql dosyasını SQL Editor'de çalıştırın
+   ```
+
+4. **API Anahtarlarını Alın**:
+   - Project Settings → API → `anon public` anahtarı
+   - Project URL
+
+5. **Yapılandırmayı Güncelleyin**:
+   ```javascript
+   // js/config/supabase.config.js
+   export const SUPABASE_CONFIG = Object.freeze({
+     url: 'YOUR_SUPABASE_URL',
+     anonKey: 'YOUR_ANON_KEY',
+     // ...
+   });
+   ```
+
+### Veritabanı Şeması
+
+| Tablo | Açıklama |
+|-------|----------|
+| `anonymous_reports` | Anonim bildirimler |
+| `admin_users` | Yetkili kullanıcılar |
+| `report_rate_limits` | Rate limit kayıtları |
+| `security_events` | Güvenlik olay logları |
+
+### RLS Politikaları
+
+- **Insert-only** politikası: Anonim kullanıcılar yalnızca bildirim ekleyebilir
+- **Read** politikası: Yalnızca yetkili kullanıcılar bildirimleri okuyabilir
+
+> 📖 Mevcut README.md'nin eski sürümünde yer alan ayrıntılı "Supabase ile Kalıcı Kayıt" adım adım rehberi, bu bölümde özetlenmiştir. Tam SQL kurulum betikleri `docs/` klasöründe bulunur.
+
+---
+
+## 🧪 Test
+
+### Smoke Testleri (Salt Okunur)
+
+Tarayıcı tabanlı, salt okunur smoke test takımı `tests/smoke/` altında yer alır.
+
+#### Kapsam
+
+- ✅ `index.html` yüklenmesi
+- ✅ İhbar adım akışı
+- ✅ Acil durum ve gönderim bildirim modalları
+- ✅ Admin giriş kapısı
+- ✅ Çekirdek filtreler
+- ✅ Harita katman geçişleri
+
+#### Kurulum ve Çalıştırma
+
+```bash
+# Test klasörüne gidin
 cd tests/smoke
+
+# Bağımlılıkları yükleyin
 npm install
+
+# Playwright tarayıcısını yükleyin
 npx playwright install chromium
+
+# Testleri çalıştırın
 npm test
+
+# Görsel modda çalıştırın (isteğe bağlı)
+npm run test:headed
 ```
 
-Farklı adres (Vercel preview) için: `SMOKE_BASE_URL` ortam değişkenini ayarlayın.
-Ayrıntılar: [tests/smoke/README.md](tests/smoke/README.md)
+#### Farklı Ortamda Test
 
-## Supabase ile Kalıcı Kayıt (Sıfırdan Kurulum Rehberi)
-
-Anonim bildirim formu, yerel kayıt yanında Supabase veritabanına da yazacak şekilde hazırdır.
-Bu rehber, daha önce hiç Supabase kullanmamış bir kullanıcıya göre yazılmıştır.
-
-### Aşama 0: Kuruluma Başlamadan Önce
-
-1. Supabase hesabınız olmalı.
-2. Bu proje klasörü bilgisayarınızda açık olmalı.
-3. İnternet bağlantınız açık olmalı.
-4. Terminal ve tarayıcıyı birlikte kullanacaksınız.
-
-### Aşama 1: Supabase Projesi Oluştur
-
-1. Tarayıcıdan [https://supabase.com](https://supabase.com) adresine girin.
-2. Sign in ile hesabınıza giriş yapın.
-3. Dashboard ekranında New project butonuna tıklayın.
-4. Organization olarak kişisel hesabınızı seçin.
-5. Name alanına proje adı yazın. Ornek: guvenli-okul-pgm
-6. Database Password alanına güçlü bir şifre yazın ve bu şifreyi bir yere not edin.
-7. Region alanında size yakın bir bölge seçin. Ornek: Frankfurt (Europe West).
-8. Create new project butonuna tıklayın.
-9. Proje hazırlanırken 1-3 dakika bekleyin.
-
-Kontrol noktası:
-1. Sol menüde Table Editor ve SQL Editor görünüyorsa proje hazırdır.
-
-### Aşama 2: Veritabanı Tablosunu ve Politikaları Kur
-
-1. VS Code'da [docs/supabase-setup.sql](docs/supabase-setup.sql) dosyasını açın.
-2. Dosyadaki tüm metni seçip kopyalayın.
-3. Supabase'e dönün, sol menüden SQL Editor ekranını açın.
-4. New query butonuna tıklayın.
-5. Kopyaladığınız SQL metnini sorgu alanına yapıştırın.
-6. Run butonuna tıklayın.
-
-Kontrol noktası:
-1. Ekranda hata yerine başarı mesajı görünmeli.
-2. Sol menüden Table Editor ekranına gidin.
-3. public şeması altında anonymous_reports tablosu görünmeli.
-
-Not:
-1. Bu script tabloyu, indexleri ve RLS insert politikasını sizin için otomatik kurar.
-
-### Aşama 3: Supabase API Bilgilerini Al
-
-1. Supabase sol menüden Project Settings ekranına girin.
-2. API sekmesine tıklayın.
-3. Project URL değerini kopyalayın.
-4. Public anahtarınızı kopyalayın.
-5. Anahtar değeri iki formatta olabilir:
-6. sb_publishable_... formatı yeni anahtardır.
-7. eyJ... formatı legacy anon anahtardır.
-8. İkisi de bu istemci kullanımında çalışır.
-
-Eger API sekmesi acilmiyorsa:
-1. General settings ekranindaki Project ID satirinda bulunan Copy butonuna basin.
-2. Kopyalanan degeri bir not defterine yapistirip kontrol edin.
-3. Tarayicida su adresi acin ve PROJECT_ID yerine kendi kopyaladiginiz degeri yazin:
-4. https://supabase.com/dashboard/project/PROJECT_ID/settings/api
-5. Hala acilmiyorsa once su adrese gidin:
-6. https://supabase.com/dashboard/project/PROJECT_ID
-7. Proje acildiktan sonra sol menuden Settings icindeki API veya Data API ekranina gecin.
-
-Eger Data API ekranina ulasip key goremiyorsaniz:
-1. Tarayicida su adrese gidin (PROJECT_ID degerini degistirin):
-2. https://supabase.com/dashboard/project/PROJECT_ID?showConnect=true
-3. Acilan Connect penceresinde JavaScript veya plain API secin.
-4. Burada URL ve Publishable key birlikte gorunur.
-5. Publishable key degerini kopyalayin.
-
-Güvenlik kuralı:
-1. service_role anahtarını tarayıcı tarafındaki bu projeye koymayın.
-2. Sadece public/publishable veya legacy anon anahtarı kullanın.
-
-### Aşama 4: Projede Supabase Ayarını Doldur
-
-1. VS Code'da [js/config/supabase.config.js](js/config/supabase.config.js) dosyasını açın.
-2. url alanındaki boş metni Project URL ile değiştirin.
-3. anonKey alanındaki boş metni public/publishable anahtar ile değiştirin.
-4. schema değeri public olarak kalsın.
-5. reportsTable değeri anonymous_reports olarak kalsın.
-
-Not:
-1. Data API ekraninda gordugunuz URL /rest/v1/ ile bitiyorsa da bu projede kullanabilirsiniz.
-2. Sistem otomatik olarak uygun taban URL formatina normalize eder.
-
-Ornek görünüm:
-
-export const SUPABASE_CONFIG = Object.freeze({
-  url: 'https://SIZIN-PROJE-REF.supabase.co',
-  anonKey: 'SIZIN_ANON_PUBLIC_ANAHTARINIZ',
-  schema: 'public',
-  reportsTable: 'anonymous_reports',
-  requestTimeoutMs: 10000
-});
-
-Kontrol noktası:
-1. url https ile başlamalı.
-2. anonKey boş olmamalı.
-
-### Aşama 4.1: Paket B Sunucu Ayarı (Vercel)
-
-Faz 2 Paket B ile birlikte bildirimler tarayıcıdan dogrudan tabloya degil, Vercel uzerindeki `/api/report` endpoint'ine gider.
-
-Bu nedenle Vercel Project Settings > Environment Variables ekraninda su degerler tanimli olmalidir:
-
-1. SUPABASE_URL = https://SIZIN-PROJE-REF.supabase.co
-2. SUPABASE_SERVICE_ROLE_KEY = SIZIN_SERVICE_ROLE_ANAHTARINIZ
-3. SUPABASE_SCHEMA = public
-4. SUPABASE_REPORTS_TABLE = anonymous_reports
-5. REPORT_SECURITY_SALT = rastgele_uzun_bir_metin
-6. SUPABASE_SECURITY_EVENTS_TABLE = security_events (opsiyonel, varsayilan tablo adi)
-7. SUPABASE_ADMIN_USERS_TABLE = admin_users (opsiyonel, varsayilan tablo adi)
-
-Guvenlik kurali:
-
-1. SUPABASE_SERVICE_ROLE_KEY degerini istemci koduna koymayin.
-2. Bu anahtar sadece Vercel sunucu ortam degiskeninde bulunmalidir.
-
-### Aşama 4.2: Paket C Guvenlik Olay Tablosu
-
-Paket C ile birlikte rate limit, duplicate ve invalid payload gibi guvenlik olaylari ayri bir tabloda saklanir.
-
-Mevcut Supabase projesinde bir kez su scripti calistirin:
-
-1. [docs/supabase-package-c-security-events.sql](docs/supabase-package-c-security-events.sql)
-
-Kontrol noktasi:
-
-1. Table Editor icinde public.security_events tablosu gorunmeli.
-2. Ilk rate limit veya duplicate testinden sonra tabloda olay kaydi olusmali.
-3. Security Advisor tarafinda public.security_events icin "RLS Enabled No Policy" infosu goruluyorsa, ayni scripti tekrar calistirin; script explicit deny policy olusturur.
-
-### Aşama 4.3: Panel Girisi Icin Admin Kullanicilarini Olustur
-
-Bu surumde panel kullanicilari frontend config'ten degil `public.admin_users` tablosundan yonetilir.
-
-1. Once SQL Editor'de [docs/supabase-admin-users.sql](docs/supabase-admin-users.sql) dosyasini calistirin.
-2. Bu script `admin_users` tablosunu, index/policy/trigger yapisini ve ornek kullanicilari olusturur.
-
-Panel girisi kullanici adi + sifre ile calisir. Supabase Auth teknik olarak e-posta ile dogruladigi icin arka planda su desen kullanilir:
-
-1. kullaniciAdi@okul.gov.ct.tr
-
-Not: `okul.gov.ct.tr` bu projenin kanonik varsayilan admin e-posta alanidir. `docs/supabase-admin-users.sql` ornekleri ile `scripts/seed-admin-users.mjs` runtime varsayilani ayni alani kullanir.
-
-Hesaplarin Auth + tablo kaydini tek komutla esitlemek icin:
-
-```powershell
-$env:SUPABASE_SERVICE_ROLE_KEY='SIZIN_SERVICE_ROLE_KEY'; $env:PGM_ADMIN_DEFAULT_PASSWORD='Sifre123456!'; $env:PGM_ADMIN_RESET_PASSWORDS='true'; node scripts/seed-admin-users.mjs
+```bash
+# Vercel preview adresi için
+SMOKE_BASE_URL=https://your-preview.vercel.app npm test
 ```
 
-Notlar:
+> 💡 Testler hiçbir gerçek ağ isteği göndermez (yazma uçları stub'lanır). Bu nedenle hem yerel HTTP sunucusuna hem Vercel preview adresine karşı güvenle çalıştırılabilir.
 
-1. Bu komut hem Supabase Auth kullanicilarini hem `admin_users` tablo satirlarini upsert eder.
-2. Kullanici ekranda yalnizca kullanici adini girer (e-posta girmez).
-3. `PGM_ADMIN_RESET_PASSWORDS='true'` ise mevcut Auth kullanicilarinin sifresi de sifirlanir.
-4. `PGM_ADMIN_USERS_JSON` ortam degiskeni ile varsayilan kullanici listesini JSON olarak override edebilirsiniz.
-5. `PGM_ADMIN_EMAIL_DOMAIN` ortam degiskeni ile varsayilan e-posta alanini (varsayilan: okul.gov.ct.tr) explicit olarak degistirebilirsiniz. Farkli bir alan kullanacaksaniz ayni degeri `docs/supabase-admin-users.sql` orneklerinde de guncellemeyi unutmayin.
+---
 
-### Aşama 5: Uygulamayı Doğru Şekilde Aç
+## ☁️ Vercel Deploy
 
-Supabase testinde file ile açmak yerine yerel sunucu kullanın.
+### Otomatik Deploy
 
-Yontem A (Python varsa):
-1. VS Code terminalini açın.
-2. Proje klasöründe olduğunuzu kontrol edin.
-3. Şu komutu çalıştırın: python -m http.server 5500
-4. Tarayıcıda şu adrese gidin: http://localhost:5500
+GitHub reposuna push yapıldığında Vercel otomatik olarak deploy eder.
 
-Yontem B (Python yoksa, Node varsa):
-1. VS Code terminalini açın.
-2. Şu komutu çalıştırın: npx serve . -l 5500
-3. Tarayıcıda şu adrese gidin: http://localhost:5500
+### Manuel Deploy
 
-Kontrol noktası:
-1. Site localhost adresinde açılmalı.
-2. Terminal açık kalmalı.
+```bash
+# Vercel CLI ile
+npx vercel
+```
 
-### Aşama 6: Test Bildirimi Gönder
+### Güvenlik Başlıkları
 
-1. Sitede Bildirim Yap ekranına geçin.
-2. Zorunlu alanları doldurun:
-3. İlçe
-4. Okul
-5. Bildirim kategorisi
-6. Sorunun kısa başlığı
-7. Açıklama
-8. Bildirimi Gönder butonuna basın.
+`vercel.json` dosyasında tanımlanan güvenlik başlıkları:
 
-Kontrol noktası:
-1. Ekranda bildirimin alındığına dair onay modalı görünmeli.
+| Başlık | Değer |
+|--------|-------|
+| Content-Security-Policy | Script, style, image ve connect kaynakları kısıtlı |
+| X-Frame-Options | DENY |
+| X-Content-Type-Options | nosniff |
+| Referrer-Policy | strict-origin-when-cross-origin |
+| Permissions-Policy | Kamera, mikrofon, ödeme devre dışı |
 
-### Aşama 7: Kaydın Supabase'e Yazıldığını Doğrula
+### Cache Ayarları
 
-1. Supabase paneline geri dönün.
-2. Table Editor ekranına girin.
-3. anonymous_reports tablosunu açın.
-4. En yeni satırda biraz önce gönderdiğiniz başlık, kategori ve okul bilgisi görünmeli.
+```json
+{
+  "source": "/js/(.*)",
+  "headers": [
+    { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+  ]
+}
+```
 
-### Aşama 8: Çalışmazsa Hızlı Sorun Giderme
+> ⚠️ Deploy sonrası cache sorunları için: `?cb=1` parametresi ekleyerek sayfayı açın.
 
-1. url ve anonKey yanlış veya eksik olabilir.
-2. SQL scripti çalışmamış olabilir.
-3. Uygulamayı file yerine localhost ile açmamış olabilirsiniz.
-4. Yanlış anahtar kullanılmış olabilir. service_role yerine anon public anahtar olmalı.
-5. Tarayıcı konsolunda hata olabilir. F12 ile Console sekmesini açıp hata mesajını kontrol edin.
+---
 
-Eger su hatayi gorurseniz:
-1. Supabase request failed (401)
-2. new row violates row-level security policy for table anonymous_reports
+## 🚨 Acil Durum Politikası
 
-Su adimlari uygulayin:
-1. Supabase SQL Editor acin.
-2. [docs/supabase-rls-fix.sql](docs/supabase-rls-fix.sql) dosyasinin guncel halini tekrar calistirin.
-3. Table Editor ekraninda anonymous_reports tablosunu acin.
-4. Tablo icinde RLS acik kalacak; yalnizca insert-only policy kalacak ve asiri genis update policy bulunmayacak.
-5. Uygulamada yeni bir test bildirimi daha gonderin.
-6. Hala devam ederse uygulamadaki URL ile Supabase Data API URL alaninin birebir ayni oldugunu dogrulayin.
+> ⚠️ **Bu sistem acil olay bildirimi almak için kullanılmaz.**
 
-### Aşama 9: Bağlantı Kesilirse Ne Olur?
+Aşağıdaki durumlar bu sistemden **bildirilmemelidir**:
 
-1. İnternet kesilirse bildirim yine yerel kayda yazılır.
-2. Supabase'e gönderim otomatik kuyruklanır.
-3. Bağlantı geri geldiğinde veya sayfa yeniden açıldığında sistem kuyruktaki kayıtları tekrar göndermeyi dener.
+- 🔴 Devam eden kavga
+- 🔴 Yaralanma
+- 🔴 Silah
+- 🔴 Yangın
+- 🔴 Ciddi tehdit
+- 🔴 Anlık tehlike
 
-### Vercel Deploy Sonrasi Onemli Not (Cache)
+### Acil Durumlarda
 
-Eger local ortamda kayıt dusuyor ama Vercel ortaminda dusmuyorsa, nedeni eski JS dosyalarinin tarayici cache'inden calismasi olabilir.
+| Hat | Numara |
+|-----|--------|
+| **Polis İmdat** | 155 |
+| **Acil Çağrı Merkezi** | 112 |
 
-Kontrol adimlari:
-1. Siteyi su sekilde acin: https://guvenli-okul-pgm.vercel.app/?cb=1
-2. Formdan yeni test bildirimi gonderin.
-3. Supabase Tablo Editor'de anonymous_reports tablosunu yenileyin.
+Bildirim sayfasına girildiğinde kullanıcıya **5 saniyelik zorunlu uyarı** gösterilir. Sayım tamamlandıktan sonra yalnızca **acil olmayan** okul güvenliği bildirimi yapılmasına izin verilir.
 
-Notlar:
-1. Bu projede JS modullerine surum parametresi eklendi (ornek: app.js?v=20260910-1).
-2. Vercel icin must-revalidate cache header ayari [vercel.json](vercel.json) dosyasinda tanimlandi.
+---
+
+## 📝 Sürüm Notları
+
+### Son Güncellemeler
+
+| Tarih | Sürüm | Açıklama |
+|-------|-------|----------|
+| 2026-09-11 | Panel Faz 0-3 | Harita stabilizasyonu, UI düzeni, erişilebilirlik iyileştirmeleri |
+
+> 📖 Detaylı sürüm notları: [docs/surum-notu-2026-09-11-panel-faz3.md](docs/surum-notu-2026-09-11-panel-faz3.md)
+
+### Planlanan Geliştirmeler
+
+- [ ] Durum güncelleme aksiyonları (CRUD)
+- [ ] Yetkili notu ekleme
+- [ ] Dosya/fotoğraf görüntüleme (panel içi)
+- [ ] Captcha entegrasyonu (koşullu)
+- [ ] Operasyon metrikleri dashboard'u
+
+---
+
+## ⚖️ Lisans ve Sorumluluk
+
+Bu proje **KKTC Polis Genel Müdürlüğü** ve **POLVAK (Polis Güçlendirme Vakfı)** iş birliği ile geliştirilmektedir.
+
+### Kullanım Şartları
+
+- Bildirimler **resmi şikâyet başvurusu değildir**
+- Toplanan bilgiler yalnızca okul güvenliği kapsamında değerlendirilir
+- Kasıtlı olarak gerçeğe aykırı bilgi verilmesi yasal işlem gerektirebilir
+
+### Gizlilik
+
+- Kimlik bilgisi zorunlu değildir
+- Konum bilgisi yalnızca açık izin ile alınır
+- Teknik kayıtlar (IP hash, cihaz izi) güvenlik amacıyla işlenir
+
+---
+
+<div align="center">
+
+**Güvenli Okul Bilgi ve Bildirim Platformu**
+
+*KKTC Polis Genel Müdürlüğü © 2026*
+
+</div>
+
