@@ -709,7 +709,23 @@ export function showEmergencyGateOnReportEntry() {
   if (!gate || !countdown || !continueButton || !cancelButton) return;
 
   setReportInteractionLock(true);
-  setModalState(gate, true);
+
+  const cancelGate = () => {
+    if (emergencyGateTimerId) {
+      window.clearInterval(emergencyGateTimerId);
+      emergencyGateTimerId = null;
+    }
+
+    setModalState(gate, false);
+    setReportInteractionLock(false);
+    navigateToHomeView();
+  };
+
+  setModalState(gate, true, {
+    initialFocus: cancelButton,
+    dismissible: true,
+    onEscape: cancelGate
+  });
 
   let seconds = EMERGENCY_GATE_SECONDS;
   countdown.textContent = String(seconds);
@@ -745,16 +761,7 @@ export function showEmergencyGateOnReportEntry() {
     showReportUsageTermsModal();
   };
 
-  cancelButton.onclick = () => {
-    if (emergencyGateTimerId) {
-      window.clearInterval(emergencyGateTimerId);
-      emergencyGateTimerId = null;
-    }
-
-    setModalState(gate, false);
-    setReportInteractionLock(false);
-    navigateToHomeView();
-  };
+  cancelButton.onclick = cancelGate;
 }
 
 function initReportUsageTermsModal() {
@@ -939,17 +946,17 @@ function showReportUsageTermsModal() {
 
   scrollContent.addEventListener('scroll', usageTermsScrollHandler);
 
-  setModalState(usageTermsModal, true);
+  setModalState(usageTermsModal, true, {
+    initialFocus: scrollContent,
+    dismissible: false
+  });
 
   window.requestAnimationFrame(() => {
     scrollContent.scrollTop = 0;
 
     if (scrollContent.scrollHeight <= scrollContent.clientHeight) {
       enableCheckbox();
-      return;
     }
-
-    scrollContent.focus();
   });
 }
 
@@ -968,14 +975,10 @@ function setReportInteractionLock(locked) {
 
   reportView.classList.toggle('report-locked', locked);
 
-  if (locked) {
-    reportView.setAttribute('inert', '');
-    return;
+  if (!locked) {
+    reportInteractionUnlockedAtMs = Date.now();
+    syncFormState();
   }
-
-  reportView.removeAttribute('inert');
-  reportInteractionUnlockedAtMs = Date.now();
-  syncFormState();
 }
 
 function initVisitorSnapshot() {
@@ -1133,7 +1136,10 @@ function showSubmitNoticeModal(onComplete) {
   countdown.textContent = String(seconds);
   continueButton.disabled = true;
   continueButton.textContent = `${seconds} saniye sonra tanıtım ekranına git`;
-  setModalState(modal, true);
+  setModalState(modal, true, {
+    initialFocus: modal,
+    dismissible: false
+  });
 
   if (submitNoticeTimerId) {
     window.clearInterval(submitNoticeTimerId);
@@ -1179,7 +1185,10 @@ function showFileUploadNoticeModal() {
   const modal = document.getElementById('fileUploadNoticeModal');
   if (!modal) return;
 
-  setModalState(modal, true);
+  setModalState(modal, true, {
+    initialFocus: document.getElementById('fileUploadNoticeClose'),
+    dismissible: true
+  });
 }
 
 function navigateToHomeView() {
@@ -1201,12 +1210,186 @@ function navigateToHomeView() {
   }
 }
 
-function setModalState(modalElement, isVisible) {
+// ---------------------------------------------------------------------------
+// Reusable modal controller: focus trap, focus restore, full app-shell inert,
+// and Escape dismissal where closing is allowed.
+// ---------------------------------------------------------------------------
+
+let activeModalState = null;
+
+const FOCUSABLE_SELECTOR = [
+  'a[href]',
+  'button:not([disabled])',
+  'input:not([disabled]):not([type="hidden"])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])'
+].join(',');
+
+function setModalState(modalElement, isVisible, options = {}) {
   if (!modalElement) return;
 
-  modalElement.hidden = !isVisible;
-  modalElement.setAttribute('aria-hidden', isVisible ? 'false' : 'true');
+  if (isVisible) {
+    openModal(modalElement, options);
+    return;
+  }
+
+  closeModal(modalElement);
+}
+
+function openModal(modal, options = {}) {
+  if (!modal) return;
+
+  const { initialFocus = null, dismissible = false, onEscape = null } = options;
+
+  activeModalState = {
+    element: modal,
+    previousFocus: document.activeElement && document.activeElement !== document.body
+      ? document.activeElement
+      : null,
+    dismissible,
+    onEscape
+  };
+
+  applyAppShellInert(true);
+  modal.hidden = false;
+  modal.setAttribute('aria-hidden', 'false');
   syncBodyModalState();
+
+  document.addEventListener('keydown', handleModalKeydown, true);
+
+  const focusTarget = resolveInitialFocusTarget(modal, initialFocus);
+  window.requestAnimationFrame(() => {
+    focusElement(focusTarget || modal);
+  });
+}
+
+function closeModal(modal) {
+  if (!modal) return;
+
+  modal.hidden = true;
+  modal.setAttribute('aria-hidden', 'true');
+
+  const restoredState = activeModalState;
+  if (restoredState && restoredState.element === modal) {
+    activeModalState = null;
+    document.removeEventListener('keydown', handleModalKeydown, true);
+    applyAppShellInert(false);
+  }
+
+  syncBodyModalState();
+
+  if (restoredState && restoredState.element === modal) {
+    restoreFocus(restoredState.previousFocus);
+  }
+}
+
+function getAppShellElements() {
+  const header = document.querySelector('header');
+  const main = document.querySelector('main');
+  return [header, main].filter(Boolean);
+}
+
+function applyAppShellInert(shouldApply) {
+  getAppShellElements().forEach(element => {
+    if (shouldApply) {
+      element.setAttribute('inert', '');
+    } else {
+      element.removeAttribute('inert');
+    }
+  });
+}
+
+function getModalFocusableElements(modal) {
+  if (!modal || typeof modal.querySelectorAll !== 'function') return [];
+
+  return Array.from(modal.querySelectorAll(FOCUSABLE_SELECTOR)).filter(element => {
+    if (element.disabled) return false;
+    return Number(element.tabIndex ?? 0) >= 0;
+  });
+}
+
+function resolveInitialFocusTarget(modal, initialFocus) {
+  if (initialFocus && typeof initialFocus === 'object' && typeof initialFocus.focus === 'function') {
+    return initialFocus;
+  }
+
+  if (typeof initialFocus === 'string' && modal && typeof modal.querySelector === 'function') {
+    return modal.querySelector(initialFocus);
+  }
+
+  return null;
+}
+
+function focusElement(element) {
+  if (!element || typeof element.focus !== 'function' || element.disabled) return;
+
+  try {
+    element.focus();
+  } catch {
+    // Focus is best-effort; the focus trap still keeps the app shell inert.
+  }
+}
+
+function restoreFocus(element) {
+  if (!element || typeof element.focus !== 'function') return;
+
+  try {
+    element.focus();
+  } catch {
+    // Focus restoration is best-effort.
+  }
+}
+
+function handleModalKeydown(event) {
+  if (!activeModalState || !activeModalState.element) return;
+
+  const modal = activeModalState.element;
+
+  if (event.key === 'Escape') {
+    if (activeModalState.dismissible) {
+      event.preventDefault();
+      dismissActiveModal();
+    }
+
+    return;
+  }
+
+  if (event.key !== 'Tab') return;
+
+  const focusables = getModalFocusableElements(modal);
+  if (focusables.length === 0) {
+    event.preventDefault();
+    focusElement(modal);
+    return;
+  }
+
+  const first = focusables[0];
+  const last = focusables[focusables.length - 1];
+  const active = document.activeElement;
+  const isInside = Boolean(active && typeof modal.contains === 'function' && modal.contains(active));
+
+  if (event.shiftKey) {
+    if (!isInside || active === first) {
+      event.preventDefault();
+      focusElement(last);
+    }
+  } else if (!isInside || active === last) {
+    event.preventDefault();
+    focusElement(first);
+  }
+}
+
+function dismissActiveModal() {
+  const state = activeModalState;
+  if (!state) return;
+
+  if (typeof state.onEscape === 'function') {
+    state.onEscape();
+    return;
+  }
+
+  closeModal(state.element);
 }
 
 function syncBodyModalState() {
