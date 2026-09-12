@@ -12,6 +12,7 @@ const DEFAULT_SECURITY_EVENTS_TABLE = 'security_events';
 
 const ipRateBuckets = new Map();
 const fingerprintRateBuckets = new Map();
+let canonicalDataPromise = null;
 
 module.exports = async (req, res) => {
   setCommonHeaders(res);
@@ -56,7 +57,8 @@ module.exports = async (req, res) => {
     return;
   }
 
-  const sanitized = sanitizeIncomingRow(payload && payload.row);
+  const canonicalData = await loadCanonicalData();
+  const sanitized = sanitizeIncomingRow(payload && payload.row, canonicalData);
   if (!sanitized.ok) {
     await tryLogSecurityEvent(config, {
       eventType: 'invalid_payload',
@@ -210,7 +212,7 @@ function parseJsonBody(body) {
   return JSON.parse(String(body));
 }
 
-function sanitizeIncomingRow(rawRow) {
+function sanitizeIncomingRow(rawRow, canonicalData) {
   if (!rawRow || typeof rawRow !== 'object') {
     return { ok: false, reason: 'missing_row' };
   }
@@ -228,6 +230,26 @@ function sanitizeIncomingRow(rawRow) {
     return { ok: false, reason: 'required_fields_missing' };
   }
 
+  const canonicalSchool = canonicalData.getCanonicalSchoolById(schoolId);
+  if (!canonicalSchool) {
+    return { ok: false, reason: 'unknown_school' };
+  }
+
+  if (!canonicalData.isCanonicalCategory(category)) {
+    return { ok: false, reason: 'unknown_category' };
+  }
+
+  const canonicalDistrict = canonicalSchool.district || canonicalSchool.region || '';
+  const clientDistrict = canonicalData.normalizeDistrictName(district, '');
+  const clientRegion = canonicalData.normalizeDistrictName(region, '');
+  if (clientDistrict !== canonicalDistrict || clientRegion !== canonicalDistrict) {
+    return { ok: false, reason: 'district_school_mismatch' };
+  }
+
+  if (normalizeComparableText(schoolName) !== normalizeComparableText(canonicalSchool.name)) {
+    return { ok: false, reason: 'school_name_mismatch' };
+  }
+
   const linkMarkerCount = countLinkMarkers(title) + countLinkMarkers(description);
   if (linkMarkerCount > MAX_LINK_MARKER_COUNT) {
     return { ok: false, reason: 'too_many_links' };
@@ -238,10 +260,10 @@ function sanitizeIncomingRow(rawRow) {
 
   const row = {
     id,
-    district,
-    region,
+    district: canonicalDistrict,
+    region: canonicalDistrict,
     school_id: schoolId,
-    school_name: schoolName,
+    school_name: canonicalSchool.name,
     category,
     title,
     description,
@@ -260,10 +282,26 @@ function sanitizeIncomingRow(rawRow) {
   return { ok: true, row };
 }
 
+async function loadCanonicalData() {
+  if (!canonicalDataPromise) {
+    canonicalDataPromise = import('../js/data/canonical-source.mjs');
+  }
+
+  return canonicalDataPromise;
+}
+
 function normalizeText(value, maxLength) {
   const text = String(value || '').trim();
   if (!text) return '';
   return text.slice(0, maxLength);
+}
+
+function normalizeComparableText(value) {
+  return String(value || '')
+    .trim()
+    .toLocaleLowerCase('tr')
+    .normalize('NFC')
+    .replace(/\s+/g, ' ');
 }
 
 function normalizeNullableText(value, maxLength) {
