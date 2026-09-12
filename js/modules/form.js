@@ -3,8 +3,12 @@ import { generateId, getDistrictOptions, normalizeDistrictName } from './utils.j
 import { persistReportToSupabase, syncPendingSupabaseReports } from './supabase.js?v=20260910-2';
 
 let selectedFiles = [];
+// Legacy full-content archives. Kept only so they can be purged after a successful remote sync.
 const PUBLIC_REPORTS_STORAGE_KEY = 'pgm-public-reports-demo-v1';
 const LEGACY_REPORTS_STORAGE_KEY = 'reports';
+// Short-lived duplicate guard entries. Digest only: no narrative or contact data is stored.
+const DEDUPE_FINGERPRINTS_STORAGE_KEY = 'pgm-report-dedupe-fingerprints-v1';
+const MAX_DEDUPE_FINGERPRINTS = 20;
 const EMERGENCY_GATE_SECONDS = 5;
 const SUBMIT_NOTICE_SECONDS = 5;
 const USAGE_TERMS_SCROLL_SPEED_PX_PER_SECOND = 240;
@@ -241,12 +245,12 @@ function handleSubmit() {
     updatedAt: new Date().toISOString()
   };
 
-  if (hasRecentDuplicateReport(report, getReports())) {
+  if (hasRecentDuplicateFingerprint(report)) {
     alert('Aynı içerikte bir bildirim kısa süre içinde gönderildi. Lütfen 15 dakika sonra tekrar deneyin.');
     return;
   }
 
-  saveReport(report);
+  rememberReportFingerprint(report);
   document.dispatchEvent(new CustomEvent('reports:updated', { detail: { report } }));
   void syncReportToCloud(report);
 
@@ -263,10 +267,82 @@ function handleSubmit() {
   });
 }
 
-function saveReport(report) {
-  const reports = getReports();
-  reports.push(report);
-  localStorage.setItem(PUBLIC_REPORTS_STORAGE_KEY, JSON.stringify(reports));
+// Local retention is limited to a short-lived digest used by the duplicate-submit guard.
+// The accepted report payload (narrative + optional contact data) is never written here;
+// the only local copy of an undelivered report is the offline queue in js/modules/supabase.js.
+function rememberReportFingerprint(report) {
+  const fingerprint = buildDuplicateFingerprint(report);
+  if (!fingerprint) return;
+
+  const nowMs = Date.now();
+  const entries = pruneDedupeFingerprints(readDedupeFingerprints(), nowMs)
+    .filter(entry => entry.fingerprint !== fingerprint);
+
+  entries.push({
+    fingerprint,
+    createdAt: new Date(nowMs).toISOString()
+  });
+
+  writeDedupeFingerprints(entries.slice(-MAX_DEDUPE_FINGERPRINTS));
+}
+
+function readDedupeFingerprints() {
+  try {
+    const raw = localStorage.getItem(DEDUPE_FINGERPRINTS_STORAGE_KEY);
+    if (!raw) return [];
+
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed
+      .filter(entry => entry && typeof entry === 'object')
+      .map(entry => ({
+        fingerprint: String(entry.fingerprint || ''),
+        createdAt: String(entry.createdAt || '')
+      }))
+      .filter(entry => Boolean(entry.fingerprint));
+  } catch {
+    // Storage failures must never block delivery to /api/report.
+    return [];
+  }
+}
+
+function writeDedupeFingerprints(entries) {
+  try {
+    localStorage.setItem(DEDUPE_FINGERPRINTS_STORAGE_KEY, JSON.stringify(entries));
+  } catch {
+    // Storage failures must never block delivery to /api/report.
+  }
+}
+
+function pruneDedupeFingerprints(entries, nowMs) {
+  return entries.filter(entry => {
+    const createdAtMs = Date.parse(entry.createdAt);
+    if (!Number.isFinite(createdAtMs)) return false;
+
+    return nowMs - createdAtMs <= DUPLICATE_REPORT_WINDOW_MS;
+  });
+}
+
+// Drops the legacy archives that still hold full report payloads (narrative + contact data).
+function clearLegacyReportArchives() {
+  [PUBLIC_REPORTS_STORAGE_KEY, LEGACY_REPORTS_STORAGE_KEY].forEach(key => {
+    try {
+      localStorage.removeItem(key);
+    } catch {
+      // Cleanup is best-effort only.
+    }
+  });
+}
+
+function purgeStaleArchivesIfSynced(result) {
+  const status = String((result && result.status) || '');
+
+  if (!status || status === 'queued' || status === 'skipped' || status === 'error') {
+    return;
+  }
+
+  clearLegacyReportArchives();
 }
 
 function isHoneypotTriggered(honeypotInput) {
@@ -302,21 +378,17 @@ function countLinkMarkers(text) {
   return Array.isArray(matches) ? matches.length : 0;
 }
 
-function hasRecentDuplicateReport(report, existingReports) {
-  if (!Array.isArray(existingReports) || existingReports.length === 0) {
-    return false;
-  }
+function hasRecentDuplicateFingerprint(report) {
+  const fingerprint = buildDuplicateFingerprint(report);
+  if (!fingerprint) return false;
 
-  const nowMs = Date.now();
-  const targetSignature = buildDuplicateSignature(report);
+  const entries = pruneDedupeFingerprints(readDedupeFingerprints(), Date.now());
 
-  return existingReports.some(existingReport => {
-    const existingTimestamp = parseReportTimestamp(existingReport);
-    if (!Number.isFinite(existingTimestamp)) return false;
-    if (nowMs - existingTimestamp > DUPLICATE_REPORT_WINDOW_MS) return false;
+  return entries.some(entry => entry.fingerprint === fingerprint);
+}
 
-    return buildDuplicateSignature(existingReport) === targetSignature;
-  });
+function buildDuplicateFingerprint(report) {
+  return hashDuplicateSignature(buildDuplicateSignature(report));
 }
 
 function buildDuplicateSignature(report) {
@@ -333,10 +405,22 @@ function normalizeSignatureText(value) {
     .replace(/\s+/g, ' ');
 }
 
-function parseReportTimestamp(report) {
-  const rawValue = report?.createdAt || report?.updatedAt || '';
-  const parsedTime = Date.parse(String(rawValue));
-  return Number.isFinite(parsedTime) ? parsedTime : NaN;
+// One-way digest (FNV-1a + djb2) so the stored value carries no report content.
+function hashDuplicateSignature(signature) {
+  const text = String(signature || '');
+  if (!text) return '';
+
+  let fnvHash = 0x811c9dc5;
+  let djbHash = 5381;
+
+  for (let index = 0; index < text.length; index += 1) {
+    const code = text.charCodeAt(index);
+
+    fnvHash = Math.imul(fnvHash ^ code, 0x01000193) >>> 0;
+    djbHash = (((djbHash << 5) + djbHash) + code) >>> 0;
+  }
+
+  return `${fnvHash.toString(16).padStart(8, '0')}${djbHash.toString(16).padStart(8, '0')}`;
 }
 
 async function syncReportToCloud(report) {
@@ -351,7 +435,12 @@ async function syncReportToCloud(report) {
       console.warn('Bildirim Supabase kuyruğuna alındı:', reportSyncResult.reason);
     }
     if (reportSyncResult.status === 'skipped') {
-      console.info('Supabase yapılandırması tamamlanmadı; bildirim local kayda yazıldı.');
+      console.info('Supabase yapılandırması tamamlanmadı; bildirim sunucuya iletilemedi.');
+    }
+
+    // Stale local archives are dropped once the remote sync succeeded.
+    if (reportSyncResult.status === 'synced') {
+      purgeStaleArchivesIfSynced(pendingSyncResult);
     }
   } catch (error) {
     console.error('Supabase senkronizasyonunda beklenmeyen hata oluştu:', error);
@@ -359,82 +448,25 @@ async function syncReportToCloud(report) {
 }
 
 function bootSupabaseSync() {
-  void syncPendingSupabaseReports();
+  syncPendingReportsAndPurgeArchives();
 
   if (onlineSyncInitialized) {
     return;
   }
 
   window.addEventListener('online', () => {
-    void syncPendingSupabaseReports();
+    syncPendingReportsAndPurgeArchives();
   });
 
   onlineSyncInitialized = true;
 }
 
-export function getReports() {
-  const publicRaw = localStorage.getItem(PUBLIC_REPORTS_STORAGE_KEY);
-  const legacyRaw = localStorage.getItem(LEGACY_REPORTS_STORAGE_KEY);
-
-  if (!publicRaw && legacyRaw) {
-    localStorage.setItem(PUBLIC_REPORTS_STORAGE_KEY, legacyRaw);
-  }
-
-  const reports = JSON.parse(localStorage.getItem(PUBLIC_REPORTS_STORAGE_KEY) || '[]');
-  if (!Array.isArray(reports)) return [];
-  return reports
-    .map(normalizeReport)
-    .filter(Boolean);
-}
-
-function normalizeReport(report) {
-  if (!report || typeof report !== 'object') return null;
-
-  const district = normalizeDistrictName(report.district || report.region || '', '');
-  const schoolId = Number(report.schoolId || report.school || 0);
-  const school = schools.find(item => item.id === schoolId);
-  const schoolName = report.schoolName || school?.name || '';
-
-  const contactObject = typeof report.contact === 'object' && report.contact !== null ? report.contact : {};
-  const contactName = report.contactName || contactObject.name || (typeof report.contact === 'string' ? report.contact : '');
-  const contactPhone = report.contactPhone || contactObject.phone || '';
-  const contactEmail = report.contactEmail || contactObject.email || '';
-
-  const attachments = Array.isArray(report.attachments)
-    ? report.attachments
-    : Array.isArray(report.files)
-      ? report.files
-      : [];
-
-  const technicalMeta = report.technicalMeta && typeof report.technicalMeta === 'object'
-    ? report.technicalMeta
-    : null;
-
-  return {
-    ...report,
-    district,
-    region: district,
-    schoolId: Number.isFinite(schoolId) ? schoolId : 0,
-    schoolName,
-    category: report.category || '',
-    title: report.title || '',
-    description: report.description || '',
-    eventDate: report.eventDate || '',
-    attachments,
-    files: attachments,
-    contact: {
-      name: contactName,
-      phone: contactPhone,
-      email: contactEmail
-    },
-    technicalMeta,
-    contactName,
-    contactPhone,
-    contactEmail,
-    status: report.status || 'Yeni',
-    createdAt: report.createdAt || new Date().toISOString(),
-    updatedAt: report.updatedAt || report.createdAt || new Date().toISOString()
-  };
+function syncPendingReportsAndPurgeArchives() {
+  void syncPendingSupabaseReports()
+    .then(purgeStaleArchivesIfSynced)
+    .catch(error => {
+      console.error('Supabase senkronizasyonunda beklenmeyen hata oluştu:', error);
+    });
 }
 
 function syncFormState() {
