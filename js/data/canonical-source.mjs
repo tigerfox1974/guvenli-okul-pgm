@@ -22,7 +22,7 @@ export const CATEGORY_OPTIONS = Object.freeze([
   'Diğer'
 ]);
 
-export const RAW_SCHOOLS = [
+export const RAW_SCHOOLS = Object.freeze([
     {
         "id":  1,
         "name":  "19 Mayıs TMK",
