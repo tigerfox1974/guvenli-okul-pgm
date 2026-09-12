@@ -10,10 +10,11 @@
   --soft: #f8fafc;
 }
 * { box-sizing: border-box; }
-body { margin: 0; font-family: Arial, Helvetica, sans-serif; color: var(--ink); background: var(--soft); line-height: 1.5; }
+body { margin: 0; font-family: Arial, Helvetica, sans-serif; color: var(--ink); background: var(--soft); line-height: 1.5; overflow-x: clip; }
 header { position: sticky; top: 0; z-index: 1000; background: var(--navy); color: #fff; padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .brand { display: flex; align-items: center; gap: 12px; font-weight: 700; letter-spacing: .2px; }
-.brand-subtitle { font-weight: 400; }
+.brand > div { min-width: 0; overflow-wrap: anywhere; }
+.brand-subtitle { display: block; font-weight: 400; overflow-wrap: anywhere; }
 .mark { width: 42px; height: 42px; border-radius: 8px; background: #fff; color: var(--navy); display: grid; place-items: center; font-weight: 800; }
 img.mark {
   display: block;
@@ -231,9 +232,8 @@ input.field-invalid, select.field-invalid, textarea.field-invalid { border-color
 }
 .map { width: 100%; min-height: 360px; height: clamp(360px, 52vh, 620px); border-radius: 8px; overflow: hidden; }
 
-/* Badge'siz risk gosterimi: sayi + ince yogunluk bari + isi tonu */
+/* Risk gosterimi: sade, sabit arka planli kurumsal buton stili */
 .risk-cell {
-  --risk-intensity: 0;
   display: inline-grid;
   gap: 4px;
   justify-items: center;
@@ -242,7 +242,7 @@ input.field-invalid, select.field-invalid, textarea.field-invalid { border-color
   padding: 6px 8px;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
-  background: rgba(37, 99, 235, calc(0.06 + var(--risk-intensity) * 0.22));
+  background: #f8fafc;
   color: #1e3a8a;
   font-family: inherit;
   font-size: 14px;
@@ -265,23 +265,6 @@ input.field-invalid, select.field-invalid, textarea.field-invalid { border-color
   border-color: #2563eb;
   box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
 }
-.risk-cell-bar,
-.risk-card-bar {
-  display: block;
-  width: 100%;
-  height: 4px;
-  border-radius: 999px;
-  background: #e2e8f0;
-  overflow: hidden;
-}
-.risk-cell-bar > i,
-.risk-card-bar > i {
-  display: block;
-  height: 100%;
-  border-radius: 999px;
-  background: #2563eb;
-  width: calc(var(--risk-intensity) * 100%);
-}
 .risk-total-cell {
   font-weight: 800;
   color: #0f172a;
@@ -299,7 +282,6 @@ input.field-invalid, select.field-invalid, textarea.field-invalid { border-color
 }
 .regional-risk-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-top: 10px; }
 .risk-card {
-  --risk-intensity: 0;
   display: grid;
   gap: 6px;
   padding: 10px 12px;
@@ -331,7 +313,6 @@ input.field-invalid, select.field-invalid, textarea.field-invalid { border-color
   color: #1e3a8a;
   font-variant-numeric: tabular-nums;
 }
-.risk-card-bar { height: 6px; }
 .risk-cell:focus-visible,
 .risk-card:focus-visible {
   outline: 3px solid #1d4ed8;
@@ -731,7 +712,7 @@ body.modal-open { overflow: hidden; }
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
-@media (max-width: 780px) {
+@media (max-width: 920px) {
   header { flex-wrap: nowrap; }
   .brand { flex: 1 1 auto; min-width: 0; }
   .nav-toggle { display: flex; }
@@ -753,7 +734,7 @@ body.modal-open { overflow: hidden; }
   nav button { width: 100%; text-align: left; }
   .hero { grid-template-columns: 1fr; }
   .grid { grid-template-columns: 1fr 1fr; }
-  .admin-layout { grid-template-columns: 1fr; }
+  .admin-layout { grid-template-columns: minmax(0, 1fr); }
   .admin-layout .filters {
     position: static;
     top: auto;

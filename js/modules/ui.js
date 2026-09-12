@@ -711,10 +711,9 @@ function renderRegionalRiskPanel(reports) {
     .join('');
 
   const highlightItems = buildRiskHighlights(districtRows);
-  const maxHighlightCount = highlightItems.length > 0 ? highlightItems[0].count : 1;
   riskGrid.innerHTML = highlightItems.length > 0
     ? highlightItems
-      .map(item => renderRiskCard(item, maxHighlightCount))
+      .map(item => renderRiskCard(item))
       .join('')
     : '<div class="empty-row">Risk dağılımı oluştuğunda odak kartları burada gösterilir.</div>';
 
@@ -1059,11 +1058,10 @@ function renderRiskCountButton(district, bucket, count, intensity = 0, options =
     return `<span class="risk-zero" aria-label="${escapeHtml(districtLabel)} ${escapeHtml(bucketLabel)}: 0 bildirim">0</span>`;
   }
 
-  const ratio = Math.max(0, Math.min(1, intensity));
   const bucketTitle = includeLabel
     ? `<span class="hint">${escapeHtml(bucketLabel)}</span>`
     : '';
-  return `<button type="button" class="risk-cell" style="--risk-intensity: ${ratio.toFixed(3)}" data-risk-district="${escapeHtml(district)}" data-risk-bucket="${escapeHtml(bucket)}" aria-label="${escapeHtml(districtLabel)} ${escapeHtml(bucketLabel)}: ${count} bildirim">${bucketTitle}<span>${count}</span><span class="risk-cell-bar" aria-hidden="true"><i></i></span></button>`;
+  return `<button type="button" class="risk-cell" data-risk-district="${escapeHtml(district)}" data-risk-bucket="${escapeHtml(bucket)}" aria-label="${escapeHtml(districtLabel)} ${escapeHtml(bucketLabel)}: ${count} bildirim">${bucketTitle}<span>${count}</span></button>`;
 }
 
 function renderRiskDistrictCard(row) {
@@ -1081,16 +1079,14 @@ function renderRiskDistrictCard(row) {
   `;
 }
 
-function renderRiskCard(item, maxCount) {
-  const ratio = maxCount > 0 ? Math.max(0, Math.min(1, item.count / maxCount)) : 0;
+function renderRiskCard(item) {
   const districtLabel = getDistrictLabel(item.district);
   return `
-    <button type="button" class="risk-card" style="--risk-intensity: ${ratio.toFixed(3)}" data-risk-district="${escapeHtml(item.district)}" data-risk-bucket="${escapeHtml(item.bucket)}" aria-label="${escapeHtml(districtLabel)} ${escapeHtml(item.bucketLabel)}: ${item.count} bildirim">
+    <button type="button" class="risk-card" data-risk-district="${escapeHtml(item.district)}" data-risk-bucket="${escapeHtml(item.bucket)}" aria-label="${escapeHtml(districtLabel)} ${escapeHtml(item.bucketLabel)}: ${item.count} bildirim">
       <span class="risk-card-head">
         <span>${escapeHtml(districtLabel)} · ${escapeHtml(item.bucketLabel)}</span>
         <strong>${item.count}</strong>
       </span>
-      <span class="risk-card-bar" aria-hidden="true"><i></i></span>
     </button>
   `;
 }
