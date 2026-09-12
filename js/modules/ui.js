@@ -1,4 +1,3 @@
-import { showEmergencyGateOnReportEntry } from './form.js';
 import { AdminApiError, fetchAdminPanel, fetchAdminReports } from './admin-api.js';
 import {
   fitToIsland,
@@ -342,6 +341,14 @@ function initNavigation() {
     });
   });
 
+  // URL hash'i panel dışına çıkarsa (elle değiştirme, geri/ileri tuşu) oturumu kapat.
+  window.addEventListener('hashchange', () => {
+    const view = resolveViewFromHash();
+    if (view && view !== 'admin') {
+      dispatchPanelExit(view);
+    }
+  });
+
   const initialView = navButtons.find(button => button.classList.contains('active'))?.dataset.view
     || document.querySelector('.view.active')?.id
     || 'home';
@@ -351,6 +358,13 @@ function initNavigation() {
 
 function activateView(viewId, navButtons) {
   if (!VIEW_IDS.includes(viewId)) return;
+
+  // Aktif oturum yalnızca panel (admin) görünümünde geçerlidir; admin dışına
+  // çıkış otomatik logout tetikler.
+  if (viewId !== 'admin') {
+    dispatchPanelExit(viewId);
+    return;
+  }
 
   VIEW_IDS.forEach(id => {
     const viewElement = document.getElementById(id);
@@ -363,15 +377,23 @@ function activateView(viewId, navButtons) {
     button.classList.toggle('active', button.dataset.view === viewId);
   });
 
-  if (viewId === 'report') {
-    showEmergencyGateOnReportEntry();
-    return;
-  }
+  void renderAdminPanel();
+  requestAdminMapRefresh();
+}
 
-  if (viewId === 'admin') {
-    void renderAdminPanel();
-    requestAdminMapRefresh();
-  }
+function dispatchPanelExit(viewId) {
+  document.dispatchEvent(new CustomEvent('pgm:panel-exit', {
+    detail: { view: viewId }
+  }));
+}
+
+function resolveViewFromHash() {
+  const token = String(window.location.hash || '').replace(/^#/, '').trim().toLowerCase();
+
+  if (token === 'admin' || token === 'panel') return 'admin';
+  if (token === 'report' || token === 'ihbar') return 'report';
+  if (token === '' || token === 'home' || token === 'anasayfa') return 'home';
+  return null;
 }
 
 function requestAdminMapRefresh() {

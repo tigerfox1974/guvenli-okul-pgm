@@ -88,6 +88,11 @@ function initAdminAuthEventHandlers() {
     showPublicView('admin', { syncUrl: false });
     setAuthMessage('Oturum süresi doldu veya yetkiniz kaldırıldı. Lütfen tekrar giriş yapın.', true);
   });
+
+  document.addEventListener('pgm:panel-exit', event => {
+    const targetView = event && event.detail && event.detail.view;
+    handleAdminLogout({ targetView });
+  });
 }
 
 function initPublicNavigation() {
@@ -242,11 +247,13 @@ function initAdminGate() {
   });
 }
 
-function handleAdminLogout() {
+function handleAdminLogout(options = {}) {
   clearStoredAdminSession();
   authSession = null;
   applyAdminVisibility(false);
-  window.location.hash = `#${VIEW_ROUTE_TOKENS.home}`;
+
+  const targetToken = VIEW_ROUTE_TOKENS[options.targetView] || VIEW_ROUTE_TOKENS.home;
+  window.location.hash = `#${targetToken}`;
   window.location.reload();
 }
 
