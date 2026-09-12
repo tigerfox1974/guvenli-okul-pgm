@@ -1195,13 +1195,34 @@ body.modal-open { overflow: hidden; }
   .home-legal-body { padding: 16px; }
 }
 @media (max-width: 768px) {
-  .home-legal-summary { flex-wrap: wrap; row-gap: 6px; }
-  .home-legal-summary .home-legal-icon { flex: 0 0 auto; }
+  /* Mobil yasal kart: 3 bloklu ferah grid (ikon | baslik | chevron / aciklama / aksiyon) */
+  .home-legal-summary {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 12px;
+    row-gap: 10px;
+    padding: 16px 18px;
+  }
   .home-legal-summary .home-legal-heading { display: contents; }
-  .home-legal-summary .home-legal-title { order: 2; flex: 1 1 0; min-width: 12ch; }
-  .home-legal-summary .home-legal-chevron { order: 3; flex: 0 0 auto; margin-left: auto; }
-  .home-legal-summary .home-legal-subtitle { order: 4; flex: 1 1 100%; overflow-wrap: anywhere; }
-  .home-legal-summary .home-legal-action { order: 5; flex: 1 1 100%; }
+  .home-legal-summary .home-legal-icon { grid-column: 1; grid-row: 1; }
+  .home-legal-summary .home-legal-title { grid-column: 2; grid-row: 1; min-width: 0; }
+  .home-legal-summary .home-legal-chevron { grid-column: 3; grid-row: 1; }
+  .home-legal-summary .home-legal-subtitle {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    font-size: 12px;
+    line-height: 1.55;
+    overflow-wrap: break-word;
+  }
+  .home-legal-summary .home-legal-action {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--blue);
+  }
 }
 @media (max-width: 480px) {
   .home-topics { grid-template-columns: 1fr; }
