@@ -226,13 +226,18 @@ function applyLayerVisibility() {
   }
 }
 
+// Panel artik okul bazli aggregate sayilar gonderir ({ schoolId, count });
+// tekil kayitlarda count alani olmadigi icin 1 olarak sayilir (geriye donuk uyumlu).
 function buildCountMap(reports) {
   const countMap = new Map();
 
   reports.forEach(report => {
     const schoolId = Number(report.schoolId);
     if (!Number.isFinite(schoolId) || schoolId <= 0) return;
-    countMap.set(schoolId, (countMap.get(schoolId) || 0) + 1);
+
+    const weight = Number(report && report.count);
+    const increment = Number.isFinite(weight) && weight > 0 ? weight : 1;
+    countMap.set(schoolId, (countMap.get(schoolId) || 0) + increment);
   });
 
   return countMap;

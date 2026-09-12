@@ -92,6 +92,7 @@ const STATUS_META = Object.freeze({
 let currentFilteredReports = [];
 let activeRiskBucket = 'all';
 let renderRequestId = 0;
+let detailRequestId = 0;
 let reportsUpdatedTimer = null;
 
 export function initUI() {
@@ -142,8 +143,10 @@ export async function renderAdminPanel() {
     }
 
     const reports = extractReportItems(panelResponse);
-    paintAdminPanelData(reports, panelResponse, filters);
-    updateSummaryCards(reports, normalizeSummaryData(panelResponse && panelResponse.summary, reports));
+    const analytics = extractPanelAnalytics(panelResponse);
+
+    paintAdminPanelData(reports, panelResponse, filters, analytics);
+    updateSummaryCards(reports, normalizeSummaryData(panelResponse && panelResponse.summary, reports, analytics));
   } catch (error) {
     if (requestId !== renderRequestId) {
       return;
@@ -167,27 +170,140 @@ function extractReportItems(response) {
   return Array.isArray(response && response.items) ? response.items : [];
 }
 
-function paintAdminPanelData(reports, reportsResponse, filters = getFilterValues()) {
+// Analytics, tum filtrelenmis kayit kumesini temsil eden sunucu tarafi aggregate'tir.
+// Yoksa (eski API/RPC surumu) panel kontrollu olarak sayfa verisine geri duser.
+function extractPanelAnalytics(response) {
+  const analytics = response && response.analytics;
+
+  if (!analytics || typeof analytics !== 'object' || !Array.isArray(analytics.groups)) {
+    return null;
+  }
+
+  return analytics;
+}
+
+function paintAdminPanelData(reports, reportsResponse, filters = getFilterValues(), analytics = null) {
   const hasLimitedResult = Boolean(reportsResponse && reportsResponse.hasNext);
-
-  populateFilterOptions(reports, {
-    truncated: hasLimitedResult,
-    filters
-  });
-
-  const filteredReports = applyRiskBucketFilter(reports);
   const totalCount = Number(reportsResponse && reportsResponse.totalCount);
 
-  currentFilteredReports = filteredReports;
+  // Dashboard analizleri aggregate'ten uretilir; sayfa listesi yalnizca detay/drill-down icindir.
+  const aggregateGroups = analytics ? filterGroupsByRiskBucket(analytics.groups) : null;
+  const filteredReports = applyRiskBucketFilter(reports);
 
-  renderRegionalRiskPanel(filteredReports);
-  renderReportTable(filteredReports);
-  updateMapVisualization(filteredReports);
+  populateFilterOptions(reports, {
+    truncated: aggregateGroups ? false : hasLimitedResult,
+    filters,
+    counts: analytics ? buildFilterOptionCounts(analytics.groups) : null
+  });
+
+  const reportGroups = aggregateGroups
+    ? attachLocalGroupItems(aggregateGroups, filteredReports)
+    : groupReports(filteredReports);
+  const filteredTotal = aggregateGroups ? sumGroupCounts(aggregateGroups) : filteredReports.length;
+
+  currentFilteredReports = aggregateGroups
+    ? buildMapCountEntries(aggregateGroups)
+    : filteredReports;
+
+  renderRegionalRiskPanel(
+    aggregateGroups
+      ? buildRegionalEntriesFromGroups(aggregateGroups)
+      : buildRegionalEntriesFromReports(filteredReports),
+    filteredTotal
+  );
+  renderReportTable(reportGroups);
+  updateMapVisualization(currentFilteredReports);
   syncMapControlUI();
-  updateFilterResult(Number.isFinite(totalCount) ? totalCount : filteredReports.length, filteredReports.length, {
-    limited: hasLimitedResult
+  updateFilterResult(Number.isFinite(totalCount) ? totalCount : filteredTotal, filteredTotal, {
+    limited: aggregateGroups ? false : hasLimitedResult
   });
   syncRiskFocusUI();
+}
+
+function filterGroupsByRiskBucket(groups) {
+  if (activeRiskBucket === 'all') {
+    return groups;
+  }
+
+  return groups.filter(group => getRiskBucketKey(group.categoryKey || '') === activeRiskBucket);
+}
+
+function sumGroupCounts(groups) {
+  return groups.reduce((total, group) => total + (Number(group.count) || 0), 0);
+}
+
+// Harita pinleri/heatmap icin okul bazli aggregate sayilar (sayfa listesinden bagimsiz).
+function buildMapCountEntries(groups) {
+  const counts = new Map();
+
+  groups.forEach(group => {
+    const schoolId = Number(group.schoolId);
+    if (!Number.isFinite(schoolId) || schoolId <= 0) return;
+    counts.set(schoolId, (counts.get(schoolId) || 0) + (Number(group.count) || 0));
+  });
+
+  return Array.from(counts.entries()).map(([schoolId, count]) => ({ schoolId, count }));
+}
+
+// Filtre secenek sayaclari da tum filtrelenmis kumeden uretilir (risk odagi burada uygulanmaz).
+function buildFilterOptionCounts(groups) {
+  const school = new Map();
+  const category = new Map();
+  const status = new Map();
+
+  groups.forEach(group => {
+    const count = Number(group.count) || 0;
+    const schoolKey = String(group.schoolId || '');
+    const categoryKey = String(group.categoryKey || '');
+
+    if (schoolKey) addWeightedCount(school, schoolKey, count);
+    if (categoryKey) addWeightedCount(category, categoryKey, count);
+
+    Object.entries(group.statusCounts || {}).forEach(([statusKey, statusCount]) => {
+      if (statusKey) addWeightedCount(status, statusKey, Number(statusCount) || 0);
+    });
+  });
+
+  return { school, category, status };
+}
+
+// Sayfadaki detay kayitlari aggregate gruplarina baglanir; grup mevcut sayfada tam olarak
+// karsilaniyorsa drill-down icin ek istek atilmaz.
+function attachLocalGroupItems(groups, reports) {
+  const itemsByKey = new Map();
+
+  reports.forEach(report => {
+    const key = `${report.schoolId}-${report.category || ''}`;
+    if (!itemsByKey.has(key)) {
+      itemsByKey.set(key, []);
+    }
+
+    itemsByKey.get(key).push(report);
+  });
+
+  return groups
+    .map(group => {
+      const district = normalizeDistrictName(group.district || '', 'Belirsiz');
+
+      return {
+        ...group,
+        district,
+        districtLabel: getDistrictLabel(district),
+        schoolName: group.schoolName || 'Bilinmeyen okul',
+        category: group.category || 'Belirsiz',
+        items: itemsByKey.get(group.key) || []
+      };
+    })
+    .sort((left, right) => {
+      if (right.count !== left.count) return right.count - left.count;
+      const districtComparison = compareDistrictOrder(left.district, right.district);
+      if (districtComparison !== 0) return districtComparison;
+      return left.schoolName.localeCompare(right.schoolName, 'tr');
+    });
+}
+
+function addWeightedCount(counts, key, value) {
+  counts.set(key, (counts.get(key) || 0) + value);
 }
 
 async function loadAdminPanelFallback(requestId, filters) {
@@ -374,7 +490,7 @@ function getFilterValues() {
 }
 
 function populateFilterOptions(reports, options = {}) {
-  const { truncated = false, filters = {} } = options;
+  const { truncated = false, filters = {}, counts = null } = options;
   const districtSelect = document.getElementById(FILTER_IDS.district);
   const schoolSelect = document.getElementById(FILTER_IDS.school);
   const categorySelect = document.getElementById(FILTER_IDS.category);
@@ -388,14 +504,22 @@ function populateFilterOptions(reports, options = {}) {
     return value !== '' && value !== 'all';
   });
 
-  // Sayaç/pasiflik kuralı: yalnızca (a) tüm kayıtlar yüklüyse ve (b) daraltıcı filtre yoksa
-  // 0 sonuçlu seçenekler pasifleştirilir. Aksi halde yanlış-negatif üretmemek için dokunulmaz.
+  // Sayaç/pasiflik kuralı: yalnızca (a) tüm kayıtlar sayılabiliyorsa (server aggregate varsa
+  // sayfa sınırı bunu bozmaz) ve (b) daraltıcı filtre yoksa 0 sonuçlu seçenekler pasifleştirilir.
+  // Aksi halde yanlış-negatif üretmemek için dokunulmaz.
   const allowDisable = !truncated && !hasNarrowingFilter;
   const showCounts = !truncated;
 
-  const schoolCounts = countBy(reports, report => String(report.schoolId || ''));
-  const categoryCounts = countBy(reports, report => report.category || '');
-  const statusCounts = countBy(reports, report => report.status || '');
+  // Aggregate sayaçları geldiyse tüm filtrelenmiş küme, gelmediyse mevcut sayfa kayıtları kullanılır.
+  const schoolCounts = counts && counts.school instanceof Map
+    ? counts.school
+    : countBy(reports, report => String(report.schoolId || ''));
+  const categoryCounts = counts && counts.category instanceof Map
+    ? counts.category
+    : countBy(reports, report => report.category || '');
+  const statusCounts = counts && counts.status instanceof Map
+    ? counts.status
+    : countBy(reports, report => report.status || '');
 
   populateSchoolSelect(schoolSelect, selectedDistrict, schoolCounts, {
     showCounts,
@@ -528,30 +652,79 @@ function applyRiskBucketFilter(reports) {
   return reports.filter(report => getRiskBucketKey(report.category) === activeRiskBucket);
 }
 
-function normalizeSummaryData(summaryData, reports) {
+function normalizeSummaryData(summaryData, reports, analytics = null) {
   const safeData = summaryData && typeof summaryData === 'object' ? summaryData : {};
+  const aggregateGroups = analytics && Array.isArray(analytics.groups) ? analytics.groups : null;
 
-  const fallbackTopDistrict = getMostFrequent(
-    reports,
-    report => normalizeDistrictName(report.district || report.region || '', '')
-  );
-  const fallbackTopCategory = getMostFrequent(reports, report => report.category || '');
-
-  const totalReports = Number(safeData.totalReports);
-  const newReports = Number(safeData.newReports);
-  const reviewedReports = Number(safeData.reviewedReports);
+  // Ozet kartlari sirayla: RPC ozeti -> server aggregate -> (son care) sayfa kayitlari.
+  const fallback = aggregateGroups
+    ? summarizeAnalyticsGroups(aggregateGroups)
+    : {
+      totalReports: reports.length,
+      newReports: reports.filter(report => report.status === 'Yeni').length,
+      reviewedReports: reports.filter(report => report.status !== 'Yeni').length,
+      topDistrict: getMostFrequent(
+        reports,
+        report => normalizeDistrictName(report.district || report.region || '', '')
+      ),
+      topCategory: getMostFrequent(reports, report => report.category || '')
+    };
 
   return {
-    totalReports: Number.isFinite(totalReports) ? totalReports : reports.length,
-    newReports: Number.isFinite(newReports)
-      ? newReports
-      : reports.filter(report => report.status === 'Yeni').length,
-    reviewedReports: Number.isFinite(reviewedReports)
-      ? reviewedReports
-      : reports.filter(report => report.status !== 'Yeni').length,
-    topDistrict: String(safeData.topDistrict || fallbackTopDistrict || ''),
-    topCategory: String(safeData.topCategory || fallbackTopCategory || '')
+    totalReports: toSummaryCount(safeData.totalReports, fallback.totalReports),
+    newReports: toSummaryCount(safeData.newReports, fallback.newReports),
+    reviewedReports: toSummaryCount(safeData.reviewedReports, fallback.reviewedReports),
+    topDistrict: String(safeData.topDistrict || fallback.topDistrict || ''),
+    topCategory: String(safeData.topCategory || fallback.topCategory || '')
   };
+}
+
+function toSummaryCount(value, fallbackValue) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : fallbackValue;
+}
+
+function summarizeAnalyticsGroups(groups) {
+  const districtCounts = new Map();
+  const categoryCounts = new Map();
+
+  let totalReports = 0;
+  let newReports = 0;
+
+  groups.forEach(group => {
+    const count = Number(group.count) || 0;
+    totalReports += count;
+
+    Object.entries(group.statusCounts || {}).forEach(([status, value]) => {
+      if (status === 'Yeni') {
+        newReports += Number(value) || 0;
+      }
+    });
+
+    addWeightedCount(districtCounts, normalizeDistrictName(group.district || '', ''), count);
+    addWeightedCount(categoryCounts, String(group.categoryKey || ''), count);
+  });
+
+  return {
+    totalReports,
+    newReports,
+    reviewedReports: Math.max(totalReports - newReports, 0),
+    topDistrict: getTopWeightedValue(districtCounts),
+    topCategory: getTopWeightedValue(categoryCounts)
+  };
+}
+
+function getTopWeightedValue(counts) {
+  let topValue = '';
+  let topCount = 0;
+
+  counts.forEach((count, value) => {
+    if (!value || count <= topCount) return;
+    topCount = count;
+    topValue = value;
+  });
+
+  return topValue;
 }
 
 function updateSummaryCards(reports, summary) {
@@ -597,17 +770,18 @@ function getMostFrequent(items, getValue) {
   return maxValue;
 }
 
-function renderReportTable(reports) {
+// Gruplanmis tablo server aggregate gruplarindan cizilir (aggregate yoksa sayfa kayitlarindan).
+function renderReportTable(groups) {
   const tbody = document.getElementById('adminReportRows');
   if (!tbody) return;
 
-  if (reports.length === 0) {
+  const groupedReports = Array.isArray(groups) ? groups : [];
+
+  if (groupedReports.length === 0) {
     tbody.innerHTML = '<tr><td class="empty-row" colspan="5">Filtrelere uygun bildirim bulunamadı.</td></tr>';
-    renderDetailPanel([]);
+    renderDetailPanel([], null);
     return;
   }
-
-  const groupedReports = groupReports(reports);
 
   tbody.innerHTML = groupedReports
     .map(group => {
@@ -636,7 +810,7 @@ function renderReportTable(reports) {
 
       setActiveGroupRow(row, tbody);
       zoomToSchool(selectedGroup.schoolId);
-      renderDetailPanel(selectedGroup.items, selectedGroup);
+      void renderGroupDetail(selectedGroup);
     });
 
     row.addEventListener('keydown', event => {
@@ -668,18 +842,69 @@ function renderReportTable(reports) {
     setActiveGroupRow(firstRow, tbody);
   }
 
-  renderDetailPanel(groupedReports[0].items, groupedReports[0]);
+  void renderGroupDetail(groupedReports[0]);
 }
 
-function renderRegionalRiskPanel(reports) {
+// Drill-down detay listesi sayfali `items` verisinden beslenir: grup mevcut sayfada tam olarak
+// karsilaniyorsa ek istek atilmaz, aksi halde grubun kayitlari sayfali olarak cekilir.
+async function renderGroupDetail(group) {
+  if (!group) return;
+
+  const requestId = ++detailRequestId;
+  const localItems = Array.isArray(group.items) ? group.items : [];
+  const groupCount = Number(group.count) || 0;
+
+  if (localItems.length > 0 && localItems.length >= groupCount) {
+    renderDetailPanel(localItems, group);
+    return;
+  }
+
+  renderDetailPanel(localItems, group, { loading: true });
+
+  try {
+    const detailItems = await fetchGroupDetailItems(group);
+
+    if (requestId !== detailRequestId) {
+      return;
+    }
+
+    renderDetailPanel(detailItems.length > 0 ? detailItems : localItems, group);
+  } catch {
+    if (requestId !== detailRequestId) {
+      return;
+    }
+
+    renderDetailPanel(localItems, group);
+  }
+}
+
+async function fetchGroupDetailItems(group) {
+  const categoryKey = String(group.categoryKey || '');
+  const schoolId = Number(group.schoolId) || 0;
+
+  const response = await fetchAdminReports({
+    filters: {
+      ...getFilterValues(),
+      school: schoolId > 0 ? String(schoolId) : 'all',
+      category: categoryKey
+    },
+    page: 1,
+    pageSize: ADMIN_PAGE_SIZE
+  });
+
+  return extractReportItems(response)
+    .filter(item => Number(item.schoolId) === schoolId && String(item.category || '') === categoryKey);
+}
+
+function renderRegionalRiskPanel(regionalEntries, totalRecords = 0) {
   const matrixBody = document.getElementById('regionalRiskMatrix');
   const riskGrid = document.getElementById('regionalRiskGrid');
   const fullGrid = document.getElementById('regionalRiskFullGrid');
 
   if (!matrixBody || !riskGrid) return;
 
-  const districtRows = createRegionalRows(reports);
-  updateRegionalRiskStats(reports);
+  const districtRows = createRegionalRows(regionalEntries);
+  updateRegionalRiskStats(totalRecords);
 
   if (districtRows.length === 0) {
     matrixBody.innerHTML = '<tr><td class="empty-row" colspan="7">Filtrelere uygun risk kaydı bulunamadı.</td></tr>';
@@ -739,6 +964,7 @@ function groupReports(reports) {
         district,
         districtLabel: getDistrictLabel(district),
         category: report.category || 'Belirsiz',
+        categoryKey: report.category || '',
         count: 0,
         statusCounts: {},
         items: []
@@ -798,14 +1024,15 @@ function setActiveGroupRow(activeRow, tbody) {
   });
 }
 
-function renderDetailPanel(items, group) {
+function renderDetailPanel(items, group, options = {}) {
+  const { loading = false } = options;
   const intro = document.getElementById('detailIntro');
   const list = document.getElementById('detailList');
   const mapButton = document.getElementById('detailMapButton');
 
   if (!list || !intro || !mapButton) return;
 
-  if (!items || items.length === 0 || !group) {
+  if (!group) {
     intro.textContent = 'Ana tablodan bir okul/kategori grubuna tıklayın; bağlı tekil bildirimler burada listelenir.';
     list.setAttribute('aria-busy', 'true');
     list.innerHTML = '<div class="empty-row">Henüz grup seçilmedi.</div>';
@@ -816,13 +1043,26 @@ function renderDetailPanel(items, group) {
     return;
   }
 
+  const detailItems = Array.isArray(items) ? items : [];
+
   intro.textContent = `${group.schoolName} - ${group.category} grubunda ${group.count} bildirim var.`;
   mapButton.disabled = false;
   mapButton.setAttribute('aria-disabled', 'false');
   mapButton.onclick = () => zoomToSchool(group.schoolId);
 
-  list.setAttribute('aria-busy', 'true');
-  list.innerHTML = items
+  list.setAttribute('aria-busy', loading ? 'true' : 'false');
+
+  if (loading) {
+    list.innerHTML = '<div class="empty-row">Detay kayıtları yükleniyor...</div>';
+    return;
+  }
+
+  if (detailItems.length === 0) {
+    list.innerHTML = '<div class="empty-row">Bu grup için listelenecek detay kaydı bulunamadı.</div>';
+    return;
+  }
+
+  list.innerHTML = detailItems
     .map(item => {
       return `
         <article class="detail-item">
@@ -833,7 +1073,6 @@ function renderDetailPanel(items, group) {
       `;
     })
     .join('');
-  list.setAttribute('aria-busy', 'false');
 }
 
 function updateFilterResult(totalCount, filteredCount, options = {}) {
@@ -884,7 +1123,7 @@ function handleAdminPanelLoadError(error) {
     topDistrict: '',
     topCategory: ''
   });
-  renderRegionalRiskPanel([]);
+  renderRegionalRiskPanel([], 0);
   renderReportTable([]);
   updateMapVisualization([]);
   syncMapControlUI();
@@ -1001,21 +1240,21 @@ function syncRiskFocusUI() {
   });
 }
 
-function createRegionalRows(reports) {
+function createRegionalRows(entries) {
   const districtOptions = getDistrictOptions();
   const rowMap = new Map(
     districtOptions.map(option => [option.value, createRegionalRow(option.value)])
   );
 
-  reports.forEach(report => {
-    const district = normalizeDistrictName(report.district || report.region || '', 'Belirsiz');
+  (Array.isArray(entries) ? entries : []).forEach(entry => {
+    const district = entry.district || 'Belirsiz';
     if (!rowMap.has(district)) {
       rowMap.set(district, createRegionalRow(district));
     }
 
     const row = rowMap.get(district);
-    row.total += 1;
-    row.bucketCounts[getRiskBucketKey(report.category)] += 1;
+    row.total += entry.count;
+    row.bucketCounts[entry.bucketKey] += entry.count;
   });
 
   return Array.from(rowMap.values())
@@ -1024,6 +1263,24 @@ function createRegionalRows(reports) {
       if (right.total !== left.total) return right.total - left.total;
       return compareDistrictOrder(left.district, right.district);
     });
+}
+
+// Aggregate yoksa (fallback) bolgesel girisler sayfa kayitlarindan uretilir.
+function buildRegionalEntriesFromReports(reports) {
+  return reports.map(report => ({
+    district: normalizeDistrictName(report.district || report.region || '', 'Belirsiz'),
+    bucketKey: getRiskBucketKey(report.category),
+    count: 1
+  }));
+}
+
+// Aggregate varsa bolgesel girisler tum filtrelenmis kumeyi temsil eden gruplardan uretilir.
+function buildRegionalEntriesFromGroups(groups) {
+  return groups.map(group => ({
+    district: normalizeDistrictName(group.district || '', 'Belirsiz'),
+    bucketKey: getRiskBucketKey(group.categoryKey || ''),
+    count: Number(group.count) || 0
+  }));
 }
 
 function createRegionalRow(district) {
@@ -1097,13 +1354,14 @@ function renderRiskCard(item) {
   `;
 }
 
-function updateRegionalRiskStats(reports) {
+function updateRegionalRiskStats(totalRecords) {
   const totalElement = document.getElementById('regionalStatTotal');
   const districtElement = document.getElementById('regionalStatDistrict');
   const categoryElement = document.getElementById('regionalStatCategory');
 
   if (totalElement) {
-    totalElement.textContent = String(Array.isArray(reports) ? reports.length : 0);
+    const total = Number(totalRecords);
+    totalElement.textContent = String(Number.isFinite(total) && total >= 0 ? total : 0);
   }
 
   if (districtElement) {

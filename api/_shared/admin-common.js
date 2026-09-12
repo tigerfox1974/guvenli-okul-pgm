@@ -309,17 +309,90 @@ async function fetchReportSummary(config, filters) {
   return normalizeSummaryPayload(payload);
 }
 
+// RPC ciktisi iki bolumden olusur:
+//  - summary:   ozet kartlari (Faz 2'den beri ayni alanlar)
+//  - analytics: tum filtrelenmis kayit kumesini temsil eden aggregate (Faz 3)
+// `analytics` alani yoksa (eski RPC surumu) null doner; panel bu durumda kontrollu olarak
+// sayfa verisine geri duser. Sayfalama yalnizca detay listesi icin kullanilir.
 function normalizeSummaryPayload(payload) {
   const source = Array.isArray(payload)
     ? (payload[0] && typeof payload[0] === 'object' ? payload[0] : {})
     : (payload && typeof payload === 'object' ? payload : {});
 
   return {
-    totalReports: toSafeCount(source.totalReports),
-    newReports: toSafeCount(source.newReports),
-    reviewedReports: toSafeCount(source.reviewedReports),
-    topDistrict: String(source.topDistrict || ''),
-    topCategory: String(source.topCategory || '')
+    summary: {
+      totalReports: toSafeCount(source.totalReports),
+      newReports: toSafeCount(source.newReports),
+      reviewedReports: toSafeCount(source.reviewedReports),
+      topDistrict: String(source.topDistrict || ''),
+      topCategory: String(source.topCategory || '')
+    },
+    analytics: normalizeAnalyticsPayload(source.analytics)
+  };
+}
+
+function normalizeAnalyticsPayload(analytics) {
+  if (!analytics || typeof analytics !== 'object' || Array.isArray(analytics)) {
+    return null;
+  }
+
+  const cells = Array.isArray(analytics.cells) ? analytics.cells : [];
+  const groups = new Map();
+
+  cells.forEach(cell => {
+    const normalizedCell = normalizeAnalyticsCell(cell);
+    if (!normalizedCell) {
+      return;
+    }
+
+    const existing = groups.get(normalizedCell.key);
+    if (!existing) {
+      groups.set(normalizedCell.key, normalizedCell);
+      return;
+    }
+
+    existing.count += normalizedCell.count;
+    Object.entries(normalizedCell.statusCounts).forEach(([status, count]) => {
+      existing.statusCounts[status] = toSafeCount(existing.statusCounts[status]) + count;
+    });
+  });
+
+  const groupList = Array.from(groups.values())
+    .filter(group => group.count > 0)
+    .sort((left, right) => right.count - left.count);
+
+  const declaredTotal = toSafeCount(analytics.totalRecords);
+  const computedTotal = groupList.reduce((total, group) => total + group.count, 0);
+
+  return {
+    totalRecords: declaredTotal > 0 ? declaredTotal : computedTotal,
+    groups: groupList
+  };
+}
+
+function normalizeAnalyticsCell(cell) {
+  if (!cell || typeof cell !== 'object') {
+    return null;
+  }
+
+  const count = toSafeCount(cell.count);
+  if (count <= 0) {
+    return null;
+  }
+
+  const rawSchoolId = Number(cell.schoolId);
+  const schoolId = Number.isFinite(rawSchoolId) && rawSchoolId > 0 ? rawSchoolId : 0;
+  const category = String(cell.category || '');
+  const status = String(cell.status || '') || 'Yeni';
+
+  return {
+    key: `${schoolId}-${category}`,
+    schoolId,
+    schoolName: String(cell.schoolName || ''),
+    district: String(cell.district || ''),
+    category,
+    count,
+    statusCounts: { [status]: count }
   };
 }
 

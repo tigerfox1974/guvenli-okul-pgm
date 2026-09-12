@@ -76,6 +76,10 @@ module.exports = async (req, res) => {
   }
 };
 
+// Panel cevabi iki katmandan olusur:
+//  - items:     yalnizca sayfali detay kayitlari (drill-down listesi icin)
+//  - summary/analytics: tum filtrelenmis kayit kumesini temsil eden sunucu tarafi aggregate
+// Boylece dashboard analizleri ilk sayfadaki kayitlarla sinirli kalmaz.
 async function fetchPanel(config, filters) {
   const [reportsResult, summaryResult] = await Promise.allSettled([
     fetchReports(config, filters),
@@ -87,9 +91,11 @@ async function fetchPanel(config, filters) {
   }
 
   let summary = null;
+  let analytics = null;
 
   if (summaryResult.status === 'fulfilled') {
-    summary = summaryResult.value;
+    summary = summaryResult.value.summary;
+    analytics = summaryResult.value.analytics;
   } else {
     const reason = summaryResult.reason;
     console.warn(
@@ -100,7 +106,8 @@ async function fetchPanel(config, filters) {
 
   return {
     ...reportsResult.value,
-    summary
+    summary,
+    analytics
   };
 }
 

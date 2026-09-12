@@ -95,7 +95,9 @@ export async function fetchAdminPanel({ filters = {}, page = 1, pageSize = 100 }
   query.set('page', String(normalizedPage));
   query.set('pageSize', String(normalizedPageSize));
 
-  return requestAdminApi(`/api/admin/panel?${query.toString()}`, session.accessToken);
+  const payload = await requestAdminApi(`/api/admin/panel?${query.toString()}`, session.accessToken);
+
+  return normalizePanelPayload(payload);
 }
 
 export function loadStoredAdminSession() {
@@ -151,6 +153,88 @@ export function getRoleLabel(role) {
 function normalizeFilterValue(value) {
   const normalized = String(value || '').trim();
   return normalized || 'all';
+}
+
+// Panel cevabini UI icin tek bicime getirir:
+//  - items:     sayfali detay kayitlari (yalnizca drill-down listesi icin)
+//  - summary:   ozet kartlari (sunucu tarafi tam sayim)
+//  - analytics: tum filtrelenmis kumeyi temsil eden aggregate (yoksa null -> UI kontrollu fallback yapar)
+function normalizePanelPayload(payload) {
+  const source = payload && typeof payload === 'object' ? payload : {};
+  const items = Array.isArray(source.items) ? source.items : [];
+  const totalCount = Number(source.totalCount);
+  const page = Number(source.page);
+  const pageSize = Number(source.pageSize);
+
+  return {
+    items,
+    totalCount: Number.isFinite(totalCount) && totalCount >= 0 ? totalCount : items.length,
+    page: Number.isFinite(page) && page > 0 ? page : 1,
+    pageSize: Number.isFinite(pageSize) && pageSize > 0 ? pageSize : items.length,
+    hasNext: Boolean(source.hasNext),
+    summary: source.summary && typeof source.summary === 'object' && !Array.isArray(source.summary)
+      ? source.summary
+      : null,
+    analytics: normalizePanelAnalytics(source.analytics)
+  };
+}
+
+function normalizePanelAnalytics(analytics) {
+  if (!analytics || typeof analytics !== 'object' || Array.isArray(analytics)) {
+    return null;
+  }
+
+  const groups = Array.isArray(analytics.groups)
+    ? analytics.groups.map(normalizeAnalyticsGroup).filter(Boolean)
+    : [];
+
+  const totalRecords = Number(analytics.totalRecords);
+  const computedTotal = groups.reduce((total, group) => total + group.count, 0);
+
+  return {
+    totalRecords: Number.isFinite(totalRecords) && totalRecords >= 0 ? totalRecords : computedTotal,
+    groups
+  };
+}
+
+function normalizeAnalyticsGroup(group) {
+  if (!group || typeof group !== 'object') {
+    return null;
+  }
+
+  const rawSchoolId = Number(group.schoolId);
+  const schoolId = Number.isFinite(rawSchoolId) && rawSchoolId > 0 ? rawSchoolId : 0;
+  const categoryKey = String(group.category || '');
+  const count = Number(group.count);
+
+  return {
+    key: String(group.key || `${schoolId}-${categoryKey}`),
+    schoolId,
+    schoolName: String(group.schoolName || ''),
+    district: String(group.district || ''),
+    category: categoryKey || 'Belirsiz',
+    categoryKey,
+    count: Number.isFinite(count) && count > 0 ? count : 0,
+    statusCounts: normalizeAnalyticsStatusCounts(group.statusCounts)
+  };
+}
+
+function normalizeAnalyticsStatusCounts(statusCounts) {
+  if (!statusCounts || typeof statusCounts !== 'object' || Array.isArray(statusCounts)) {
+    return {};
+  }
+
+  return Object.entries(statusCounts).reduce((counts, [status, value]) => {
+    const normalizedStatus = String(status || '');
+    const count = Number(value);
+
+    if (!normalizedStatus || !Number.isFinite(count) || count <= 0) {
+      return counts;
+    }
+
+    counts[normalizedStatus] = (counts[normalizedStatus] || 0) + count;
+    return counts;
+  }, {});
 }
 
 async function requireAdminSession() {
