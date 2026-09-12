@@ -1,3 +1,5 @@
+import { CATEGORY_OPTIONS } from '../data/canonical-source.mjs';
+
 // Yardımcı fonksiyonlar
 export function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
@@ -170,17 +172,7 @@ function normalizeDistrictKey(value) {
 }
 
 export function getCategoryOptions() {
-  return [
-    'Trafik güvenliği',
-    'Okul servisi / taşımacılık',
-    'Kavga / şiddet / zorbalık',
-    'Uyuşturucu veya zararlı madde şüphesi',
-    'Şüpheli kişi / araç',
-    'Okul çevresi güvenliği',
-    'Kamera / aydınlatma / giriş-çıkış eksikliği',
-    'Siber zorbalık / sosyal medya tehdidi',
-    'Diğer'
-  ];
+  return Array.from(CATEGORY_OPTIONS);
 }
 
 export function getStatusOptions() {
