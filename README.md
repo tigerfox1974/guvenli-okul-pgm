@@ -47,6 +47,27 @@ Supabase entegrasyonu test edilirken `file://` yerine yerel HTTP sunucu ile açm
 2. `python -m http.server 5500` komutunu çalıştırın.
 3. Tarayıcıdan `http://localhost:5500` adresine gidin.
 
+## Smoke Testleri (Salt Okunur)
+
+Sürüm kontrollerini hafif tutmak için tarayıcı tabanlı, salt okunur bir smoke test
+takımı vardır. `tests/smoke/` altında yer alır ve; `index.html` yüklenmesini, ihbar
+adım akışını, acil durum ve gönderim bildirim modallarını, admin giriş kapısını,
+çekirdek filtreleri ve harita katman geçişlerini kapsar. Testler hiçbir gerçek ağ
+isteği göndermez (yazma uçları stub'lanır), bu nedenle hem yerel HTTP sunucusuna hem
+Vercel preview adresine karşı güvenle çalıştırılabilir.
+
+Kısa kurulum ve çalıştırma:
+
+```bash
+cd tests/smoke
+npm install
+npx playwright install chromium
+npm test
+```
+
+Farklı adres (Vercel preview) için: `SMOKE_BASE_URL` ortam değişkenini ayarlayın.
+Ayrıntılar: [tests/smoke/README.md](tests/smoke/README.md)
+
 ## Supabase ile Kalıcı Kayıt (Sıfırdan Kurulum Rehberi)
 
 Anonim bildirim formu, yerel kayıt yanında Supabase veritabanına da yazacak şekilde hazırdır.

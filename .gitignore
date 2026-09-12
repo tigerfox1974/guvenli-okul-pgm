@@ -12,3 +12,7 @@ Thumbs.db
 # Ortam değişkenleri / yerel sırlar
 .env
 .env.local
+
+# Playwright smoke test çıktıları
+test-results/
+playwright-report/
