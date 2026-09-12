@@ -5,7 +5,7 @@ const DEFAULT_PASSWORD = String(process.env.PGM_ADMIN_DEFAULT_PASSWORD || '').tr
 const RESET_EXISTING_PASSWORDS = String(process.env.PGM_ADMIN_RESET_PASSWORDS || 'false').trim().toLowerCase() === 'true';
 const DOMAIN_OVERRIDE = String(process.env.PGM_ADMIN_EMAIL_DOMAIN || '').trim().toLowerCase();
 const ADMIN_USERS_TABLE = String(process.env.SUPABASE_ADMIN_USERS_TABLE || 'admin_users').trim() || 'admin_users';
-const DEFAULT_EMAIL_DOMAIN = 'kurum.gov.ct.tr';
+const DEFAULT_EMAIL_DOMAIN = 'okul.gov.ct.tr';
 const SUPPORTED_ROLES = new Set(['operator', 'supervisor']);
 const DEFAULT_ADMIN_USERS = Object.freeze([
   { username: 'operator', role: 'operator' },
@@ -85,7 +85,7 @@ function getEmailDomain() {
   const domain = (DOMAIN_OVERRIDE || DEFAULT_EMAIL_DOMAIN).replace(/^@+/, '');
 
   if (!domain) {
-    throw new Error('adminAuthEmailDomain bos olamaz.');
+    throw new Error('PGM_ADMIN_EMAIL_DOMAIN bos olamaz.');
   }
 
   return domain;

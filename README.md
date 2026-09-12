@@ -190,7 +190,9 @@ Bu surumde panel kullanicilari frontend config'ten degil `public.admin_users` ta
 
 Panel girisi kullanici adi + sifre ile calisir. Supabase Auth teknik olarak e-posta ile dogruladigi icin arka planda su desen kullanilir:
 
-1. kullaniciAdi@kurum.gov.ct.tr
+1. kullaniciAdi@okul.gov.ct.tr
+
+Not: `okul.gov.ct.tr` bu projenin kanonik varsayilan admin e-posta alanidir. `docs/supabase-admin-users.sql` ornekleri ile `scripts/seed-admin-users.mjs` runtime varsayilani ayni alani kullanir.
 
 Hesaplarin Auth + tablo kaydini tek komutla esitlemek icin:
 
@@ -204,6 +206,7 @@ Notlar:
 2. Kullanici ekranda yalnizca kullanici adini girer (e-posta girmez).
 3. `PGM_ADMIN_RESET_PASSWORDS='true'` ise mevcut Auth kullanicilarinin sifresi de sifirlanir.
 4. `PGM_ADMIN_USERS_JSON` ortam degiskeni ile varsayilan kullanici listesini JSON olarak override edebilirsiniz.
+5. `PGM_ADMIN_EMAIL_DOMAIN` ortam degiskeni ile varsayilan e-posta alanini (varsayilan: okul.gov.ct.tr) explicit olarak degistirebilirsiniz. Farkli bir alan kullanacaksaniz ayni degeri `docs/supabase-admin-users.sql` orneklerinde de guncellemeyi unutmayin.
 
 ### Aşama 5: Uygulamayı Doğru Şekilde Aç
 
